@@ -198,3 +198,9 @@ Testler: 104 uçtan uca + 12 birim, hepsi yeşil. Commit edilmedi.
 Önce özgün `app.js` üzerinde bir Playwright/Chromium duman testi yazıldı (`demo/test/browser.mjs`, 16 denetim: katalog, arama, öneriler, filtre ve adres, sepet, merkliste, ürün penceresi, demo kasa ile sipariş, kalıcılık, sayfa hatası yok). Sonra 1794 satırlık tek async IIFE, 11 klasik betik bölümüne (`app/*.js`, 83–343 satır) ayrıldı; bölümleri `app.js` (20 satır) sırayla çalıştırır. Yeniden atanan 25 paylaşılan değişken `Ctx.S` altına taşındı (AST ile, kapsam duyarlı). Klasik betik olduğu için `file://` desteği korundu. Bölme sonrası 16/16 tarayıcı denetimi, 104 uçtan uca ve 12 birim test yeşil; CI'a `test:browser` adımı eklendi.
 
 Kalan uyarılar (ESLint, toplam 10): bölüm sarmalayıcıları 170–340 satır (en büyüğü `app/events.js`, içinde 167 satırlık tıklama işleyicisi), `instagram/admin.mjs` ve `marketing/suggest.mjs`. Tarayıcı testi yalnız Chromium'da ve Almanca arayüzde, mobil görünüm ve yönetici paneli (`admin/index.html`) kapsam dışı. Commit edilmedi.
+
+### Beşinci tur: kalan uyarılar ve kapsam
+
+ESLint uyarıları 10 → 0: vitrin 22 bölüme (en büyüğü <150 satır) ayrıldı, 27 dallı tıklama işleyicisi `CLICK_ACTIONS_1-3` tablolarına çevrildi, `instagram/admin` üç dosyaya, `marketing/suggest` iki dosyaya + `aggregate` yardımcısına bölündü. Testler: 17 birim (asistan onay kapısı: küçük yazma uygulanır/geri alınır, BULK_LIMIT üstü ve dış kaynaklı metinde onaya düşer), 104 uçtan uca, 16 tarayıcı. Birleşik satır kapsamı (c8, birim + uçtan uca, sunucu alt süreci dahil, `npm run test:coverage`) ≈ %70, dal kapsamı ≈ %71.
+
+Yapılmayanlar: siparişlerin ve olayların bellekten depo katmanına taşınması ve `settings`'in alan bazlı yazımı (davranış değiştiren, ölçek sınırı belgeli), mobil (`mobile/`, başka oturumun commit edilmemiş işi), G5, `sunum/` koruması, CI'ın ilk gerçek koşusu.
