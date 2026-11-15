@@ -8,3 +8,4 @@ admin-data/
 node_modules/
 package-lock.json
 *.html
+coverage/

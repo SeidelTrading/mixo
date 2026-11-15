@@ -21,6 +21,7 @@ export default [
     languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: globals.node },
     rules: common,
   },
+  { files: ['test/**'], rules: { 'max-lines': 'off' } },
   {
     files: ['test/browser.mjs'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },

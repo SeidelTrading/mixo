@@ -10,3 +10,4 @@ _raw/
 video/
 *.log
 __pycache__/
+coverage/
