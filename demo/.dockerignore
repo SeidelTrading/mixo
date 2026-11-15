@@ -9,3 +9,8 @@ backups
 *.tasindi
 .nvmrc
 test
+.env*
+coverage
+eslint.config.js
+.prettier*
+tsconfig.json

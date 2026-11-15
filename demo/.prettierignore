@@ -1,0 +1,10 @@
+data/
+data.js
+img/
+store/
+ara/
+sunum/
+admin-data/
+node_modules/
+package-lock.json
+*.html
