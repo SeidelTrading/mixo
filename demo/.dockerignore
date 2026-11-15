@@ -4,3 +4,8 @@ node_modules
 store
 .admin-password
 data.js
+mixo.db*
+backups
+*.tasindi
+.nvmrc
+test

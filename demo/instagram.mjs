@@ -9,10 +9,9 @@ import crypto from 'node:crypto';
 const DAY = 24 * 3600e3;
 
 export function initInstagram(ctx) {
-  const { P, settings, effP, isPending, shopOk, logChange, searchProducts, norm, getClient, model, freeShip, shipFee, limited, dataDir, writeAtomic, loadJson } = ctx;
-  const FILE = path.join(dataDir, 'instagram.json');
-  const db = Object.assign({ posts: [], inbox: [] }, (x => x && typeof x === 'object' && !Array.isArray(x) ? x : {})(loadJson(FILE, {})));
-  const save = () => writeAtomic(FILE, JSON.stringify(db));
+  const { P, settings, effP, isPending, shopOk, logChange, searchProducts, norm, getClient, model, freeShip, shipFee, limited, doc, saveDoc } = ctx;
+  const db = Object.assign({ posts: [], inbox: [] }, (x => x && typeof x === 'object' && !Array.isArray(x) ? x : {})(doc('instagram', {})));
+  const save = () => saveDoc('instagram', db);
   const E = process.env;
   const TOKEN = E.INSTAGRAM_TOKEN || '', USER = E.INSTAGRAM_USER_ID || '', APP_SECRET = E.IG_APP_SECRET || '', VERIFY = E.IG_VERIFY_TOKEN || '';
   const SITE = (E.SITE_URL || 'https://web-production-a959d0b7.up.railway.app').replace(/\/$/, '');

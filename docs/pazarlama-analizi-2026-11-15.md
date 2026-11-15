@@ -8,7 +8,7 @@
 2. **En yüksek getirili ilk adımlar ücretsiz:** ürün başına adres ve sunucu tarafı HTML, ürün yapılandırılmış verisi, Google Merchant Center ücretsiz listelemeleri, site haritası.
 3. **Ücretli reklamda ilk kanal Google Shopping**, ikinci kanal Meta katalog reklamı (yeniden pazarlama). Instagram tek başına satış getirmez; duyuru ve güven kanalıdır.
 4. **Rakiplerde gördüğümüz açık alan:** birçok kategoriyi tek outlet altında toplayan belirgin bir marka yok; güven puanı zayıf rakipler var; yapay zekâ görünürlüğüne özel çalışan rakip görmedik.
-5. **Marj bilinmeden bütçe kararı verilemez.** Tıklama başına 0,5–0,9 € ödenen bir kanalda 40 € sepetle kâr, üründeki marja bağlı.
+5. **Marj bilinmeden bütçe kararı verilemez.** Tıklama başına 0,5–0,9 € ödenen bir kanalda 40 € sepetle kâr, üründeki marja bağlı. *(Güncelleme: gerçek ortalama sepet ~78 €; yeniden hesap §7 "Bütçe senaryoları" altında.)*
 
 Karar gerektiren soru: pazarlamayı **mevcut Shopify mağazası** üzerinden mi, **yeni vitrin** üzerinden mi yapacağız? Shopify ürün adresi, site haritası ve temel ürün verisini hazır verir; yeni vitrinde bunları yazmak gerekir (2–4 gün).
 
@@ -109,6 +109,46 @@ Varsayım: dönüşüm ~%2, sepet ~40 €. Sipariş sayıları kıyaslardan tür
 | ~5.000 € | %45 Google, %30 Meta, %10 Pinterest/Bing, %15 influencer ve içerik | 130–200 sipariş; marj yetmezse zarar |
 
 500 € senaryosunda sipariş başına reklam maliyeti ~35–60 € çıkar; 40 € sepetle bu, kârlı değildir. Küçük bütçe satış için değil, hangi ürün ve kanalın çalıştığını öğrenmek içindir.
+
+#### Güncelleme (15.11.2026 akşamı): gerçek sepet ~78 € ile yeniden hesap
+
+Yukarıdaki tablo 40 € sepet varsayımıyla yazılmıştı. WawiERP panelinden okunan gerçek veri farklı: 15.10–14.11.2026 arasında mixoutlet.de'de 737 sipariş, 57.813 EUR; ortalama sepet 57.813 / 737 ≈ **78,4 €** (`site-karari-2026-11-15.md` §4a). Sipariş tahminleri aynı bırakıldı (dönüşüm ~%2 kıyasından geliyor, sepetten bağımsız); yalnız ciro ve kârlılık 78 € ile yeniden hesaplandı.
+
+| Aylık bütçe | Sipariş (aynı tahmin) | Ciro (78 € × sipariş) | ROAS | Sipariş başına reklam maliyeti |
+|---|---|---|---|---|
+| ~500 € | 8–14 | 624–1.092 € | 1,2–2,2 | 36–63 € |
+| ~2.000 € | 50–80 | 3.900–6.240 € | 2,0–3,1 | 25–40 € |
+| ~5.000 € | 130–200 | 10.140–15.600 € | 2,0–3,1 | 25–39 € |
+
+**Başa baş noktası marja bağlı; marj hâlâ bilinmiyor.** Bir siparişten kalan brüt kâr = 78 € × marj. Reklam maliyeti bunun altındaysa ilk siparişte kâr vardır.
+
+| Brüt marj | Sipariş başına brüt kâr (= katlanılabilir en yüksek reklam maliyeti) | Başa baş ROAS (1 / marj) |
+|---|---|---|
+| %15 | 11,70 € | 6,7 |
+| %25 | 19,50 € | 4,0 |
+| %35 | 27,30 € | 2,9 |
+
+Reklam harcaması düşüldükten sonra ilk siparişlerden kalan (brüt kâr − bütçe; tahminin alt ucu … üst ucu):
+
+| Aylık bütçe | %15 marj | %25 marj | %35 marj |
+|---|---|---|---|
+| ~500 € | −406 … −336 € | −344 … −227 € | −282 … −118 € |
+| ~2.000 € | −1.415 … −1.064 € | −1.025 … −440 € | −635 … **+184 €** |
+| ~5.000 € | −3.479 … −2.660 € | −2.465 … −1.100 € | −1.451 … **+460 €** |
+
+**Düzeltilen yargı.** "40 € sepetle bu, kârlı değildir" cümlesi yanlış sepet varsayımına dayanıyordu. 78 € ile durum şöyle:
+
+- Ciro ve ROAS yaklaşık iki katına çıkıyor, ama tahmin edilen sipariş başına reklam maliyeti (25–63 €), %15–35 marjın bıraktığı brüt kârın (12–27 €) çoğu durumda hâlâ üstünde.
+- İlk siparişte başa baş yalnız iki koşul birlikte sağlanırsa görünüyor: marj %35 dolayında **ve** sipariş başına reklam maliyeti aralığın alt ucunda (~25 €). Bu, 2.000 € ve üstü bütçede, tahminin iyimser ucunda oluyor.
+- 500 € senaryosu her marjda ekside kalıyor. Bu bütçenin amacı değişmedi: satış değil, hangi ürün grubunun ve kanalın çalıştığını öğrenmek.
+- Karar için asıl iki sayı **kategori bazında marj** ve **tekrar sipariş oranı**. Kataloğun büyük kısmı sarf malzemesi (toner, mürekkep); müşteri yılda ikinci kez sipariş verirse katlanılabilir reklam maliyeti kabaca iki katına çıkar ve tablo artıya dönebilir. Tekrar oranı elimizde yok.
+
+Sınırlar:
+
+1. Sipariş tahminleri ikincil kaynak kıyaslarıdır, garanti değildir; gerçek dönüşüm ilk testte ölçülür.
+2. 78,4 €'nun KDV dahil mi hariç mi olduğu WawiERP verisinden anlaşılmıyor. KDV dahilse (%19) net sepet ~66 € olur ve brüt kâr satırları yaklaşık %16 küçülür.
+3. Hesapta kargo (39 € üstü ücretsiz DHL satıcıda kalır), ödeme komisyonu ve iade maliyeti yok. Bunlar marjın içinde sayılmadıysa sonuç daha kötüdür.
+4. 78 € bugünkü trafiğin sepetidir; reklamla gelen yeni müşterinin sepeti farklı çıkabilir.
 
 ## 8. Instagram
 

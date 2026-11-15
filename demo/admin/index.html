@@ -99,7 +99,8 @@ aside.ai{position:fixed;right:24px;bottom:92px;width:min(400px,calc(100vw - 24px
 </head>
 <body>
 <div class="login" id="login" hidden>
-  <form id="loginF"><h1>Outlet Demo Yönetim</h1><p class="muted">Yönetici parolasıyla giriş yapın.</p>
+  <form id="loginF"><h1>Outlet Demo Yönetim</h1><p class="muted">Kendi kullanıcı adınız ve parolanızla giriş yapın.</p>
+    <input type="text" id="un" placeholder="Kullanıcı adı (boş bırakılırsa admin)" autocomplete="username" autocapitalize="none" spellcheck="false" aria-label="Kullanıcı adı" style="margin-bottom:8px">
     <input type="password" id="pw" placeholder="Parola" autocomplete="current-password" aria-label="Parola" required>
     <div class="err" id="loginErr"></div><button class="btn">Giriş yap</button></form>
 </div>
@@ -211,6 +212,18 @@ aside.ai{position:fixed;right:24px;bottom:92px;width:min(400px,calc(100vw - 24px
         <div class="card"><h3>Durum</h3><div id="status" class="muted"></div></div></div>
       <div class="card" id="pendCard" hidden style="margin-bottom:14px"><h3>Onay bekleyen işlemler</h3><div id="pendList"></div></div>
       <div class="card"><h3>Değişiklik günlüğü</h3><table><thead><tr><th>Zaman</th><th>Kim</th><th>Değişiklik</th><th></th></tr></thead><tbody id="changes"></tbody></table></div>
+      <div class="card" style="margin-top:14px"><h3>Hesabım</h3><p class="muted" style="margin-bottom:10px">Giriş yapan: <b id="meInfo">–</b><span id="roNote" hidden> · Bu hesap yalnız görüntüleyebilir; değişiklik düğmeleri reddedilir.</span></p>
+        <form id="pwF" style="display:flex;gap:8px;flex-wrap:wrap"><input type="password" id="pwCur" placeholder="Mevcut parola" autocomplete="current-password" aria-label="Mevcut parola" required><input type="password" id="pwNew" placeholder="Yeni parola (en az 10 karakter)" autocomplete="new-password" minlength="10" aria-label="Yeni parola" required><button class="btn sm">Parolayı değiştir</button></form>
+        <div class="err" id="pwErr"></div></div>
+      <div class="card" id="usersCard" hidden style="margin-top:14px"><h3>Kullanıcılar</h3><p class="muted" style="margin-bottom:10px">Her kişi kendi hesabıyla girer; değişiklik günlüğüne adı yazılır. Yönetici: her şey · Düzenleyen: mağaza değişiklikleri · Görüntüleyen: yalnız okuma.</p>
+        <table><thead><tr><th>Kullanıcı</th><th>Rol</th><th>Durum</th><th></th></tr></thead><tbody id="users"></tbody></table>
+        <form id="uAddF" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><input type="text" id="uName" placeholder="kullanıcı adı" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Yeni kullanıcı adı" required><input type="password" id="uPw" placeholder="parola (en az 10 karakter)" autocomplete="new-password" minlength="10" aria-label="Yeni kullanıcının parolası" required><select id="uRole" aria-label="Rol"></select><button class="btn sm">Kullanıcı ekle</button></form>
+        <div class="err" id="uErr"></div>
+        <h3 style="margin-top:16px">Son giriş denemeleri</h3><table><thead><tr><th>Zaman</th><th>Kullanıcı</th><th>Adres</th><th>Sonuç</th></tr></thead><tbody id="logins"></tbody></table></div>
+      <div class="card" id="backupCard" hidden style="margin-top:14px"><h3>Yedekler ve arka plan işleri</h3><p class="muted" style="margin-bottom:10px">Veritabanı günde bir kez yedeklenir. <b>Yedekler veritabanıyla aynı diskte durur</b>; disk dışı kopya ayrıca alınmalıdır.</p>
+        <button class="btn sm" id="bkNow">Şimdi yedek al</button> <span class="muted" id="bkMsg"></span>
+        <table style="margin-top:10px"><thead><tr><th>Yedek</th><th>Zaman</th><th>Boyut</th></tr></thead><tbody id="backups"></tbody></table>
+        <h3 style="margin-top:16px">İş kuyruğu</h3><table><thead><tr><th>#</th><th>İş</th><th>Durum</th><th>Planlanan</th><th>Deneme</th><th>Son hata</th></tr></thead><tbody id="jobs"></tbody></table></div>
     </section>
     <section id="t-pazarlama" hidden>
       <div class="chips" id="mkTabs"><button data-mk="kamp" aria-pressed="true">Kampanya önerileri</button><button data-mk="ig" aria-pressed="false">Instagram içerik hattı</button><button data-mk="hat" aria-pressed="false">Sepet ve yeniden sipariş</button></div>
@@ -278,11 +291,11 @@ const num=n=>Number(n||0).toLocaleString('tr-TR'), CDN='https://cdn.shopify.com/
 const img=s=>!s?'':s.startsWith('https:')?s:s.startsWith('fix/')?'/img/'+s:s.startsWith('img/')?'/'+s:CDN+s+'?width=300';
 async function api(path,body){const r=await fetch(path,body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{});
   const j=await r.json().catch(()=>({error:'Sunucudan geçersiz yanıt.'}));if(r.status===401&&!path.endsWith('/login')){show(false);throw new Error(j.error)}if(!r.ok)throw new Error(j.error||'Hata');return j}
-function show(inApp){$('#login').hidden=inApp;$('#app').hidden=!inApp;$('#aiFab').hidden=!inApp||!$('#aiBox').hidden;if(inApp){loadDash();loadAnalytics();loadProblems();loadSettings();loadProducts()}}
+function show(inApp){$('#login').hidden=inApp;$('#app').hidden=!inApp;$('#aiFab').hidden=!inApp||!$('#aiBox').hidden;if(inApp){loadDash();loadAnalytics();loadProblems();loadSettings();loadProducts();loadAccount()}}
 let toastT;function flash(t){const m=document.createElement('div');m.className='m sys';m.textContent='✓ '+t;$('#chat').append(m);m.scrollIntoView({block:'end'})}
 
 /* giriş */
-$('#loginF').onsubmit=async e=>{e.preventDefault();$('#loginErr').textContent='';try{await api('/api/admin/login',{password:$('#pw').value});$('#pw').value='';show(true)}catch(x){$('#loginErr').textContent=x.message}};
+$('#loginF').onsubmit=async e=>{e.preventDefault();$('#loginErr').textContent='';try{await api('/api/admin/login',{username:$('#un').value.trim(),password:$('#pw').value});$('#pw').value='';show(true)}catch(x){$('#loginErr').textContent=x.message}};
 $('#logout').onclick=async()=>{await api('/api/admin/logout',{}).catch(()=>{});show(false)};
 let curTab='genel', curSub='urunler';
 const SECS=['pazarlama','instagram','genel','analiz','siparis','musteri','urunler','sorunlu','kategori','icerik','ayar'];
@@ -376,7 +389,7 @@ const mkDate=t=>new Date(t).toLocaleString('tr-TR',{dateStyle:'short',timeStyle:
 async function loadMkRem(){try{const [st,pv]=await Promise.all([api('/api/admin/marketing/state'),api('/api/admin/marketing/reminders')]);mkRules=st.rules;mkCats=st.cats;
   $('#mkConsent').textContent=`İzin kaydı: ${st.consent.optins} kişi · kayıtlı sepet: ${st.consent.carts}.`;
   $('#mkRules').innerHTML=mkRules.map((r,i)=>mkRuleH(r,i,pv.rules.find(x=>x.rule.id===r.id))).join('')||'<p class="muted">Kural yok.</p>';
-  $('#mkSim').innerHTML=st.sim.length?`<table><thead><tr><th>Zaman</th><th>Kural</th><th>Alıcı</th><th>Konu</th></tr></thead><tbody>${st.sim.map(x=>`<tr><td>${mkDate(x.t)}</td><td>${esc(x.ruleName)}</td><td>${esc(x.to)}</td><td>${esc(x.subject)} <span class="tag" style="position:static;background:#e5e7eb">simülasyon, gönderilmedi</span></td></tr>`).join('')}</tbody></table>`:'Kayıt yok.'}catch(e){$('#mkRules').textContent=e.message}}
+  $('#mkSim').innerHTML=st.sim.length?`<table><thead><tr><th>Zaman</th><th>Kural</th><th>Alıcı</th><th>Konu</th></tr></thead><tbody>${st.sim.map(x=>`<tr><td>${mkDate(x.t)}</td><td>${esc(x.ruleName)}</td><td>${esc(x.to)}</td><td>${esc(x.subject)} <span class="tag" style="position:static;background:#e5e7eb">simülasyon, gönderilmedi</span>${x.body?`<details><summary class="muted">metni göster</summary><pre style="white-space:pre-wrap;word-break:break-all;font:inherit;margin:6px 0 0">${esc(x.body)}</pre></details>`:''}</td></tr>`).join('')}</tbody></table>`:'Kayıt yok.'}catch(e){$('#mkRules').textContent=e.message}}
 const mkCatOpts=sel=>mkCats.map(c=>`<optgroup label="${esc(c.label)}"><option value="${c.k}" ${sel.includes(c.k)?'selected':''}>${esc(c.label)} (tümü)</option>${c.subs.map(s=>`<option value="${c.k}/${s.i}" ${sel.includes(c.k+'/'+s.i)?'selected':''}>${esc(c.label)} › ${esc(s.name)}</option>`).join('')}</optgroup>`).join('');
 function mkRuleH(r,i,pv){const rec=(pv?.due||[]),sch=(pv?.scheduled||[]);
   const tbl=(rows,label)=>rows.length?`<h4 style="margin:10px 0 4px;font-size:13px">${label} (${rows.length})</h4><div style="overflow:auto"><table><thead><tr><th>Alıcı</th><th>Neden</th><th>Ürünler</th><th>Gidiş zamanı</th><th></th></tr></thead><tbody>${rows.slice(0,15).map(x=>`<tr><td>${esc(x.email)}<br><small class="muted">${esc(x.name)}</small></td><td>${esc(x.reason)}</td><td>${x.items.map(t=>`${t.qty}× ${esc(t.title.slice(0,40))}`).join('<br>')}</td><td>${mkDate(x.dueAt)}</td><td><details><summary class="muted" style="cursor:pointer">ileti</summary><div style="white-space:pre-wrap;font-size:12.5px;max-width:360px"><b>${esc(x.preview.subject)}</b>\n\n${esc(x.preview.body)}</div></details></td></tr>`).join('')}</tbody></table></div>`:'';
@@ -494,7 +507,7 @@ async function loadSettings(){
   $('#status').innerHTML=`Mağazadan gizli ürün: <b>${num(s.hiddenCount)}</b><br>Asistan modeli: <b>${esc(s.model)}</b>`;
   curS=s; renderFeat(s); renderContent(s);
   $('#pendCard').hidden=!s.pending.length; $('#pendList').innerHTML=s.pending.map(p=>`<div class="bar"><span>${esc(p.text)}</span><b><button class="btn sm" data-pend="${p.id}" data-apply="1">Onayla</button> <button class="btn ghost sm" data-pend="${p.id}" data-apply="0">Vazgeç</button></b></div>`).join('');
-  $('#changes').innerHTML=s.changes.map(c=>`<tr><td>${new Date(c.t).toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'})}</td><td>${esc(c.by)}</td><td class="${c.undone?'strike':''}">${esc(c.summary)}</td><td>${c.undone?'<span class="muted">geri alındı</span>':c.undo?`<button class="btn ghost sm" data-undo="${c.id}">Geri al</button>`:''}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Henüz değişiklik yok.</td></tr>';
+  $('#changes').innerHTML=s.changes.map(c=>`<tr><td>${new Date(c.t).toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'})}</td><td>${esc(c.by)}${c.user?` · <b>${esc(c.user)}</b>`:''}</td><td class="${c.undone?'strike':''}">${esc(c.summary)}</td><td>${c.undone?'<span class="muted">geri alındı</span>':c.undo?`<button class="btn ghost sm" data-undo="${c.id}">Geri al</button>`:''}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Henüz değişiklik yok.</td></tr>';
 }
 $('#annF').onsubmit=e=>{e.preventDefault();act('/api/admin/announcement',{text:$('#ann').value})};
 $('#featClear').onclick=()=>act('/api/admin/featured',{ids:[]});
@@ -590,7 +603,27 @@ $('#chatF').onsubmit=async e=>{e.preventDefault();const text=$('#msg').value.tri
   }catch(x){w.className='m errm';w.textContent=x.message}
   busy=false;$('#sendB').disabled=false;$('#msg').focus()};
 
-api('/api/admin/me').then(r=>{show(r.admin);if(!r.configured)$('#loginErr').textContent='Sunucuda ADMIN_PASSWORD tanımlı değil; giriş kapalı.'}).catch(()=>show(false));
+/* hesap, kullanıcılar, yedekler */
+let ME=null;const dtm=t=>new Date(t).toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'});
+async function loadAccount(){try{ME=(await api('/api/admin/me')).user}catch{return}if(!ME)return;
+  $('#meInfo').textContent=ME.username+' · '+ME.roleLabel;$('#roNote').hidden=ME.role!=='goruntuleyen';
+  const boss=ME.role==='yonetici';$('#usersCard').hidden=!boss;$('#backupCard').hidden=!boss;if(boss){loadUsers().catch(()=>{});loadBackups().catch(()=>{})}}
+async function loadUsers(){const d=await api('/api/admin/users'),opts=sel=>Object.entries(d.roles).map(([k,v])=>`<option value="${k}"${k===sel?' selected':''}>${esc(v)}</option>`).join('');
+  $('#uRole').innerHTML=opts('duzenleyen');
+  $('#users').innerHTML=d.users.map(u=>`<tr><td>${esc(u.username)}${u.self?' <span class="muted">(siz)</span>':''}</td><td><select data-urole="${u.id}" aria-label="Rol">${opts(u.role)}</select></td><td>${u.disabled?'kapalı':'açık'}</td><td><button class="btn ghost sm" data-upw="${u.id}">Parola sıfırla</button>${u.self?'':` <button class="btn ghost sm" data-udis="${u.id}" data-d="${u.disabled?0:1}">${u.disabled?'Aç':'Kapat'}</button>`}</td></tr>`).join('');
+  $('#logins').innerHTML=d.logins.slice(0,15).map(l=>`<tr><td>${dtm(l.t)}</td><td>${esc(l.username)}</td><td>${esc(l.ip)}</td><td>${l.ok?'başarılı':'<b>başarısız</b>'}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Kayıt yok.</td></tr>'}
+async function userAct(b){$('#uErr').textContent='';try{const r=await api('/api/admin/users',b);flash(r.change);loadSettings()}catch(x){$('#uErr').textContent=x.message}loadUsers().catch(()=>{})}
+$('#uAddF').onsubmit=async e=>{e.preventDefault();await userAct({action:'add',username:$('#uName').value,password:$('#uPw').value,role:$('#uRole').value});if(!$('#uErr').textContent){$('#uName').value='';$('#uPw').value=''}};
+$('#usersCard').addEventListener('change',e=>{const id=e.target.dataset.urole;if(id)userAct({action:'role',id:+id,role:e.target.value})});
+$('#usersCard').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.udis)userAct({action:'disable',id:+b.dataset.udis,disabled:b.dataset.d==='1'});
+  if(b.dataset.upw){const p=prompt('Yeni parola (en az 10 karakter). Kullanıcının açık oturumları kapanır.');if(p)userAct({action:'password',id:+b.dataset.upw,password:p})}});
+$('#pwF').onsubmit=async e=>{e.preventDefault();$('#pwErr').textContent='';try{await api('/api/admin/password',{current:$('#pwCur').value,password:$('#pwNew').value});$('#pwCur').value='';$('#pwNew').value='';flash('Parola değişti; diğer oturumlarınız kapatıldı')}catch(x){$('#pwErr').textContent=x.message}};
+async function loadBackups(){const [b,j]=await Promise.all([api('/api/admin/backups'),api('/api/admin/jobs')]),kb=n=>n>1e6?(n/1e6).toFixed(1)+' MB':Math.ceil(n/1e3)+' KB';
+  $('#backups').innerHTML=b.items.map(x=>`<tr><td>${esc(x.name)}</td><td>${dtm(x.t)}</td><td>${kb(x.size)}</td></tr>`).join('')||'<tr><td colspan="3" class="muted">Henüz yedek yok.</td></tr>';
+  $('#jobs').innerHTML=j.items.slice(0,20).map(x=>`<tr><td>${x.id}</td><td>${esc(x.type)}</td><td>${esc({queued:'sırada',running:'çalışıyor',done:'bitti',failed:'başarısız'}[x.status]||x.status)}</td><td>${dtm(x.run_at)}</td><td>${x.attempts}/${x.max_attempts}</td><td>${esc(x.last_error||'')}</td></tr>`).join('')}
+$('#bkNow').onclick=async()=>{$('#bkMsg').textContent='Yedek alınıyor…';try{const r=await api('/api/admin/backup',{});$('#bkMsg').textContent='Alındı: '+r.backup.name}catch(x){$('#bkMsg').textContent=x.message}loadBackups().catch(()=>{})};
+api('/api/admin/me').then(r=>{show(r.admin);if(!r.configured)$('#loginErr').textContent='Sunucuda yönetici hesabı tanımlı değil (ADMIN_PASSWORD); giriş kapalı.'}).catch(()=>show(false));
 </script>
 </body>
 </html>

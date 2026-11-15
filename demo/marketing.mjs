@@ -12,11 +12,10 @@ const DISCOUNT = /\d+\s?%\s?(rabatt|reduziert|sparen|g[uü]nstiger)|statt\s+\d|\
 export const lintText = t => { const w = []; if (DARK.test(t)) w.push('Sahte aciliyet/stok baskısı kalıbı var (Almanya’da ihtar riski)'); if (DISCOUNT.test(t)) w.push('İndirim/eski fiyat iddiası var: yalnız doğrulanabilir (gerçek) eski fiyat varsa kullanın'); return w; };
 
 export function initMarketing(ctx) {
-  const { P, CATS, settings, saveSettings, effP, shopOk, getEvents, getOrders, actions, logChange, searchProducts, norm, ig, dataDir, writeAtomic, loadJson } = ctx;
+  const { P, CATS, settings, saveSettings, effP, shopOk, getEvents, getOrders, actions, logChange, searchProducts, norm, ig, doc, saveDoc } = ctx;
   const SITE = (process.env.SITE_URL || 'https://web-production-a959d0b7.up.railway.app').replace(/\/$/, '');
-  const FILE = path.join(dataDir, 'marketing.json');
-  const db = Object.assign({ optins: {}, carts: {}, sim: [] }, (x => x && typeof x === 'object' && !Array.isArray(x) ? x : {})(loadJson(FILE, {})));
-  const save = () => writeAtomic(FILE, JSON.stringify(db));
+  const db = Object.assign({ optins: {}, carts: {}, sim: [] }, (x => x && typeof x === 'object' && !Array.isArray(x) ? x : {})(doc('marketing', {})));
+  const save = () => saveDoc('marketing', db);
   const MAX_OPTINS = 20000, CONSENT_TEXT = 'v1-2026-11';      // izin kaydı tavanı · onay metni sürümü
   const eur = n => Number(n).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
   const uid = () => crypto.randomUUID().slice(0, 8);
@@ -124,7 +123,7 @@ export function initMarketing(ctx) {
   const catOk = (rule, p) => !rule.cats.length || rule.cats.some(t => { const [c, s] = t.split('/'); return p.cat === c && (s === undefined || String(p.si) === s); });
   const mask = e => e.replace(/^(.).*(@.*)$/, '$1***$2');
   function recipients(rule, now = Date.now()) {
-    const orders = getOrders().filter(o => o.status !== 'cancelled'), due = [], scheduled = [], done = [];
+    const orders = getOrders().filter(o => o.status !== 'cancelled' && o.status !== 'unverified'), due = [], scheduled = [], done = [];
     const done0 = new Set(db.sim.map(x => x.key)), line = (id, qty) => { const p = P.get(id); return p ? { id, title: effP(p).title, qty, price: effP(p).price } : null; };
     const push = (email, name, ref, items, reason) => { const key = `${rule.id}|${email}|${ref}`, dueAt = ref + rule.days * DAY, r = { key, email, name, ref, dueAt, reason, items };
       (done0.has(key) ? done : dueAt <= now ? due : scheduled).push(r); };
@@ -180,6 +179,8 @@ export function initMarketing(ctx) {
   }
   const orderPlaced = email => { email = String(email).toLowerCase(); if (db.carts[email]) { delete db.carts[email]; save(); } };
 
+  // İşlem e-postası (ör. sipariş onayı): e-posta sağlayıcısı bağlı olmadığı için simüle posta kutusuna yazılır, gönderilmez.
+  const simMail = ({ kind, name, to, subject, body }) => { db.sim.push({ id: uid(), t: Date.now(), key: kind, rule: kind.split(':')[0], ruleName: name, to, subject, body, simulated: true }); if (db.sim.length > 1000) db.sim.splice(0, db.sim.length - 1000); save(); };
   /* ───────── yönetici API'si ───────── */
   async function admin(p, method, body, url) {
     const sub = p.slice('/api/admin/marketing'.length) || '/';
@@ -198,5 +199,5 @@ export function initMarketing(ctx) {
     if (sub === '/ig-queue') return ok(await igQueue(body.items, body.kind, 'yönetici'));
     return bad(404, 'yok');
   }
-  return { admin, suggestions, applyCampaign, preview, simulate, igDraftsAuto, igQueue, optIn, saveCart, orderPlaced, rules: () => settings.marketing.rules };
+  return { admin, suggestions, applyCampaign, preview, simulate, igDraftsAuto, igQueue, optIn, saveCart, orderPlaced, simMail, rules: () => settings.marketing.rules };
 }

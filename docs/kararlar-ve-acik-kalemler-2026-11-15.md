@@ -85,22 +85,22 @@ Ayrıntı `pazarlama-analizi-2026-11-15.md` §7–§11'de. Özet:
 | # | Kalem | Durum | Not |
 |---|---|---|---|
 | 1 | Mixo'ya ayrı depo | ✔ | `wpu-research/mixo`; şirket organizasyonuna taşıma bekliyor. Ana depoda (`/home/wpu`) Mixo ve WaviERP yerel olarak dışlandı |
-| 2 | Güvenlik bulguları | ◐ | Çoğu düzeltildi; yayınlandığı doğrulanmadı. Açık: `/sunum/` kararı, sipariş doğrulaması, yedekleme, kişiye bağlı hesap, yasal sayfalar. Docker imajı hâlâ derlenmedi (bu makinede Docker yetkisi yok) |
+| 2 | Güvenlik bulguları | ◐ | Üçüncü turda sipariş doğrulaması, yedekleme ve kişiye bağlı hesaplar eklendi (`guvenlik-raporu` §7); Docker imajı önceki sürümle derlendi. Açık: yayın ve canlıda doğrulama, anahtar yenileme, disk dışı yedek, 2FA, `/sunum/` kararı, yasal sayfalar |
 | 3 | Anahtarların yenilenmesi | ✗ | Claude API anahtarı, yönetici parolası, `SESSION_SECRET` |
 | 4 | Shopify test mağazası | ? | |
 | 5 | Teklifin güncellenmesi | ✗ | Mobil uygulama ve tam Instagram yönetimi teklifte yok; teklif DOCKS'a yazılı, hesaplar Lady Empire adına |
 | 6 | Erişilebilirlik (BFSG) | ✗ | Mobil uygulama tasarımına girmeli |
 | 7 | Yapay zekâ bildirimi | ✗ | Ajan tasarımına yazıldı (§3), hukuki teyit yok |
-| 8 | Bülten çift onayı | ◐ | İzin kaydı var, onay e-postası yok |
+| 8 | Bülten çift onayı | ◐ | İzin kaydı var, onay e-postası yok. Sipariş onayı için doğrulama bağlantısı eklendi ama e-posta simülasyon; ikisi de e-posta sağlayıcısı bekliyor |
 | 9 | Marka tescili | ? | |
 | 10 | Veri işleme sözleşmeleri | ✗ | Lady Empire, Anthropic, Sentry, bülten aracı |
 | 11 | İnsana devir | ✗ | |
 | 12 | JTL-Wawi mi Shopify mı | ✗ | Site kararı soru 5 |
-| 13 | Panelin veri katmanı | ◐ | Hâlâ JSON dosyası; veritabanı, yedek, iş kuyruğu yok |
+| 13 | Panelin veri katmanı | ✔ | SQLite (`demo/db.mjs`), eski JSON içe aktarma, kalıcı iş kuyruğu, günlük yedek ve geri yükleme denendi. Sınır: tek süreç; çok kopyalı çalışma için PostgreSQL gerekir. Node ≥ 22.13 ister |
 | 14 | İzleme | ✗ | Mixo paneli ve mobil uygulama için hata takibi yok |
 | 15 | E-posta alan adı ayarları (SPF, DKIM, DMARC) | ? | |
 | 16 | Mağaza incelemesi hazırlığı | — | Uygulama başlamadı |
-| 17 | Tek kişi riski | ✗ | Panelde tek ortak parola; acil durum erişimi yok |
+| 17 | Tek kişi riski | ◐ | Panelde kişiye bağlı hesap ve roller var; `ADMIN_PASSWORD` acil durum yolu. Hesapların (Railway, GitHub vb.) ikinci sahibi hâlâ yok |
 | 18 | Grubun öteki mağazaları kapsamda mı | ✗ | |
 | 19 | Uygulamaya özel indirim / pazaryeri fiyat eşitliği | ✗ | |
 | 20 | Faturalama (kime, KDV) | ✗ | Muhasebeciye sorulacak |

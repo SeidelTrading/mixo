@@ -109,4 +109,40 @@ Kod `demo/` altında değiştirildi; **yayınlanmadı**. Yerel test sunucusunda 
 
 Ek: giriş denemeleri (başarılı, başarısız, kilitli; adresle) sunucu günlüğüne yazılıyor. Rıza geri çekilince `mxv` çerezi tarayıcıda siliniyor.
 
-Açık kalanlar: 4, 16, çift onay (3), sipariş doğrulaması (2), 3. bölümdeki maddeler (yedekleme, kişiye bağlı hesap, yasal sayfalar, DSGVO).
+Açık kalanlar (ikinci tur sonu): 4, 16, çift onay (3), sipariş doğrulaması (2), 3. bölümdeki maddeler (yedekleme, kişiye bağlı hesap, yasal sayfalar, DSGVO). Sipariş doğrulaması, yedekleme ve kişiye bağlı hesap üçüncü turda ele alındı (7. bölüm).
+
+## 7. Üçüncü tur (2026-11-15 akşamı): veri katmanı, yedek, kişiye bağlı hesap, sipariş doğrulaması
+
+Kod `demo/` altında değiştirildi; **yayınlanmadı, commit edilmedi**. Sunucu artık **Node 22.13 ya da üstü** ister (yerleşik `node:sqlite`); Dockerfile zaten `node:22-alpine`. Yerelde Node 20 ile açılmaz (`demo/.nvmrc` = 22).
+
+| Konu | Durum | Ne yapıldı | Nasıl denendi |
+|---|---|---|---|
+| 8 (dayanıklı veri deposu) | ✔ düzeltildi | JSON dosyaları yerine tek SQLite veritabanı (`DATA_DIR/mixo.db`, WAL). Yeni `demo/db.mjs`: ayarlar/pazarlama/Instagram belgeleri, siparişler, olaylar, değişiklik günlüğü, kullanıcılar, oturumlar, giriş kaydı, işler. Eski JSON dosyaları ilk açılışta tek işlemde içe aktarılır ve `.tasindi` adıyla bırakılır. Geri alma artık günlüğün tamamını değil tek satırı günceller | Eski dosyalarla ilk açılış: ayar, sipariş, günlük, olay aktarıldı; ikinci açılışta yeniden aktarılmadı; yeniden başlatmada veri duruyor |
+| İş kuyruğu | ✔ eklendi | `jobs` tablosu + 5 saniyelik işçi; hata olursa üstel beklemeyle yeniden deneme; yeniden başlatmada yarım kalan iş sıraya döner. İşler: günlük yedek, olay temizliği (6 saat), oturum/giriş kaydı temizliği, doğrulanmayan siparişlerin iptali, sipariş onay e-postası | `running` durumunda bırakılan iş yeniden başlatmadan sonra tamamlandı; yinelenen işler planlı görünüyor |
+| §3 Yedekleme | ✔ düzeltildi (aynı diskte) | Günde bir `VACUUM INTO` ile `DATA_DIR/backups/mixo-YYYYMMDD-HHMMSS.db`; her yedek alındıktan sonra bütünlük denetiminden geçer; son `BACKUP_KEEP` (14) kalır. Açılışta son 24 saatte yedek yoksa hemen alınır. Panel: Ayarlar → Yedekler; uçlar `/api/admin/backups`, `/api/admin/backup` (yalnız yönetici) | Elle yedek alındı; `node db.mjs verify` → `ok`; **geri yükleme bir kez gerçekten denendi**: yedekten sonra yapılan değişiklik geri yüklemeyle kayboldu, yedek anındaki veri ve parolalar geri geldi |
+| 7 ve §3 (kişiye bağlı hesap, rol, parola, oturum) | ✔ düzeltildi | Kullanıcı tablosu ve üç rol: yönetici (her şey), düzenleyen (mağaza değişiklikleri), görüntüleyen (yalnız okuma). Parola scrypt + tuz, en az 10 karakter, panelden değiştirilir. Bilinmeyen kullanıcıda da aynı hesap yapılır. Oturum kullanıcıya bağlı; parola ya da rol değişince düşer; 2 saat hareketsizlikte kapanır. Son yönetici silinemez/indirgenemez. Değişiklik günlüğünde kişi adı (`user` alanı). Giriş denemeleri veritabanında (panelde son 15). `ADMIN_PASSWORD` yalnız ilk `admin` hesabını kurar; ortamda değiştirilirse `admin` o parolaya sıfırlanır (acil durum yolu) | Görüntüleyen POST → 403; düzenleyen yedek/kullanıcı ucu → 403; günlükte kişi adı; parola sıfırlanınca eski çerez → 401; kendi parolasını değiştirince eski çerez düştü; `ADMIN_PASSWORD` değişince eski parola → 401. Panelde Kullanıcılar ve Yedekler kartı tarayıcıda açıldı |
+| 2 (sahte sipariş) | ✔ düzeltildi (e-posta simülasyon) | Yeni sipariş "Doğrulanmadı" olarak açılır; ciroya, çok satanlara, müşteri harcamasına ve hatırlatmalara girmez. Müşteri e-postadaki bağlantıyla (`/api/orders/confirm`), yönetici panelden doğrular. Belirteç yalnız özet olarak saklanır, yanıtta dönmez. 48 saatte doğrulanmayan iptal edilir; e-posta başına en çok 3 açık sipariş. `ORDER_VERIFY=off` eski davranış | Sipariş ciroya girmedi → bağlantıyla doğrulandı → girdi; yanlış belirteç ve yanlış sipariş numarası → 400; 4. açık sipariş reddedildi; süresi geçen sipariş işle iptal edildi |
+| Eski korumalar | bozulmadı | — | Geri alma çakışması → 409; `text/plain` → 415; yabancı `Origin` → 403; gövde `null` → 400; art arda yanlış giriş → 429 |
+
+Deneme betiği depoda: `demo/test/e2e.mjs` (70 denetim, hepsi geçti; geçici veri klasörü ve atılacak parolayla, Node 22.22.2).
+
+Yedekten geri yükleme (sunucu durdurulmuş olmalı):
+
+```bash
+node db.mjs verify  <DATA_DIR>/backups/mixo-YYYYMMDD-HHMMSS.db
+node db.mjs restore <DATA_DIR>/backups/mixo-YYYYMMDD-HHMMSS.db <DATA_DIR>
+```
+
+Mevcut veritabanı `mixo.db.onceki-<zaman>` adıyla kenara alınır.
+
+**Hâlâ açık:**
+
+- **4**: API anahtarı, yönetici parolası ve `SESSION_SECRET` yenilenmedi (sahibinde).
+- **Yayın**: hiçbir düzeltme canlıda değil ve canlıda doğrulanmadı. Yayında dikkat: `DATA_DIR` kalıcı diske bağlı değilse veritabanı ve yedekler her dağıtımda sıfırlanır; `SESSION_SECRET` tanımlı değilse her yeniden başlatmada tüm oturumlar düşer.
+- **Disk dışı yedek yok**: yedekler veritabanıyla aynı diskte. Disk kaybında ikisi birlikte gider. Nesne depolama (ör. S3) hesabı gerekir.
+- **Gerçek e-posta yok**: sipariş onay e-postası panelde Pazarlama → simüle posta kutusuna düşer. Gerçek gönderim ve bülten çift onayı (3) e-posta sağlayıcısı bekliyor. Onay bağlantısını simüle posta kutusunda gören her panel kullanıcısı (görüntüleyen dahil) siparişi doğrulayabilir.
+- **İkinci adım doğrulama (2FA) yok.** Parola politikası yalnız uzunluk (10) denetler.
+- **Panelde role göre düğme gizleme yok**: görüntüleyen hesap düğmeleri görür, sunucu 403 ile reddeder.
+- **Denenmeyenler**: asistan gerçek API ile (anahtar yok); 2 saat hareketsizlik ve 12 saat oturum sınırı (süre beklenmedi, yalnız koddan); büyük veriyle (200.000 olay) açılış süresi; Docker imajında bu sürüm (önceki sürüm derlendi, bu değişiklikten sonra yeniden derlenmedi); Railway.
+- **Tasarım sınırı**: veri hâlâ tek süreçte bellekte tutuluyor, SQLite yalnız kalıcılık katmanı. Birden fazla sunucu kopyası çalıştırılamaz; bunun için PostgreSQL'e geçiş gerekir.
+- 16, yasal sayfalar, DSGVO maddeleri (saklama süresi, silme/dışa aktarma) değişmedi.

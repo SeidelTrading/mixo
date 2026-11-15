@@ -1,5 +1,5 @@
 // Outlet demo sunucusu: statik mağaza + olay toplama + yönetici API'si + AI asistanı.
-// Çalıştır: node server.mjs   (PORT, ADMIN_PASSWORD, SESSION_SECRET, DATA_DIR, ASSISTANT_MODEL ortam değişkenleri)
+// Çalıştır: node server.mjs   (Node >= 22.13; PORT, ADMIN_PASSWORD, SESSION_SECRET, DATA_DIR, ASSISTANT_MODEL, ORDER_VERIFY, BACKUP_KEEP, SITE_URL ortam değişkenleri)
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url';
 import Anthropic from '@anthropic-ai/sdk';
 import { initInstagram } from './instagram.mjs';
 import { initMarketing } from './marketing.mjs';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { openStore } from './db.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8080);
@@ -16,15 +18,11 @@ const MODEL = process.env.ASSISTANT_MODEL || 'claude-sonnet-5-5';
 const BULK_LIMIT = 20;                       // bundan fazla ürünü etkileyen değişiklik yönetici onayı ister
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
-/* ───────── dayanıklı dosya yardımcıları ───────── */
-// Yazım: önce geçici dosyaya, sonra yeniden adlandırma (çökme anında yarım yazılmış dosya kalmaz).
-function writeAtomic(file, data) { const tmp = `${file}.tmp-${process.pid}`; fs.writeFileSync(tmp, data); fs.renameSync(tmp, file); }
-// Okuma: bozuk dosya sunucunun açılmasını engellemez; yedeğe alınır, varsayılanla devam edilir.
-function loadJson(file, fallback) {
-  if (!fs.existsSync(file)) return fallback;
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
-  catch (e) { const bak = `${file}.bozuk-${Date.now()}`; try { fs.renameSync(file, bak); } catch {} console.error(`UYARI: ${file} okunamadı (${e.message}); ${bak} olarak yedeklendi, varsayılanla devam ediliyor.`); return fallback; }
-}
+/* ───────── kalıcı veri: SQLite (db.mjs). Bellekteki yapılar korunur; her değişiklik veritabanına yazılır. ───────── */
+const store = openStore(DATA_DIR);
+{ const im = store.importLegacy(); if (im) console.log('eski JSON dosyaları veritabanına aktarıldı (dosyalar .tasindi olarak duruyor):', JSON.stringify(im)); }
+const actorCtx = new AsyncLocalStorage();     // istek kapsamındaki panel kullanıcısı (değişiklik günlüğüne kişi yazmak için)
+
 const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
 
 /* ───────── yönetici parolası ve oturum ───────── */
@@ -39,17 +37,28 @@ const SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('he
 const sign = v => crypto.createHmac('sha256', SECRET).update(v).digest('base64url');
 const sigOk = (sig, value) => { const a = Buffer.from(String(sig)), b = Buffer.from(sign(value)); return a.length === b.length && crypto.timingSafeEqual(a, b); };
 const sha = s => crypto.createHash('sha256').update(String(s)).digest();
-// Oturumlar sunucuda da kayıtlıdır: çıkışta silinir, parola değişince hepsi düşer. Çerez: bitiş.kimlik.imza
-const SESS_FILE = path.join(DATA_DIR, 'sessions.json'), pwTag = sha('mx-pw:' + ADMIN_PASSWORD).toString('hex').slice(0, 16);
-let sessions = loadJson(SESS_FILE, null); if (!isObj(sessions) || sessions.pw !== pwTag || !isObj(sessions.ids)) sessions = { pw: pwTag, ids: {} };
-const saveSessions = () => { const now = Date.now(); for (const k of Object.keys(sessions.ids)) if (!(sessions.ids[k] > now)) delete sessions.ids[k];
-  const ks = Object.keys(sessions.ids); for (const k of ks.slice(0, Math.max(0, ks.length - 200))) delete sessions.ids[k]; writeAtomic(SESS_FILE, JSON.stringify(sessions)); };
-const makeSession = () => { const exp = Date.now() + 12 * 3600e3, sid = crypto.randomBytes(12).toString('base64url'), v = exp + '.' + sid; sessions.ids[sid] = exp; saveSessions(); return v + '.' + sign(v); };
-const sessionOf = c => { if (!c) return null; const [exp, sid, sig] = c.split('.'); if (!exp || !sid || !sig || !(Number(exp) > Date.now()) || !sigOk(sig, exp + '.' + sid)) return null;
-  return Object.hasOwn(sessions.ids, sid) && sessions.ids[sid] > Date.now() ? sid : null; };
-const endSession = sid => { if (sid && Object.hasOwn(sessions.ids, sid)) { delete sessions.ids[sid]; saveSessions(); } };
+/* Kullanıcılar ve roller: her kişi kendi hesabıyla girer. yonetici: her şey · duzenleyen: mağaza değişiklikleri · goruntuleyen: yalnız okuma */
+const ROLES = { yonetici: 'Yönetici', duzenleyen: 'Düzenleyen', goruntuleyen: 'Görüntüleyen' }, PW_MIN = 10, USER_RE = /^[a-z0-9._-]{3,32}$/;
+const hashPw = pw => { const salt = crypto.randomBytes(16); return 'scrypt$' + salt.toString('base64url') + '$' + crypto.scryptSync(String(pw), salt, 32).toString('base64url'); };
+const checkPw = (pw, stored) => { const [k, s, h] = String(stored).split('$'); if (k !== 'scrypt' || !s || !h) return false; const a = Buffer.from(h, 'base64url'), b = crypto.scryptSync(String(pw), Buffer.from(s, 'base64url'), 32); return a.length === b.length && crypto.timingSafeEqual(a, b); };
+const DUMMY_PW = hashPw(crypto.randomBytes(16).toString('hex'));     // bilinmeyen kullanıcıda da aynı süre harcansın
+// Önyükleme ve acil durum yolu: ADMIN_PASSWORD ilk açılışta "admin" hesabını oluşturur. Ortamdaki parola sonradan değiştirilirse
+// "admin" hesabı o parolaya sıfırlanır, yeniden etkinleştirilir ve oturumları düşer. Panelden değiştirilen parola, ortam değişmedikçe korunur.
+if (ADMIN_PASSWORD) { const boot = store.doc('admin_boot', null), adm = store.users.byName('admin');
+  if (!adm) { store.users.add('admin', 'yonetici', hashPw(ADMIN_PASSWORD)); store.saveDoc('admin_boot', { h: hashPw(ADMIN_PASSWORD) }); console.log('kullanıcı "admin" oluşturuldu (rol: yönetici)'); }
+  else if (!boot?.h || !checkPw(ADMIN_PASSWORD, boot.h)) { store.users.setPw(adm.id, hashPw(ADMIN_PASSWORD)); store.users.setRole(adm.id, 'yonetici'); store.users.setDisabled(adm.id, false); store.sessions.delUser(adm.id);
+    store.saveDoc('admin_boot', { h: hashPw(ADMIN_PASSWORD) }); console.warn('ADMIN_PASSWORD değişmiş: "admin" parolası sıfırlandı, oturumları kapatıldı'); } }
+// Oturumlar veritabanında ve kullanıcıya bağlıdır: çıkışta ve parola değişince silinir, 12 saatte ya da 2 saat hareketsizlikte düşer. Çerez: bitiş.kimlik.imza
+const SESSION_MS = 12 * 3600e3, IDLE_MS = 2 * 3600e3;
+const makeSession = userId => { const exp = Date.now() + SESSION_MS, sid = crypto.randomBytes(12).toString('base64url'), v = exp + '.' + sid; store.sessions.put(sid, userId, exp); return v + '.' + sign(v); };
+// Dönüş: { sid, user: { id, username, role } } ya da null
+const sessionOf = c => { if (!c) return null; const [exp, sid, sig] = c.split('.'), now = Date.now(); if (!exp || !sid || !sig || !(Number(exp) > now) || !sigOk(sig, exp + '.' + sid)) return null;
+  const s = store.sessions.get(sid); if (!s) return null; if (!(s.exp > now) || now - s.seen > IDLE_MS) { store.sessions.del(sid); return null; }
+  const u = store.users.byId(s.user_id); if (!u || u.disabled || !Object.hasOwn(ROLES, u.role)) return null; if (now - s.seen > 60e3) store.sessions.touch(sid);
+  return { sid, user: { id: u.id, username: u.username, role: u.role } }; };
+const endSession = sid => { if (sid) store.sessions.del(sid); };
 const cookie = (req, name) => (req.headers.cookie || '').split(/;\s*/).map(x => x.split('=')).find(x => x[0] === name)?.[1];
-const isAdmin = req => !!ADMIN_PASSWORD && !!sessionOf(cookie(req, 'mxadm'));
+const authOf = req => sessionOf(cookie(req, 'mxadm'));
 // İstemci adresi: yalnız güvenilen vekilin yazdığı değer kullanılır. İstemcinin kendi gönderdiği X-Forwarded-For öğelerine güvenilmez;
 // vekil arkasında değilsek (yerel) başlıklar hiç okunmaz. Railway dışında bir vekil kullanılıyorsa TRUST_PROXY=1 verin.
 const BEHIND_PROXY = !!(process.env.RAILWAY_ENVIRONMENT || process.env.TRUST_PROXY);
@@ -77,19 +86,21 @@ const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '
 console.log(`katalog: ${P.size} ürün, ${PROBLEMS.length} sorunlu kayıt`);
 
 /* ───────── kalıcı ayarlar + değişiklik günlüğü ───────── */
-const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json'), CHANGES_FILE = path.join(DATA_DIR, 'changes.jsonl'), EVENTS_FILE = path.join(DATA_DIR, 'events.jsonl');
-const settings = Object.assign({ announcement: '', hidden: {}, featured: [], cleared: {}, approved: {}, overrides: {}, content: {}, categories: {}, marketing: {} }, (x => isObj(x) ? x : {})(loadJson(SETTINGS_FILE, {})));
+const settings = Object.assign({ announcement: '', hidden: {}, featured: [], cleared: {}, approved: {}, overrides: {}, content: {}, categories: {}, marketing: {} }, (x => isObj(x) ? x : {})(store.doc('settings', {})));
 for (const k of ['hidden', 'cleared', 'approved', 'overrides', 'content', 'categories', 'marketing']) if (!isObj(settings[k])) settings[k] = {};
 if (!Array.isArray(settings.featured)) settings.featured = [];
-const jsonLines = file => fs.existsSync(file) ? fs.readFileSync(file, 'utf8').split('\n').filter(Boolean).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(isObj) : [];
-const changes = jsonLines(CHANGES_FILE);
-const ORDERS_FILE = path.join(DATA_DIR, 'orders.json'), MAX_ORDERS = 5000;
-const orders = (x => Array.isArray(x) ? x : [])(loadJson(ORDERS_FILE, []));
-const saveOrders = () => writeAtomic(ORDERS_FILE, JSON.stringify(orders));
-const ORDER_STATUS = { new: 'Yeni', processing: 'Hazırlanıyor', shipped: 'Kargoda', done: 'Teslim edildi', cancelled: 'İptal' };
-const saveSettings = () => writeAtomic(SETTINGS_FILE, JSON.stringify(settings));
+const changes = store.allChanges();
+const MAX_ORDERS = 5000;
+// Sipariş doğrulaması: yeni sipariş "Doğrulanmadı" olarak açılır; müşteri e-postadaki bağlantıyla (ya da yönetici panelden) doğrulayana kadar
+// ciroya, çok satanlara ve analize girmez. 48 saatte doğrulanmayan sipariş iptal edilir. ORDER_VERIFY=off eski davranışa döner.
+const ORDER_VERIFY = !/^(off|0|false)$/i.test(process.env.ORDER_VERIFY || ''), VERIFY_HOURS = 48, VERIFY_MAX_OPEN = 3;
+const SITE_URL = (process.env.SITE_URL || 'https://web-production-a959d0b7.up.railway.app').replace(/\/$/, '');
+const orders = store.allOrders();
+const saveOrder = o => store.putOrder(o);
+const ORDER_STATUS = { unverified: 'Doğrulanmadı', new: 'Yeni', processing: 'Hazırlanıyor', shipped: 'Kargoda', done: 'Teslim edildi', cancelled: 'İptal' };
+const saveSettings = () => store.saveDoc('settings', settings);
 let igRefresh = null;      // Instagram modülü: mağaza değişince taslak/gönderi bayraklarını yeniler
-function logChange(by, summary, undo) { const c = { id: crypto.randomUUID().slice(0, 8), t: Date.now(), by, summary, undo, undone: false }; changes.push(c); fs.appendFileSync(CHANGES_FILE, JSON.stringify(c) + '\n'); if (igRefresh && by !== 'Instagram') try { igRefresh(); } catch (e) { console.error('instagram', e.message); } return c; }
+function logChange(by, summary, undo) { const user = actorCtx.getStore()?.username, c = { id: crypto.randomUUID().slice(0, 8), t: Date.now(), by, ...(user ? { user } : {}), summary, undo, undone: false }; changes.push(c); store.addChange(c); if (igRefresh && by !== 'Instagram') try { igRefresh(); } catch (e) { console.error('instagram', e.message); } return c; }
 
 /* ürün düzenlemeleri (overrides), içerik ve kategori ayarları: doğrulama */
 const OV_KEYS = ['title', 'price', 'was', 'na', 'img'];
@@ -163,7 +174,7 @@ const actions = {
     return logChange(by, `${done.length} sorunlu ürün onaylandı (mağazada görünür)`, { type: 'unapprove_products', ids: done }); },
   unapprove_products({ ids }, by) { const done = ids.filter(id => settings.approved[id]); done.forEach(id => delete settings.approved[id]); saveSettings();
     return logChange(by, `${done.length} ürünün onayı geri alındı (mağazadan kalktı)`, { type: 'approve_products', ids: done }); },
-  set_order_status({ id, status }, by) { const o = orders.find(x => x.id === id); if (!o || !Object.hasOwn(ORDER_STATUS, status) || o.status === status) return null; const prev = o.status; o.status = status; (o.history ||= []).push({ t: Date.now(), status, by }); saveOrders();
+  set_order_status({ id, status }, by) { const o = orders.find(x => x.id === id); if (!o || !Object.hasOwn(ORDER_STATUS, status) || o.status === status) return null; const prev = o.status; o.status = status; (o.history ||= []).push({ t: Date.now(), status, by }); saveOrder(o);
     return logChange(by, `Sipariş ${id}: ${ORDER_STATUS[prev]} → ${ORDER_STATUS[status]}`, { type: 'set_order_status', id, status: prev }); },
   // Pazarlama: kampanyayı vitrine yansıt (öne çıkanlar + isteğe bağlı duyuru şeridi 2); tek günlük kaydıyla geri alınır
   apply_campaign({ cid, title, ids, text }, by) { const prev = { featured: settings.featured, patch: { announce2: settings.content.announce2 ?? null }, active: settings.marketing.active || null };
@@ -189,7 +200,7 @@ function undoConflict(c) { const mine = new Set(undoTargets(c.undo)); if (!mine.
 // Dönüş: değişiklik kaydı · null (geri alınamaz) · { conflict } (önce sonraki değişiklik geri alınmalı)
 function undo(id, by) { const c = changes.find(x => x.id === id); if (!c || c.undone || !c.undo || typeof actions[c.undo.type] !== 'function') return null;
   const later = undoConflict(c); if (later) return { conflict: later };
-  c.undone = true; writeAtomic(CHANGES_FILE, changes.map(x => JSON.stringify(x)).join('\n') + '\n'); return actions[c.undo.type](c.undo, by + ' (geri alma)'); }
+  c.undone = true; store.setUndone(c.id); return actions[c.undo.type](c.undo, by + ' (geri alma)'); }
 // Onay kuralı: sorunlu listesindeki (ve “sorun değil” denmemiş) ürün, yönetici onaylayana kadar mağazada görünmez.
 // settings.hidden yalnızca elle gizlemeyi tutar; “Göster” onay kuralını aşamaz, tek yol “Onayla”dır.
 const PROBLEM_IDS = new Set(PROBLEMS.map(p => p.id));
@@ -260,15 +271,24 @@ function createOrder(body) {
   if (orders.length >= MAX_ORDERS) return { err: 'Die Demo nimmt zurzeit keine weiteren Bestellungen an.' };
   const c = body.customer || {}, str = (v, n) => String(v ?? '').trim().slice(0, n), cu = { name: str(c.name, 80), email: str(c.email, 120).toLowerCase(), street: str(c.street, 120), zip: str(c.zip, 12), city: str(c.city, 60) };
   if (cu.name.length < 2 || !EMAIL_RE.test(cu.email) || cu.street.length < 3 || cu.zip.length < 3 || cu.city.length < 2) return { err: 'Bitte alle Felder korrekt ausfüllen.' };
+  if (ORDER_VERIFY && orders.filter(x => x.status === 'unverified' && x.customer.email === cu.email).length >= VERIFY_MAX_OPEN) return { err: 'Für diese E-Mail-Adresse warten bereits Bestellungen auf Bestätigung. Bitte bestätigen Sie diese zuerst über den Link in der E-Mail.' };
   const subtotal = money(items.reduce((a, i) => a + i.price * i.qty, 0)), shipping = subtotal >= freeShip() ? 0 : SHIP_FEE;
-  const o = { id: 'MX-' + String(Date.now()).slice(-6) + crypto.randomBytes(1).toString('hex').toUpperCase(), t: Date.now(), status: 'new', items, subtotal, shipping, total: money(subtotal + shipping), customer: cu, demo: true, history: [{ t: Date.now(), status: 'new', by: 'müşteri' }] };
-  o.marketing = body.marketing === true; orders.push(o); saveOrders(); mk.orderPlaced(cu.email); if (o.marketing) mk.optIn(cu.email, cu.name, 'checkout'); return { order: o };
+  const st0 = ORDER_VERIFY ? 'unverified' : 'new', o = { id: 'MX-' + String(Date.now()).slice(-6) + crypto.randomBytes(1).toString('hex').toUpperCase(), t: Date.now(), status: st0, items, subtotal, shipping, total: money(subtotal + shipping), customer: cu, demo: true, history: [{ t: Date.now(), status: st0, by: 'müşteri' }] };
+  o.marketing = body.marketing === true; let token = null; if (ORDER_VERIFY) { token = crypto.randomBytes(24).toString('base64url'); o.verify = { h: sha('ov:' + token).toString('hex'), exp: Date.now() + VERIFY_HOURS * 3600e3 }; }
+  orders.push(o); saveOrder(o); if (token) { store.jobs.enqueue('order_confirm_mail', { id: o.id, token }); setImmediate(runJobs); } mk.orderPlaced(cu.email); if (o.marketing) mk.optIn(cu.email, cu.name, 'checkout'); return { order: o };
 }
 const orderRow = o => ({ id: o.id, t: o.t, status: o.status, statusLabel: ORDER_STATUS[o.status], total: o.total, count: o.items.reduce((a, i) => a + i.qty, 0), customer: o.customer.name, email: o.customer.email });
-const liveOrders = () => orders.filter(o => o.status !== 'cancelled');
+const liveOrders = () => orders.filter(o => o.status !== 'cancelled' && o.status !== 'unverified');
+// E-postadaki bağlantıyla doğrulama. Belirteç yalnız özet olarak saklanır ve sabit sürede karşılaştırılır. Dönüş: 'ok' | 'already' | 'expired' | 'bad'
+function confirmOrder(id, token) { const o = orders.find(x => x.id === id); if (!o || !o.verify?.h || typeof token !== 'string' || !token) return 'bad';
+  const a = Buffer.from(o.verify.h, 'hex'), b = sha('ov:' + token); if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return 'bad';
+  if (o.status !== 'unverified') return o.status === 'cancelled' ? 'expired' : 'already'; if (!(o.verify.exp > Date.now())) return 'expired';
+  o.status = 'new'; (o.history ||= []).push({ t: Date.now(), status: 'new', by: 'müşteri (e-posta onayı)' }); saveOrder(o); homeCache.t = 0; return 'ok'; }
+function expireUnverified() { const now = Date.now(); let n = 0; for (const o of orders) if (o.status === 'unverified' && !((o.verify?.exp ?? o.t + VERIFY_HOURS * 3600e3) > now)) { o.status = 'cancelled'; (o.history ||= []).push({ t: now, status: 'cancelled', by: 'sistem (doğrulanmadı)' }); saveOrder(o); n++; }
+  if (n) console.log(`doğrulanmayan ${n} sipariş iptal edildi`); return n; }
 function customers() {
   const m = new Map();
-  for (const o of orders) { const k = o.customer.email, c = m.get(k) || { email: k, name: o.customer.name, city: o.customer.city, orders: 0, spent: 0, first: o.t, last: o.t }; c.orders++; if (o.status !== 'cancelled') c.spent = money(c.spent + o.total); c.last = Math.max(c.last, o.t); c.first = Math.min(c.first, o.t); c.name = o.customer.name; m.set(k, c); }
+  for (const o of orders) { const k = o.customer.email, c = m.get(k) || { email: k, name: o.customer.name, city: o.customer.city, orders: 0, spent: 0, first: o.t, last: o.t }; c.orders++; if (o.status !== 'cancelled' && o.status !== 'unverified') c.spent = money(c.spent + o.total); c.last = Math.max(c.last, o.t); c.first = Math.min(c.first, o.t); c.name = o.customer.name; m.set(k, c); }
   return [...m.values()].sort((a, b) => b.spent - a.spent);
 }
 function dashboard() {
@@ -309,12 +329,12 @@ function shopHome() {
 
 /* ───────── olaylar ve analiz ───────── */
 const EVENT_TYPES = new Set(['session', 'view', 'dwell', 'add', 'remove', 'wish', 'unwish', 'search', 'cat', 'filter', 'sort', 'more', 'cart_open', 'checkout', 'exit_intent', 'sugg', 'login']);
-let events = jsonLines(EVENTS_FILE);
+let events = store.allEvents();
 // Saklama tavanı: analiz en çok 90 güne bakar; daha eskisi ve EVENT_MAX üstü silinir (dosya ve bellek sınırsız büyümez).
 const EVENT_DAYS = 90, EVENT_MAX = 200000;
 function pruneEvents() { const from = Date.now() - EVENT_DAYS * 864e5; let keep = events.filter(x => x.t >= from); if (keep.length > EVENT_MAX) keep = keep.slice(-EVENT_MAX);
-  if (keep.length !== events.length) { console.log(`olay temizliği: ${events.length - keep.length} eski kayıt silindi`); events = keep; writeAtomic(EVENTS_FILE, keep.map(x => JSON.stringify(x)).join('\n') + (keep.length ? '\n' : '')); } }
-pruneEvents(); setInterval(pruneEvents, 6 * 3600e3).unref();
+  if (keep.length !== events.length) { console.log(`olay temizliği: ${events.length - keep.length} eski kayıt silindi`); events = keep; store.pruneEvents(from, EVENT_MAX); } }
+pruneEvents();      // yinelenen temizlik iş kuyruğundadır (prune_events)
 // Ziyaretçi kimliğini sunucu verir ve imzalar (mxv çerezi); istemcinin gövdede gönderdiği kimlik yok sayılır.
 // Yeni kimlik adres başına saatte 30 ile sınırlıdır: uydurma kimliklerle ağırlık tavanı aşılamaz.
 function visitorOf(req, ip) { const c = cookie(req, 'mxv'); if (c) { const [v, sig] = c.split('.'); if (v && sig && /^[a-z0-9-]{8,40}$/i.test(v) && sigOk(sig, 'v:' + v)) return { vid: v }; }
@@ -334,9 +354,9 @@ function ingest(body, req, vid) {
     if (typeof x.q === 'string') ev.q = x.q.slice(0, 80);
     for (const k of ['pr', 'n', 'sec', 'v']) if (Number.isFinite(x[k])) ev[k] = x[k];
     if (typeof x.o === 'string') ev.o = x.o.slice(0, 8); if (typeof x.k === 'string') ev.k = x.k.slice(0, 12);
-    events.push(ev); lines.push(JSON.stringify(ev));
+    events.push(ev); lines.push(ev);
   }
-  if (lines.length) fs.appendFileSync(EVENTS_FILE, lines.join('\n') + '\n');
+  store.addEvents(lines);
   return lines.length;
 }
 function analytics(days = 7) {
@@ -556,9 +576,9 @@ async function assistant(convId, text) {
 }
 
 /* ───────── Instagram (taslak/simülasyon; token varsa gerçek) ───────── */
-const ig = initInstagram({ P, settings, effP, isPending, shopOk, logChange, searchProducts, norm, getClient: () => (client ??= new Anthropic()), model: MODEL, freeShip, shipFee: SHIP_FEE, limited, dataDir: DATA_DIR, writeAtomic, loadJson });
+const ig = initInstagram({ P, settings, effP, isPending, shopOk, logChange, searchProducts, norm, getClient: () => (client ??= new Anthropic()), model: MODEL, freeShip, shipFee: SHIP_FEE, limited, doc: store.doc, saveDoc: store.saveDoc });
 igRefresh = ig.refresh;
-const mk = initMarketing({ P, CATS, settings, saveSettings, effP, shopOk, getEvents: () => events, getOrders: () => orders, actions, logChange, searchProducts, norm, ig, dataDir: DATA_DIR, writeAtomic, loadJson });
+const mk = initMarketing({ P, CATS, settings, saveSettings, effP, shopOk, getEvents: () => events, getOrders: () => orders, actions, logChange, searchProducts, norm, ig, doc: store.doc, saveDoc: store.saveDoc });
 console.log('Instagram modu:', ig.live ? 'CANLI (token tanımlı)' : 'simülasyon (token yok)');
 
 /* ───────── HTTP ───────── */
@@ -618,26 +638,63 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { ok: true }, r.removed || own ? {} : { 'set-cookie': `mxc=${sign('c:' + em)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000${secure}` }); }
     if (p === '/api/orders' && req.method === 'POST') { if (limited('ord' + ip, 8, 60e3) || limited('ord*', 60, 600e3)) return send(res, 429, { error: 'Zu viele Versuche. Bitte kurz warten.' });
       const r = createOrder(await readBody(req, 60e3)); if (r.err) return send(res, 400, { error: r.err });
-      return send(res, 200, { ok: true, order: { id: r.order.id, total: r.order.total, shipping: r.order.shipping, subtotal: r.order.subtotal, email: r.order.customer.email } },
+      return send(res, 200, { ok: true, order: { id: r.order.id, total: r.order.total, shipping: r.order.shipping, subtotal: r.order.subtotal, email: r.order.customer.email, verify: r.order.status === 'unverified' } },
         r.order.marketing ? { 'set-cookie': `mxc=${sign('c:' + r.order.customer.email)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000${secure}` } : {}); }
     if (p === '/api/events' && req.method === 'POST') { if (limited('ev' + ip, 120, 60e3) || limited('ev*', 3000, 60e3)) return send(res, 429, { error: 'çok fazla istek' });
       const b = await readBody(req, 60e3), v = visitorOf(req, ip); return send(res, 200, { ok: ingest(b, req, v?.vid) }, v?.setCookie ? { 'set-cookie': v.setCookie } : {}); }
+    if (p === '/api/orders/confirm' && req.method === 'GET') { const st = limited('oc' + ip, 30, 60e3) ? 'limit' : confirmOrder(url.searchParams.get('id') || '', url.searchParams.get('token') || '');
+      const M = { ok: ['Bestellung bestätigt', 'Vielen Dank! Ihre Bestellung ist bestätigt und wird jetzt bearbeitet.'], already: ['Bereits bestätigt', 'Diese Bestellung wurde bereits bestätigt.'], expired: ['Link abgelaufen', 'Dieser Bestätigungslink ist abgelaufen. Bitte bestellen Sie erneut.'],
+        bad: ['Link ungültig', 'Dieser Bestätigungslink ist ungültig.'], limit: ['Zu viele Versuche', 'Bitte versuchen Sie es in einer Minute erneut.'] }[st];
+      res.writeHead(st === 'ok' || st === 'already' ? 200 : st === 'limit' ? 429 : 400, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' });
+      return res.end(`<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${M[0]}</title><body style="font-family:system-ui,sans-serif;max-width:32rem;margin:15vh auto;padding:0 1rem;text-align:center"><h1 style="font-size:1.4rem">${M[0]}</h1><p>${M[1]}</p><p><a href="/">Zurück zum Shop</a></p></body></html>`); }
     if (p === '/api/admin/login' && req.method === 'POST') {
-      if (!ADMIN_PASSWORD) return send(res, 503, { error: 'Yönetici parolası tanımlı değil (ADMIN_PASSWORD).' });
+      if (!store.users.activeAdmins()) return send(res, 503, { error: 'Yönetici hesabı tanımlı değil (ADMIN_PASSWORD).' });
       const now = Date.now(); while (loginFails.length && now - loginFails[0].t > FAIL_WINDOW) loginFails.shift();
       if (limited('login' + ip, 6, 60e3)) return send(res, 429, { error: 'Çok fazla deneme. Bir dakika bekleyin.' });
       if (loginFails.length >= FAIL_GLOBAL || loginFails.filter(f => f.ip === ip).length >= FAIL_PER_IP) { console.warn(`giriş KİLİTLİ ip=${ip} (son 15 dk hatalı deneme: ${loginFails.length})`); return send(res, 429, { error: 'Çok fazla hatalı deneme. 15 dakika sonra yeniden deneyin.' }); }
-      const { password } = await readBody(req, 2e3);
-      // İki değer de özetlenip sabit sürede karşılaştırılır (parola uzunluğu süreden anlaşılmaz).
-      if (typeof password !== 'string' || !crypto.timingSafeEqual(sha(password), sha(ADMIN_PASSWORD))) { loginFails.push({ t: now, ip }); console.warn(`giriş BAŞARISIZ ip=${ip}`); return send(res, 401, { error: 'Parola hatalı.' }); }
-      console.log(`giriş başarılı ip=${ip}`);
-      return send(res, 200, { ok: true }, { 'set-cookie': `mxadm=${makeSession()}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200${secure}` });
+      const b = await readBody(req, 2e3), username = (typeof b.username === 'string' && b.username.trim() ? b.username.trim().toLowerCase() : 'admin').slice(0, 40), password = b.password;
+      // Parola scrypt ile doğrulanır; bilinmeyen ya da kapatılmış kullanıcıda da aynı hesap yapılır (kullanıcı adı süreden anlaşılmaz).
+      const u = store.users.byName(username), live = !!u && !u.disabled, good = typeof password === 'string' && password.length <= 200 && checkPw(password, live ? u.pw : DUMMY_PW) && live;
+      if (!good) { loginFails.push({ t: now, ip }); store.logins.add(ip, username, false); console.warn(`giriş BAŞARISIZ ip=${ip} kullanıcı=${JSON.stringify(username)}`); return send(res, 401, { error: 'Kullanıcı adı ya da parola hatalı.' }); }
+      store.logins.add(ip, username, true); console.log(`giriş başarılı ip=${ip} kullanıcı=${username}`);
+      return send(res, 200, { ok: true }, { 'set-cookie': `mxadm=${makeSession(u.id)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200${secure}` });
     }
-    if (p === '/api/admin/me') return send(res, 200, { admin: isAdmin(req), configured: !!ADMIN_PASSWORD });
+    const auth = authOf(req);
+    if (p === '/api/admin/me') return send(res, 200, { admin: !!auth, configured: store.users.activeAdmins() > 0, user: auth ? { username: auth.user.username, role: auth.user.role, roleLabel: ROLES[auth.user.role] } : null });
     if (!p.startsWith('/api/admin/')) return send(res, 404, { error: 'yok' });
-    if (!isAdmin(req)) return send(res, 401, { error: 'Oturum açmanız gerekiyor.' });
+    if (!auth) return send(res, 401, { error: 'Oturum açmanız gerekiyor.' });
     const body = req.method === 'POST' ? await readBody(req) : {};
-    if (p === '/api/admin/logout') { endSession(sessionOf(cookie(req, 'mxadm'))); return send(res, 200, { ok: true }, { 'set-cookie': 'mxadm=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0' }); }
+    if (p === '/api/admin/logout') { endSession(auth.sid); return send(res, 200, { ok: true }, { 'set-cookie': 'mxadm=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0' }); }
+    const me = auth.user, isBoss = me.role === 'yonetici', canEdit = me.role !== 'goruntuleyen';
+    // Yetki: okuma uçları tüm roller · değiştiren uçlar düzenleyen ve yönetici · kullanıcı, yedek ve iş uçları yalnız yönetici
+    if (req.method === 'POST' && !canEdit && p !== '/api/admin/password') return send(res, 403, { error: 'Bu hesap yalnız görüntüleme yetkisine sahip.' });
+    if (/^\/api\/admin\/(users|backups?|jobs)$/.test(p) && !isBoss) return send(res, 403, { error: 'Bu işlem için yönetici rolü gerekir.' });
+    return await actorCtx.run(me, async () => {
+    if (p === '/api/admin/password') { if (req.method !== 'POST') return send(res, 405, { error: 'POST bekleniyor' });
+      if (limited('pw' + me.id, 5, 600e3)) return send(res, 429, { error: 'Çok fazla deneme. Biraz bekleyin.' });
+      const u = store.users.byId(me.id), np = body.password; if (typeof body.current !== 'string' || !checkPw(body.current.slice(0, 200), u.pw)) return send(res, 400, { error: 'Mevcut parola hatalı.' });
+      if (typeof np !== 'string' || np.length < PW_MIN || np.length > 200) return send(res, 400, { error: `Yeni parola en az ${PW_MIN} karakter olmalı.` });
+      store.users.setPw(me.id, hashPw(np)); store.sessions.delUser(me.id); console.log(`parola değişti kullanıcı=${me.username}`);      // tüm oturumlar düşer; bu tarayıcıya yenisi verilir
+      return send(res, 200, { ok: true }, { 'set-cookie': `mxadm=${makeSession(me.id)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200${secure}` }); }
+    if (p === '/api/admin/users' && req.method === 'GET') return send(res, 200, { users: store.users.all().map(u => ({ ...u, disabled: !!u.disabled, roleLabel: ROLES[u.role], self: u.id === me.id })), roles: ROLES, pwMin: PW_MIN, logins: store.logins.recent(40) });
+    if (p === '/api/admin/users') { const act = String(body.action || ''), t = act === 'add' ? null : store.users.byId(Number(body.id)), lastBoss = u => u.role === 'yonetici' && !u.disabled && store.users.activeAdmins() <= 1;
+      const pwOk = v => typeof v === 'string' && v.length >= PW_MIN && v.length <= 200;
+      if (act === 'add') { const name = String(body.username || '').trim().toLowerCase(), role = String(body.role || '');
+        if (!USER_RE.test(name)) return send(res, 400, { error: 'Kullanıcı adı 3–32 karakter olmalı: küçük harf, rakam, nokta, tire, alt çizgi.' }); if (!Object.hasOwn(ROLES, role)) return send(res, 400, { error: 'Rol geçersiz.' });
+        if (!pwOk(body.password)) return send(res, 400, { error: `Parola en az ${PW_MIN} karakter olmalı.` }); if (store.users.byName(name)) return send(res, 400, { error: 'Bu kullanıcı adı zaten var.' });
+        store.users.add(name, role, hashPw(body.password)); return send(res, 200, { ok: true, change: logChange('yönetici', `Kullanıcı eklendi: ${name} (${ROLES[role]})`, null).summary }); }
+      if (!t) return send(res, 404, { error: 'Kullanıcı bulunamadı.' });
+      if (act === 'role') { const role = String(body.role || ''); if (!Object.hasOwn(ROLES, role)) return send(res, 400, { error: 'Rol geçersiz.' }); if (role !== 'yonetici' && lastBoss(t)) return send(res, 400, { error: 'Son yöneticinin rolü düşürülemez.' });
+        store.users.setRole(t.id, role); store.sessions.delUser(t.id); return send(res, 200, { ok: true, change: logChange('yönetici', `Kullanıcı rolü değişti: ${t.username} → ${ROLES[role]}`, null).summary }); }
+      if (act === 'disable') { const d = body.disabled !== false; if (d && t.id === me.id) return send(res, 400, { error: 'Kendi hesabınızı kapatamazsınız.' }); if (d && lastBoss(t)) return send(res, 400, { error: 'Son yönetici hesabı kapatılamaz.' });
+        store.users.setDisabled(t.id, d); if (d) store.sessions.delUser(t.id); return send(res, 200, { ok: true, change: logChange('yönetici', `Kullanıcı ${d ? 'kapatıldı' : 'yeniden açıldı'}: ${t.username}`, null).summary }); }
+      if (act === 'password') { if (!pwOk(body.password)) return send(res, 400, { error: `Parola en az ${PW_MIN} karakter olmalı.` });
+        store.users.setPw(t.id, hashPw(body.password)); store.sessions.delUser(t.id); return send(res, 200, { ok: true, change: logChange('yönetici', `Kullanıcı parolası sıfırlandı: ${t.username}`, null).summary }); }
+      return send(res, 400, { error: 'Bilinmeyen işlem.' }); }
+    if (p === '/api/admin/backups') return send(res, 200, { items: store.listBackups(), keep: BACKUP_KEEP, note: 'Yedekler veritabanıyla aynı diskte durur; disk dışı kopya ayrıca alınmalıdır.' });
+    if (p === '/api/admin/backup') { if (req.method !== 'POST') return send(res, 405, { error: 'POST bekleniyor' }); if (limited('bk', 6, 3600e3)) return send(res, 429, { error: 'Saatte en çok 6 elle yedek alınabilir.' });
+      const b = store.backup(BACKUP_KEEP); console.log(`yedek alındı (elle, ${me.username}): ${b.name}`); return send(res, 200, { ok: true, backup: b }); }
+    if (p === '/api/admin/jobs') return send(res, 200, { items: store.jobs.list(80) });
     if (p === '/api/admin/dashboard') return send(res, 200, dashboard());
     if (p.startsWith('/api/admin/marketing')) { const r = await mk.admin(p, req.method, body, url); return send(res, r.code, r.obj); }
     if (p.startsWith('/api/admin/instagram')) { const r = await ig.admin(p, req.method, body, url); return send(res, r.code, r.obj); }
@@ -698,7 +755,34 @@ const server = http.createServer(async (req, res) => {
       }
     }
     return send(res, 404, { error: 'yok' });
+    });
   } catch (e) { const code = e?.http || 500; if (code === 500) console.error(e);
     if (!res.headersSent) send(res, code, { error: code === 413 ? 'İstek çok büyük.' : code === 400 ? 'Geçersiz istek.' : 'Sunucu hatası.' }, code === 413 ? { connection: 'close' } : {}); }
 });
+/* ───────── iş kuyruğu: kalıcı (jobs tablosu); 5 saniyede bir sıradaki işler çalışır ───────── */
+// İşleyici { again: ms } dönerse iş o süre sonra yeniden planlanır. Hata olursa üstel beklemeyle yeniden denenir (max_attempts'e kadar).
+const BACKUP_KEEP = Math.max(1, Number(process.env.BACKUP_KEEP) || 14), HOUR = 3600e3;
+const JOBS = {
+  backup() { const b = store.backup(BACKUP_KEEP); console.log(`yedek alındı: ${b.name} (${b.size} bayt)`); return { again: 24 * HOUR }; },
+  prune_events() { pruneEvents(); return { again: 6 * HOUR }; },
+  housekeeping() { store.sessions.purge(IDLE_MS); store.logins.prune(90); store.jobs.prune(7); return { again: HOUR }; },
+  expire_unverified_orders() { expireUnverified(); return { again: HOUR }; },
+  // Onay e-postası: e-posta sağlayıcısı bağlı olmadığı için simülasyon; panelde Pazarlama → simüle posta kutusuna düşer.
+  order_confirm_mail({ id, token }) { const o = orders.find(x => x.id === id); if (!o || o.status !== 'unverified' || !token) return;
+    mk.simMail({ kind: 'order-confirm:' + o.id, name: 'Sipariş onayı', to: o.customer.email, subject: `Bitte bestätigen Sie Ihre Bestellung ${o.id}`,
+      body: `Hallo ${o.customer.name},\n\nbitte bestätigen Sie Ihre Bestellung ${o.id} über diesen Link (gültig ${VERIFY_HOURS} Stunden):\n${SITE_URL}/api/orders/confirm?id=${encodeURIComponent(o.id)}&token=${token}\n\nOhne Bestätigung wird die Bestellung automatisch storniert.` }); },
+};
+const RECURRING = ['backup', 'prune_events', 'housekeeping', 'expire_unverified_orders'];
+let jobBusy = false;
+async function runJobs() { if (jobBusy) return; jobBusy = true;
+  try { for (let i = 0; i < 25; i++) { const j = store.jobs.claim(); if (!j) break;
+    try { const h = JOBS[j.type]; if (!h) throw new Error('bilinmeyen iş türü: ' + j.type); const r = await h(j.payload); store.jobs.done(j.id); if (r?.again) store.jobs.enqueue(j.type, {}, { runAt: Date.now() + r.again, unique: true }); }
+    catch (e) { const retry = j.attempts < j.max_attempts; store.jobs.fail(j.id, e?.message || e, retry ? Date.now() + Math.min(HOUR, 30e3 * 2 ** (j.attempts - 1)) : null); console.error(`iş hatası #${j.id} ${j.type} (deneme ${j.attempts}/${j.max_attempts}): ${e?.message || e}`);
+      if (!retry && RECURRING.includes(j.type)) store.jobs.enqueue(j.type, {}, { runAt: Date.now() + HOUR, unique: true }); } } }
+  finally { jobBusy = false; } }
+{ const back = store.jobs.recover(); if (back) console.log(`${back} yarım kalmış iş yeniden sıraya alındı`);
+  // Son 24 saatte yedek yoksa hemen alınır; varsa bir sonraki yedek son yedekten 24 saat sonraya planlanır.
+  const last = store.listBackups()[0]?.t || 0; for (const t of RECURRING) store.jobs.enqueue(t, {}, { runAt: t === 'backup' ? Math.max(Date.now(), last + 24 * HOUR) : Date.now(), unique: true }); }
+setInterval(runJobs, 5000).unref(); setTimeout(runJobs, 500).unref();
+for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { console.log(sig + ': kapanıyor'); server.close(() => { try { store.close(); } catch {} process.exit(0); }); setTimeout(() => process.exit(0), 3000).unref(); });
 server.listen(PORT, () => console.log(`Outlet demo: http://127.0.0.1:${PORT}  ·  panel: /admin  ·  asistan modeli: ${MODEL}`));
