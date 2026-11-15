@@ -69,7 +69,9 @@ export function initMarketing(ctx) {
       products: disc.map(p => row(p, `%${Math.round((1 - effP(p).price / effP(p).was) * 100)} (${eur(effP(p).was)} → ${eur(effP(p).price)})`)) });
     return { data, items, active: settings.marketing.active || null };
   }
-  function applyCampaign(id, announce, by, days = 7) {
+  // frozen: onay kartı oluşturulurken dondurulan içerik; verilirse öneri yeniden hesaplanmaz (kartta yazan ürünler uygulanır).
+  function applyCampaign(id, announce, by, days = 7, frozen = null) {
+    if (frozen) { const c = actions.apply_campaign(frozen, by); return c ? { change: c, count: frozen.ids.length } : { err: 'Kampanya uygulanamadı.' }; }
     const it = suggestions(days).items.find(x => x.id === id);
     if (!it) return { err: 'Öneri bulunamadı (veri değişmiş olabilir). Listeyi yenileyin.' };
     const ids = it.products.map(p => p.id).slice(0, 12); if (!ids.length) return { err: 'Bu önerinin vitrine yansıtılacak ürünü yok.' };

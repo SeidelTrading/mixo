@@ -91,7 +91,7 @@ Regeln: Nutze NUR die gelieferten Produktdaten (Titel, Marke, Preis). Erfinde ke
   /* ───────── Graph API (yalnız token varsa, yalnız admin onayıyla çağrılır) ───────── */
   async function graph(method, p, params) {
     const url = BASE + p + (method === 'GET' && params ? '?' + new URLSearchParams(params) : '');
-    const r = await fetch(url, { method, headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' }, body: method === 'POST' ? JSON.stringify(params || {}) : undefined });
+    const r = await fetch(url, { method, headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' }, body: method === 'POST' ? JSON.stringify(params || {}) : undefined, signal: AbortSignal.timeout(20000) });
     const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Instagram API hatası (' + r.status + ')'); return j;
   }
   async function livePublish(po) {
@@ -135,17 +135,21 @@ Gib nur den Antworttext aus.`;
       return x ? { text: x.slice(0, 900), ai: true } : { text: tpl, ai: false };
     } catch { return { text: tpl, ai: false }; }
   }
+  const inFlight = new Set(), busy = new Set();      // işlenmekte olan webhook kimlikleri · süren yayın/yanıt gönderimleri
   async function addInbox(it) {
-    if (it.ext && db.inbox.some(x => x.ext === it.ext)) return null;                 // webhook tekrarını yoksay
+    if (it.ext && (inFlight.has(it.ext) || db.inbox.some(x => x.ext === it.ext))) return null;                 // webhook tekrarını yoksay (işlenmekte olan dahil)
+    if (it.ext) inFlight.add(it.ext);
+    try {
     const item = { id: uid(), t: it.t || Date.now(), type: it.type, from: String(it.from || '').slice(0, 80), fromName: String(it.fromName || '').slice(0, 60), text: String(it.text || '').slice(0, 2000), mediaId: it.mediaId || null, commentId: it.commentId || null, ext: it.ext || null, status: 'new', draft: '', ai: false, productId: null, sim: !!it.sim };
     const r = await makeReply(item); item.draft = r.text; item.ai = r.ai; item.status = 'drafted';
     db.inbox.push(item); if (db.inbox.length > 500) db.inbox.splice(0, db.inbox.length - 500); save();
     logChange(BY, `Instagram ${item.type === 'dm' ? 'DM' : 'yorum'} geldi${item.sim ? ' (simülasyon)' : ''}, yanıt taslağı hazır${item.productId && P.get(item.productId) ? ' — ürün: ' + effP(P.get(item.productId)).title.slice(0, 40) : ''}`, null);
     return item;
+    } finally { if (it.ext) inFlight.delete(it.ext); }
   }
 
   /* ───────── webhook (Meta → bize). İmza zorunlu: IG_APP_SECRET yoksa kapalı ───────── */
-  function rawBody(req, max = 300e3) { return new Promise((ok, no) => { let n = 0; const ch = []; req.on('data', c => { n += c.length; if (n > max) { no(new Error('too large')); req.destroy(); } else ch.push(c); }); req.on('end', () => ok(Buffer.concat(ch))); req.on('error', no); }); }
+  function rawBody(req, max = 300e3) { return new Promise((ok, no) => { let n = 0; const ch = []; req.on('data', c => { n += c.length; if (n > max) { ch.length = 0; no(new Error('too large')); } else ch.push(c); }); req.on('end', () => ok(Buffer.concat(ch))); req.on('error', no); }); }
   async function webhook(req, res, url, ip) {
     const out = (code, txt) => { res.writeHead(code, { 'content-type': 'text/plain' }); res.end(txt); };
     if (req.method === 'GET') {                                            // Meta abonelik doğrulaması
@@ -157,7 +161,8 @@ Gib nur den Antworttext aus.`;
     if (req.method !== 'POST') return out(405, '');
     if (!APP_SECRET) return out(503, 'webhook kapalı (IG_APP_SECRET yok)');
     if (limited('igwh' + ip, 300, 60e3)) return out(429, 'çok fazla istek');
-    const raw = await rawBody(req), sig = String(req.headers['x-hub-signature-256'] || ''), want = 'sha256=' + crypto.createHmac('sha256', APP_SECRET).update(raw).digest('hex');
+    let raw; try { raw = await rawBody(req); } catch { res.on('finish', () => req.destroy()); res.setHeader('connection', 'close'); return out(413, 'gövde çok büyük'); }
+    const sig = String(req.headers['x-hub-signature-256'] || ''), want = 'sha256=' + crypto.createHmac('sha256', APP_SECRET).update(raw).digest('hex');
     if (sig.length !== want.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(want))) return out(401, 'imza geçersiz');
     let body; try { body = JSON.parse(raw.toString('utf8')); } catch { return out(400, 'json'); }
     for (const en of body.entry || []) {
@@ -202,12 +207,14 @@ Gib nur den Antworttext aus.`;
     if (sub === '/post-approve') {
       const po = post(); if (!po || po.status !== 'draft') return bad(400, 'Yalnız onay bekleyen taslak yayınlanabilir.');
       const f = flagsOf(po); if (f.length) return bad(409, 'Site verisi değişti: ' + f.map(x => x.t).join('; ') + '. Önce “Yenile” ya da reddet.');
+      if (busy.has(po.id)) return bad(409, 'Bu taslağın yayını sürüyor.'); busy.add(po.id);
       try {
         if (LIVE) { po.mediaId = await livePublish(po); po.mode = 'live'; } else { po.mediaId = 'sim-' + uid(); po.mode = 'sim'; }
         po.status = 'published'; po.publishedAt = Date.now(); save();
         logChange('yönetici', `Instagram ${po.kind === 'story' ? 'hikâye' : 'gönderi'} ${po.mode === 'live' ? 'YAYINLANDI' : 'yayınlandı (simülasyon, Instagram’a gitmedi)'}: “${snap(po).slice(0, 40)}”`, null);
         return ok({ post: view(po) });
       } catch (e) { po.lastError = String(e.message).slice(0, 200); save(); logChange('yönetici', `Instagram yayın hatası: ${po.lastError}`, null); return bad(502, po.lastError); }
+      finally { busy.delete(po.id); }
     }
     if (sub === '/simulate') {                                             // test: gelen mesaj/yorum taklidi
       const type = body.type === 'comment' ? 'comment' : 'dm', text = String(body.text || '').trim(); if (!text) return bad(400, 'Metin boş.');
@@ -222,12 +229,14 @@ Gib nur den Antworttext aus.`;
       // yanıt içindeki ürün verisi eskidiyse engelle: taslak üretildikten sonra fiyat/stok değişmiş olabilir
       const p0 = it.productId && P.get(it.productId); if (p0) { const e = effP(p0); const prices = [...it.draft.matchAll(/(\d{1,3}(?:\.\d{3})*,\d{2}) €/g)].map(m => Number(m[1].replace(/\./g, '').replace(',', '.')));
         if (prices.length && !prices.includes(Math.round(e.price * 100) / 100)) return bad(409, 'Taslaktaki fiyat güncel site fiyatıyla (' + eur(e.price) + ') uyuşmuyor. “Yeniden üret” deyin.'); if (!shopOk(p0) && /verfügbar|kostet/.test(it.draft) && !/nicht verfügbar/.test(it.draft)) return bad(409, 'Ürün artık sitede görünmüyor; yanıtı yeniden üretin.'); }
+      if (busy.has(it.id)) return bad(409, 'Bu yanıtın gönderimi sürüyor.'); busy.add(it.id);
       try {
         if (LIVE && !it.sim) { if (it.type === 'dm') await graph('POST', `/${USER}/messages`, { recipient: { id: it.from }, message: { text: it.draft } }); else await graph('POST', `/${it.commentId}/replies`, { message: it.draft }); it.mode = 'live'; } else it.mode = 'sim';
         it.status = 'sent'; it.sentAt = Date.now(); save();
         logChange('yönetici', `Instagram ${it.type === 'dm' ? 'DM' : 'yorum'} yanıtı ${it.mode === 'live' ? 'GÖNDERİLDİ' : 'gönderildi (simülasyon, Instagram’a gitmedi)'}`, null);
         return ok({ item: inboxView(it) });
       } catch (e) { logChange('yönetici', `Instagram yanıt hatası: ${String(e.message).slice(0, 150)}`, null); return bad(502, String(e.message).slice(0, 200)); }
+      finally { busy.delete(it.id); }
     }
     return bad(404, 'yok');
   }

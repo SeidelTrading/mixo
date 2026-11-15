@@ -331,11 +331,11 @@ const igInboxH=i=>{const open=i.status==='drafted';
   <p style="margin:6px 0;white-space:pre-wrap">${esc(i.text)}</p>
   ${open?`<textarea data-igrep="${i.id}" rows="3" style="width:100%">${esc(i.draft)}</textarea><div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><button class="btn sm" data-igact="reply-send" data-id="${i.id}">Onayla ve gönder</button><button class="btn ghost sm" data-igact="reply-edit" data-id="${i.id}">Taslağı kaydet</button><button class="btn ghost sm" data-igact="reply-regen" data-id="${i.id}">Yeniden üret</button><button class="btn ghost sm" data-igact="reply-ignore" data-id="${i.id}">Yanıtsız bırak</button></div>`
   :`<p class="muted" style="white-space:pre-wrap">↳ ${i.status==='sent'?'Gönderildi'+(i.mode==='sim'?' (simülasyon)':'')+': '+esc(i.draft):'Yanıtsız bırakıldı'}</p>`}</div>`};
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-igact]');if(!b)return;const a=b.dataset.igact,id=b.dataset.id,body={id};
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-igact]');if(!b||b.disabled)return;b.disabled=true;const a=b.dataset.igact,id=b.dataset.id,body={id};
   if(a==='post-edit')body.caption=$(`[data-igcap="${id}"]`).value; if(a==='reply-edit')body.text=$(`[data-igrep="${id}"]`).value;
   if(a==='post-approve'){const cap=$(`[data-igcap="${id}"]`).value;const cur=igPosts.find(x=>x.id===id);if(cap!==cur.caption)await api('/api/admin/instagram/post-edit',{id,caption:cap}).catch(()=>{})}
   if(a==='reply-send'){const t=$(`[data-igrep="${id}"]`).value;await api('/api/admin/instagram/reply-edit',{id,text:t}).catch(()=>{})}
-  b.disabled=true;try{await api('/api/admin/instagram/'+a,body)}catch(x){alert(x.message)}loadIg();loadSettings()});
+  try{await api('/api/admin/instagram/'+a,body)}catch(x){alert(x.message)}loadIg();loadSettings()});
 const igPickH=items=>items.length?items.map(p=>`<label style="display:grid;grid-template-columns:20px 44px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);cursor:pointer"><input type="checkbox" data-igpick="${esc(p.id)}" ${igSel.has(p.id)?'checked':''}><img src="${esc(img(p.img))}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px" onerror="this.style.visibility='hidden'"><span style="font-size:13px">${esc(p.title.slice(0,70))}<br><small class="muted">${esc(p.vendor)}</small></span><b>${Number(p.price).toLocaleString('de-DE',{minimumFractionDigits:2})} €</b></label>`).join(''):'<p class="muted">Sonuç yok.</p>';
 const igShow=items=>{$('#igPick').innerHTML=igPickH(items);igUpd()};
 const igUpd=()=>{igSel=new Set($$('[data-igpick]:checked').map(x=>x.dataset.igpick));$('#igMake').disabled=!igSel.size};

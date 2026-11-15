@@ -40,6 +40,7 @@ export function openStore(dataDir, { log = console.log } = {}) {
 
   /* siparişler */
   const allOrders = () => q('SELECT data FROM orders ORDER BY t, rowid').all().map(r => parse(r.data, null)).filter(isObj);
+  const delOrder = id => { q('DELETE FROM orders WHERE id=?').run(id); };
   const putOrder = o => { q('INSERT INTO orders(id,t,status,email,data) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET status=excluded.status, email=excluded.email, data=excluded.data').run(o.id, o.t, o.status, o.customer?.email || '', JSON.stringify(o)); };
 
   /* değişiklik günlüğü */
@@ -122,7 +123,7 @@ export function openStore(dataDir, { log = console.log } = {}) {
     return out;
   }
   const counts = () => Object.fromEntries(TABLES.map(t => [t, db.prepare(`SELECT COUNT(*) c FROM ${t}`).get().c]));
-  return { file, doc, saveDoc, allOrders, putOrder, allChanges, addChange, setUndone, allEvents, addEvents, pruneEvents, users, sessions, logins, jobs, backup, listBackups, backupDir, importLegacy, counts, tx, close: () => db.close() };
+  return { file, doc, saveDoc, allOrders, putOrder, delOrder, allChanges, addChange, setUndone, allEvents, addEvents, pruneEvents, users, sessions, logins, jobs, backup, listBackups, backupDir, importLegacy, counts, tx, close: () => db.close() };
 }
 
 // Bir veritabanı dosyasını (yedek) doğrular: SQLite bütünlük denetimi + tablo sayıları. Dosyayı değiştirmez.

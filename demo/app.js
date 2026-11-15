@@ -11,7 +11,9 @@ const CDN='https://cdn.shopify.com/s/files/1/0799/7639/9006/files/';
 const imgUrl=(s,w=480)=>!s?'':s.startsWith('fix/')?'img/'+s:(s.startsWith('img/')||s.startsWith('http'))?s:CDN+s+'?width='+w;
 /* yönetici düzenlemeleri (başlık, fiyat, stok, görsel) ve gizli kategoriler: /api/config ile gelir */
 let OV={}; const HIDCAT=new Set();
-const ov=p=>{const o=OV[p.id];if(o){if(o.title!=null&&p.title!==o.title){p.title=o.title;delete p._h}if(o.price!=null)p.price=o.price;if(o.was!=null)p.was=o.was;if(o.na!=null)p.na=!!o.na;if(o.img)p.img=o.img}return p};
+/* _b: düzenlemeden önceki özgün değerler (kopyayla birlikte saklanır); düzenleme kalkınca özgün değere dönülür */
+const ov=p=>{const o=OV[p.id];if(!o&&!p._b)return p;const b=p._b??={title:p.title,price:p.price,was:p.was,na:p.na,img:p.img},t=p.title;Object.assign(p,b);
+  if(o){if(o.title!=null)p.title=o.title;if(o.price!=null)p.price=o.price;if(o.was!=null)p.was=o.was;if(o.na!=null)p.na=!!o.na;if(o.img)p.img=o.img}else delete p._b;if(p.title!==t)delete p._h;return p};
 const CAT=Object.fromEntries(IDX.cats.map(c=>[c.k,c]));
 const label=k=>CAT[k]?.label||'';
 const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}},del(k){try{localStorage.removeItem(k)}catch{}}};
@@ -92,7 +94,9 @@ function ensure(key,count,onProgress){
       const from=L.n,len=L.rows.length,to=Math.min(total,from+(count===Infinity?6:1)),ps=[];
       for(let i=from;i<to;i++)ps.push(loadChunk(key,i));
       L.n=to;
-      try{for(const b of ps)L.rows.push(...(await b).map(toP).filter(p=>!HID.has(p.id)&&!HIDCAT.has(p.cat)))}catch(e){L.n=from;L.rows.length=len;throw e}
+      const rs=await Promise.allSettled(ps),bad=rs.find(r=>r.status==='rejected');
+      if(bad){for(let i=from;i<to;i++)delete waiting[key+'#'+i];L.n=from;L.rows.length=len;throw bad.reason}
+      for(const r of rs)L.rows.push(...r.value.map(toP).filter(p=>!HID.has(p.id)&&!HIDCAT.has(p.cat)));
       onProgress?.(L.n/total);
     }
     if(L.n>=total)L.done=true;
@@ -533,8 +537,10 @@ $$('[data-ncat]').forEach(el=>{const c=CAT[el.dataset.ncat];if(c)el.textContent=
 async function loadConfig(){
   if(location.protocol==='file:')return;
   try{
-    const c=new AbortController(), t=setTimeout(()=>c.abort(),1500), r=await fetch('/api/config',{signal:c.signal}); clearTimeout(t); if(!r.ok)return;
-    const cfg=await r.json(); (cfg.hidden||[]).forEach(id=>HID.add(id));
+    /* yavaş bağlantı / soğuk başlangıç: 4 sn, olmazsa bir kez daha 6 sn; ayar gelmeden gizli ürünler süzülemez */
+    const get=async ms=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{const r=await fetch('/api/config',{signal:c.signal});return r.ok?await r.json():null}catch{return null}finally{clearTimeout(t)}};
+    const cfg=await get(4000)||await get(6000); if(!cfg){setTimeout(()=>toast('Daten evtl. nicht aktuell – bitte Seite neu laden'),800);return}
+    (cfg.hidden||[]).forEach(id=>HID.add(id));
     /* gizli / onay bekleyen ürünler kategori, alt kategori ve toplam sayaçlarından düşer */
     const hc=cfg.hiddenCounts;
     if(hc){IDX.total=Math.max(0,IDX.total-(hc.total||0));

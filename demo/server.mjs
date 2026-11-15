@@ -64,10 +64,12 @@ const authOf = req => sessionOf(cookie(req, 'mxadm'));
 const BEHIND_PROXY = !!(process.env.RAILWAY_ENVIRONMENT || process.env.TRUST_PROXY);
 const clientIp = req => { if (BEHIND_PROXY) { const real = String(req.headers['x-real-ip'] || '').trim(); if (real) return real.slice(0, 64);
   const xff = String(req.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean); if (xff.length) return xff[xff.length - 1].slice(0, 64); } return req.socket.remoteAddress || ''; };
+const goodIps = new Set(store.logins.recent(200).filter(x => x.ok).map(x => x.ip));      // daha önce başarıyla giriş yapılan adresler: genel kilitten muaf (adres başına sınır yine geçerli)
 const loginFails = [];      // { t, ip }: adresten bağımsız genel kilit ve adres başına kilit için
 const FAIL_WINDOW = 15 * 60e3, FAIL_PER_IP = 10, FAIL_GLOBAL = 40;
 const hits = new Map();
-function limited(key, max, windowMs) { const now = Date.now(), a = (hits.get(key) || []).filter(t => now - t < windowMs); a.push(now); hits.set(key, a); return a.length > max; }
+// Reddedilen çağrı kaydedilmez: liste en çok `max` öğe tutar, sınır aşılınca maliyet büyümez.
+function limited(key, max, windowMs) { const now = Date.now(), a = (hits.get(key) || []).filter(t => now - t < windowMs); hits.set(key, a); if (a.length >= max) return true; a.push(now); return false; }
 setInterval(() => { const now = Date.now(); for (const [k, a] of hits) if (!a.some(t => now - t < 600e3)) hits.delete(k); }, 300e3).unref();
 
 /* ───────── ürün dizini (statik katalogdan) ───────── */
@@ -200,7 +202,8 @@ function undoConflict(c) { const mine = new Set(undoTargets(c.undo)); if (!mine.
 // Dönüş: değişiklik kaydı · null (geri alınamaz) · { conflict } (önce sonraki değişiklik geri alınmalı)
 function undo(id, by) { const c = changes.find(x => x.id === id); if (!c || c.undone || !c.undo || typeof actions[c.undo.type] !== 'function') return null;
   const later = undoConflict(c); if (later) return { conflict: later };
-  c.undone = true; store.setUndone(c.id); return actions[c.undo.type](c.undo, by + ' (geri alma)'); }
+  // Önce işlem: sonuç boşsa (değer zaten aynıysa) kayıt “geri alındı” diye işaretlenmez.
+  const r = actions[c.undo.type](c.undo, by + ' (geri alma)'); if (r) { c.undone = true; store.setUndone(c.id); } return r; }
 // Onay kuralı: sorunlu listesindeki (ve “sorun değil” denmemiş) ürün, yönetici onaylayana kadar mağazada görünmez.
 // settings.hidden yalnızca elle gizlemeyi tutar; “Göster” onay kuralını aşamaz, tek yol “Onayla”dır.
 const PROBLEM_IDS = new Set(PROBLEMS.map(p => p.id));
@@ -268,12 +271,13 @@ function createOrder(body) {
     items.push({ id, title: e.title, vendor: p.vendor, price: e.price, qty, img: e.img });
   }
   if (!items.length) return { err: 'Der Warenkorb ist leer.' };
-  if (orders.length >= MAX_ORDERS) return { err: 'Die Demo nimmt zurzeit keine weiteren Bestellungen an.' };
+  if (orders.filter(x => x.status !== 'cancelled').length >= MAX_ORDERS) return { err: 'Die Demo nimmt zurzeit keine weiteren Bestellungen an.' };
   const c = body.customer || {}, str = (v, n) => String(v ?? '').trim().slice(0, n), cu = { name: str(c.name, 80), email: str(c.email, 120).toLowerCase(), street: str(c.street, 120), zip: str(c.zip, 12), city: str(c.city, 60) };
   if (cu.name.length < 2 || !EMAIL_RE.test(cu.email) || cu.street.length < 3 || cu.zip.length < 3 || cu.city.length < 2) return { err: 'Bitte alle Felder korrekt ausfüllen.' };
   if (ORDER_VERIFY && orders.filter(x => x.status === 'unverified' && x.customer.email === cu.email).length >= VERIFY_MAX_OPEN) return { err: 'Für diese E-Mail-Adresse warten bereits Bestellungen auf Bestätigung. Bitte bestätigen Sie diese zuerst über den Link in der E-Mail.' };
   const subtotal = money(items.reduce((a, i) => a + i.price * i.qty, 0)), shipping = subtotal >= freeShip() ? 0 : SHIP_FEE;
-  const st0 = ORDER_VERIFY ? 'unverified' : 'new', o = { id: 'MX-' + String(Date.now()).slice(-6) + crypto.randomBytes(1).toString('hex').toUpperCase(), t: Date.now(), status: st0, items, subtotal, shipping, total: money(subtotal + shipping), customer: cu, demo: true, history: [{ t: Date.now(), status: st0, by: 'müşteri' }] };
+  let oid; do { oid = 'MX-' + String(Date.now()).slice(-6) + crypto.randomBytes(1).toString('hex').toUpperCase(); } while (orders.some(x => x.id === oid));      // kimlik çakışırsa yeniden üret (eski sipariş ezilmesin)
+  const st0 = ORDER_VERIFY ? 'unverified' : 'new', o = { id: oid, t: Date.now(), status: st0, items, subtotal, shipping, total: money(subtotal + shipping), customer: cu, demo: true, history: [{ t: Date.now(), status: st0, by: 'müşteri' }] };
   o.marketing = body.marketing === true; let token = null; if (ORDER_VERIFY) { token = crypto.randomBytes(24).toString('base64url'); o.verify = { h: sha('ov:' + token).toString('hex'), exp: Date.now() + VERIFY_HOURS * 3600e3 }; }
   orders.push(o); saveOrder(o); if (token) { store.jobs.enqueue('order_confirm_mail', { id: o.id, token }); setImmediate(runJobs); } mk.orderPlaced(cu.email); if (o.marketing) mk.optIn(cu.email, cu.name, 'checkout'); return { order: o };
 }
@@ -285,7 +289,9 @@ function confirmOrder(id, token) { const o = orders.find(x => x.id === id); if (
   if (o.status !== 'unverified') return o.status === 'cancelled' ? 'expired' : 'already'; if (!(o.verify.exp > Date.now())) return 'expired';
   o.status = 'new'; (o.history ||= []).push({ t: Date.now(), status: 'new', by: 'müşteri (e-posta onayı)' }); saveOrder(o); homeCache.t = 0; return 'ok'; }
 function expireUnverified() { const now = Date.now(); let n = 0; for (const o of orders) if (o.status === 'unverified' && !((o.verify?.exp ?? o.t + VERIFY_HOURS * 3600e3) > now)) { o.status = 'cancelled'; (o.history ||= []).push({ t: now, status: 'cancelled', by: 'sistem (doğrulanmadı)' }); saveOrder(o); n++; }
-  if (n) console.log(`doğrulanmayan ${n} sipariş iptal edildi`); return n; }
+  // Hiç doğrulanmadan sistemce iptal edilen siparişler 7 gün sonra silinir (sahte siparişler kaydı ve belleği doldurmasın).
+  let d = 0; for (let i = orders.length - 1; i >= 0; i--) { const o = orders[i], h = o.history?.[o.history.length - 1]; if (o.status === 'cancelled' && h?.by === 'sistem (doğrulanmadı)' && now - h.t > 7 * 864e5) { store.delOrder(o.id); orders.splice(i, 1); d++; } }
+  if (n || d) console.log(`doğrulanmayan ${n} sipariş iptal edildi, ${d} eski iptal kaydı silindi`); return n; }
 function customers() {
   const m = new Map();
   for (const o of orders) { const k = o.customer.email, c = m.get(k) || { email: k, name: o.customer.name, city: o.customer.city, orders: 0, spent: 0, first: o.t, last: o.t }; c.orders++; if (o.status !== 'cancelled' && o.status !== 'unverified') c.spent = money(c.spent + o.total); c.last = Math.max(c.last, o.t); c.first = Math.min(c.first, o.t); c.name = o.customer.name; m.set(k, c); }
@@ -307,7 +313,7 @@ function dashboard() {
 const hashId = id => { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; return h; };
 const pool = (lo, hi) => [...P.values()].filter(p => !p.na && p.price >= lo && p.price <= hi).sort((a, b) => hashId(a.id) - hashId(b.id));
 const BUDGET_POOL = pool(8, 25), PREMIUM_POOL = pool(120, 2000);
-const pickDiverse = (list, n, per = 2) => { const c = {}, out = []; for (const p of list) { if (!shopOk(p)) continue; if ((c[p.vendor] = (c[p.vendor] || 0) + 1) > per) continue; out.push(p); if (out.length >= n) break; } return out; };
+const pickDiverse = (list, n, per = 2) => { const c = Object.create(null), out = []; for (const p of list) { if (!shopOk(p)) continue; if ((c[p.vendor] = (c[p.vendor] || 0) + 1) > per) continue; out.push(p); if (out.length >= n) break; } return out; };
 const shopRow = p => { const e = effP(p); return { id: p.id, title: e.title, vendor: p.vendor, price: e.price, was: e.was || 0, img: e.img, cat: p.cat, si: p.si, sub: p.sub, na: !!e.na }; };
 const shopOk = p => p && !isHidden(p.id) && !settings.categories[p.cat]?.hidden && !effP(p).na;
 let homeCache = { t: 0, v: null };
@@ -362,11 +368,11 @@ function ingest(body, req, vid) {
 function analytics(days = 7) {
   days = Math.min(90, Math.max(1, Number(days) || 7));
   const from = Date.now() - days * 864e5, ev = events.filter(x => x.t >= from);
-  const cnt = {}, vis = new Set(), ses = new Map(), byDay = {}, sq = new Map(), pv = new Map(), pa = new Map(), cats = {}, brands = {}, dev = { m: new Set(), d: new Set() };
+  const nul = () => Object.create(null), cnt = nul(), vis = new Set(), ses = new Map(), byDay = nul(), sq = new Map(), pv = new Map(), pa = new Map(), cats = nul(), brands = nul(), dev = { m: new Set(), d: new Set() };
   let dwell = 0, dwellN = 0;
   const day = t => new Date(t).toISOString().slice(0, 10);
   for (const x of ev) {
-    cnt[x.e] = (cnt[x.e] || 0) + 1; vis.add(x.vid); const sk = x.vid + '#' + x.s, S = ses.get(sk) || { v: 0, a: 0, c: 0, subs: {} }; ses.set(sk, S); dev[x.d === 'm' ? 'm' : 'd'].add(x.vid);
+    cnt[x.e] = (cnt[x.e] || 0) + 1; vis.add(x.vid); const sk = x.vid + '#' + x.s, S = ses.get(sk) || { v: 0, a: 0, c: 0, subs: Object.create(null) }; ses.set(sk, S); dev[x.d === 'm' ? 'm' : 'd'].add(x.vid);
     const D = byDay[day(x.t)] ??= { visitors: new Set(), views: 0, adds: 0, searches: 0 }; D.visitors.add(x.vid);
     if (x.e === 'view') { S.v++; D.views++; if (x.id) pv.set(x.id, (pv.get(x.id) || 0) + 1); if (x.c) { cats[x.c] = (cats[x.c] || 0) + 1; if (x.si >= 0) S.subs[x.c + '/' + x.si] = (S.subs[x.c + '/' + x.si] || 0) + 1; } if (x.b) brands[x.b] = (brands[x.b] || 0) + 1; }
     if (x.e === 'add') { S.a++; D.adds++; if (x.id) pa.set(x.id, (pa.get(x.id) || 0) + 1); }
@@ -390,7 +396,7 @@ function analytics(days = 7) {
     note: ev.length ? undefined : 'Bu dönemde kayıtlı ziyaretçi olayı yok. Olaylar yalnızca çerez onayı veren ziyaretçilerden toplanır.' };
 }
 function problemSummary() {
-  const open = openProblems(), by = k => { const m = {}; for (const p of open) m[p[k]] = (m[p[k]] || 0) + 1; return Object.entries(m).sort((a, b) => b[1] - a[1]); };
+  const open = openProblems(), by = k => { const m = Object.create(null); for (const p of open) m[p[k]] = (m[p[k]] || 0) + 1; return Object.entries(m).sort((a, b) => b[1] - a[1]); };
   return { total: open.length, pending: open.filter(p => !settings.approved[p.id]).length, approved: open.filter(p => settings.approved[p.id]).length, hidden: open.filter(p => settings.hidden[p.id]).length, cleared: Object.keys(settings.cleared).length,
     byType: by('tur').map(([k, n]) => ({ type: k, label: TUR[k] || k, count: n })), byBrand: by('vendor').slice(0, 15).map(([brand, count]) => ({ brand, count })), byCategory: by('catLabel').map(([category, count]) => ({ category, count })) };
 }
@@ -536,12 +542,13 @@ async function runTool(name, input, conv) {
     case 'list_campaign_suggestions': { const r = mk.suggestions(input.days); return { _not: UNTRUSTED_NOTE, data: r.data, active: r.active, suggestions: r.items.map(x => ({ id: x.id, title: x.title, why: x.why, empty: x.empty || undefined, shopText: x.shopText || undefined, products: x.products.map(p => ({ id: p.id, title: p.title.slice(0, 70), vendor: p.vendor, price: p.price, note: p.note })) })) }; }
     case 'apply_campaign': { const cid = String(input.id || ''), upd = input.update_announcement === true, days = Number(input.days) || 7, why = approvalReason(conv, 1);
       if (why) { const s = mk.suggestions(days).items.find(x => x.id === cid); if (!s || !s.products.length) return { error: 'Öneri bulunamadı ya da vitrine yansıtılacak ürünü yok. Listeyi yenileyin.' };
-        const id = addPending(conv, `Kampanyayı vitrine yansıt: “${s.title}” (${Math.min(12, s.products.length)} ürün öne çıkanlara${upd && s.shopText ? `; duyuru şeridi 2 = “${s.shopText}”` : ''})`, 1, by => { const r = mk.applyCampaign(cid, upd, by, days); return r.err ? null : r.change; });
+        const id = addPending(conv, `Kampanyayı vitrine yansıt: “${s.title}” (${Math.min(12, s.products.length)} ürün öne çıkanlara${upd && s.shopText ? `; duyuru şeridi 2 = “${s.shopText}”` : ''})`, 1, by => { const r = mk.applyCampaign(cid, upd, by, days, { cid: s.id, title: s.title, ids: s.products.map(p => p.id).slice(0, 12), text: upd && s.shopText ? s.shopText : null }); return r.err ? null : r.change; });
         return { status: 'pending', message: `Henüz uygulanmadı (${why}). Yönetici panelde çıkan onay kartından onaylamalı.`, pending_id: id }; }
       const r = mk.applyCampaign(cid, upd, 'AI asistan', days); if (r.err) return { error: r.err }; conv.applied.push(r.change); return { status: 'applied', change: r.change.summary, change_id: r.change.id }; }
     case 'create_instagram_drafts': { const r = await mk.igDraftsAuto(input.ids, input.kind, 'AI asistan'); return { status: r.made.length ? 'drafted' : 'nothing', note: 'Taslaklar onay kuyruğunda; yayınlanmadı. Yönetici Instagram/Pazarlama sekmesinde onaylamalı.', drafts: r.made, errors: r.errors }; }
     case 'get_reminder_preview': return { _not: UNTRUSTED_NOTE, note: 'Simülasyon: hiçbir e-posta gönderilmez.', rules: mk.preview(input.rule_id).map(x => ({ id: x.rule.id, name: x.rule.name, type: x.rule.type, days: x.rule.days, enabled: x.enabled, due: x.due.slice(0, 10).map(r => ({ to: r.emailMasked, items: r.items.map(i => i.title.slice(0, 50)), reason: r.reason })), dueCount: x.due.length, scheduledCount: x.scheduled.length, doneCount: x.doneCount, excludedNoConsent: x.noConsent })) };
-    case 'undo_last_change': { const c = [...changes].reverse().find(x => !x.undone && x.undo && !x.by.includes('geri alma')); if (!c) return { status: 'nothing', message: 'Geri alınacak değişiklik yok.' }; const r = undo(c.id, 'AI asistan'); conv.applied.push(r); return { status: 'applied', undone: c.summary }; }
+    case 'undo_last_change': { const c = [...changes].reverse().find(x => !x.undone && x.undo && !x.by.includes('geri alma')); if (!c) return { status: 'nothing', message: 'Geri alınacak değişiklik yok.' }; const later = undoConflict(c); if (later) return { error: `Önce sonraki değişiklik geri alınmalı: “${String(later.summary).slice(0, 80)}”` };
+      const g = gate(conv, 1, `Son değişikliği geri al: “${String(c.summary).slice(0, 200)}”`, by => { const r = undo(c.id, by); return r && r.summary ? r : null; }); return g.status === 'applied' ? { ...g, undone: c.summary } : g; }
     default: return { error: 'bilinmeyen araç' };
   }
 }
@@ -600,19 +607,21 @@ function serveStatic(req, res, url) {
   if (p === '/sunum') { res.writeHead(302, { location: '/sunum/' }); return res.end(); } if (p === '/sunum/') p = '/sunum/index.html';
   if (!/^\/(index\.html|app\.js|data\/[\w.-]+|img\/(?:fix\/)?[\w.%() -]+|admin\/[\w.-]+|sunum\/(?:img\/)?[\w.-]+)$/.test(p)) { res.writeHead(404); return res.end('Not found'); }
   const file = path.join(HERE, p); if (!file.startsWith(HERE + path.sep)) { res.writeHead(403); return res.end(); }
+  const rs = o => fs.createReadStream(file, o).on('error', () => res.destroy());      // dosya arada silinirse süreç çökmesin
   fs.stat(file, (err, st) => {
     if (err || !st.isFile()) { res.writeHead(404); return res.end('Not found'); }
     const etag = `"${st.size}-${Math.round(st.mtimeMs)}"`; if (req.headers['if-none-match'] === etag) { res.writeHead(304); return res.end(); }
     const h = { 'content-type': MIME[path.extname(file)] || 'application/octet-stream', etag, 'cache-control': p.startsWith('/img/') ? 'public, max-age=86400' : 'no-cache', 'x-content-type-options': 'nosniff' };
     if (p.startsWith('/admin/')) h['x-robots-tag'] = 'noindex';
-    if (/\.(js|html|json|svg|css)$/.test(file) && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) { h['content-encoding'] = 'gzip'; res.writeHead(200, h); fs.createReadStream(file).pipe(zlib.createGzip()).pipe(res); }
+    if (/\.(js|html|json|svg|css)$/.test(file)) h.vary = 'accept-encoding';
+    if (/\.(js|html|json|svg|css)$/.test(file) && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) { h['content-encoding'] = 'gzip'; res.writeHead(200, h); rs().pipe(zlib.createGzip()).pipe(res); }
     else if (file.endsWith('.mp4')) { // video: ileri-geri sarma için aralık isteği
       h['accept-ranges'] = 'bytes'; const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
       if (m && (m[1] || m[2])) { let a = m[1] ? +m[1] : st.size - +m[2], b = m[1] && m[2] ? +m[2] : st.size - 1; a = Math.max(0, a); b = Math.min(b, st.size - 1);
         if (a > b) { res.writeHead(416, { 'content-range': `bytes */${st.size}` }); return res.end(); }
-        h['content-range'] = `bytes ${a}-${b}/${st.size}`; h['content-length'] = b - a + 1; res.writeHead(206, h); fs.createReadStream(file, { start: a, end: b }).pipe(res); }
-      else { h['content-length'] = st.size; res.writeHead(200, h); fs.createReadStream(file).pipe(res); } }
-    else { h['content-length'] = st.size; res.writeHead(200, h); fs.createReadStream(file).pipe(res); }
+        h['content-range'] = `bytes ${a}-${b}/${st.size}`; h['content-length'] = b - a + 1; res.writeHead(206, h); rs({ start: a, end: b }).pipe(res); }
+      else { h['content-length'] = st.size; res.writeHead(200, h); rs().pipe(res); } }
+    else { h['content-length'] = st.size; res.writeHead(200, h); rs().pipe(res); }
   });
 }
 import zlib from 'node:zlib';
@@ -629,13 +638,13 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/config' && req.method === 'GET') return send(res, 200, publicConfig());
     if (p === '/api/shop/home' && req.method === 'GET') return send(res, 200, shopHome());
     if (p === '/api/shop/product' && req.method === 'GET') { const x = P.get(url.searchParams.get('id') || ''); return x && shopOk(x) ? send(res, 200, shopRow(x)) : send(res, 404, { error: 'yok' }); }
-    if (p === '/api/instagram/webhook') return ig.webhook(req, res, url, ip);
+    if (p === '/api/instagram/webhook') return await ig.webhook(req, res, url, ip);
     // Herkese açık yazma uçları: adres başına sınırın yanında adresten bağımsız genel tavan da var (adres değiştirerek aşılamaz).
     if (p === '/api/cart-save' && req.method === 'POST') { if (limited('cs' + ip, 20, 60e3) || limited('cs*', 200, 600e3)) return send(res, 429, { error: 'Zu viele Versuche.' });
       // İzin sahipliği: izni veren tarayıcıya imzalı çerez (mxc) verilir; bir izni yalnız o çerezi taşıyan silebilir (başkasının izni silinemez).
       const b = await readBody(req, 20e3), em = String(b.email || '').trim().toLowerCase(), own = sigOk(cookie(req, 'mxc') || '', 'c:' + em);
       const r = mk.saveCart(b, own); if (r.err) return send(res, 400, { error: r.err });
-      return send(res, 200, { ok: true }, r.removed || own ? {} : { 'set-cookie': `mxc=${sign('c:' + em)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000${secure}` }); }
+      return send(res, 200, { ok: true }, r.removed || own || b.optin !== true ? {} : { 'set-cookie': `mxc=${sign('c:' + em)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000${secure}` }); }
     if (p === '/api/orders' && req.method === 'POST') { if (limited('ord' + ip, 8, 60e3) || limited('ord*', 60, 600e3)) return send(res, 429, { error: 'Zu viele Versuche. Bitte kurz warten.' });
       const r = createOrder(await readBody(req, 60e3)); if (r.err) return send(res, 400, { error: r.err });
       return send(res, 200, { ok: true, order: { id: r.order.id, total: r.order.total, shipping: r.order.shipping, subtotal: r.order.subtotal, email: r.order.customer.email, verify: r.order.status === 'unverified' } },
@@ -651,12 +660,12 @@ const server = http.createServer(async (req, res) => {
       if (!store.users.activeAdmins()) return send(res, 503, { error: 'Yönetici hesabı tanımlı değil (ADMIN_PASSWORD).' });
       const now = Date.now(); while (loginFails.length && now - loginFails[0].t > FAIL_WINDOW) loginFails.shift();
       if (limited('login' + ip, 6, 60e3)) return send(res, 429, { error: 'Çok fazla deneme. Bir dakika bekleyin.' });
-      if (loginFails.length >= FAIL_GLOBAL || loginFails.filter(f => f.ip === ip).length >= FAIL_PER_IP) { console.warn(`giriş KİLİTLİ ip=${ip} (son 15 dk hatalı deneme: ${loginFails.length})`); return send(res, 429, { error: 'Çok fazla hatalı deneme. 15 dakika sonra yeniden deneyin.' }); }
+      if ((loginFails.length >= FAIL_GLOBAL && !goodIps.has(ip)) || loginFails.filter(f => f.ip === ip).length >= FAIL_PER_IP) { console.warn(`giriş KİLİTLİ ip=${ip} (son 15 dk hatalı deneme: ${loginFails.length})`); return send(res, 429, { error: 'Çok fazla hatalı deneme. 15 dakika sonra yeniden deneyin.' }); }
       const b = await readBody(req, 2e3), username = (typeof b.username === 'string' && b.username.trim() ? b.username.trim().toLowerCase() : 'admin').slice(0, 40), password = b.password;
       // Parola scrypt ile doğrulanır; bilinmeyen ya da kapatılmış kullanıcıda da aynı hesap yapılır (kullanıcı adı süreden anlaşılmaz).
       const u = store.users.byName(username), live = !!u && !u.disabled, good = typeof password === 'string' && password.length <= 200 && checkPw(password, live ? u.pw : DUMMY_PW) && live;
       if (!good) { loginFails.push({ t: now, ip }); store.logins.add(ip, username, false); console.warn(`giriş BAŞARISIZ ip=${ip} kullanıcı=${JSON.stringify(username)}`); return send(res, 401, { error: 'Kullanıcı adı ya da parola hatalı.' }); }
-      store.logins.add(ip, username, true); console.log(`giriş başarılı ip=${ip} kullanıcı=${username}`);
+      store.logins.add(ip, username, true); goodIps.add(ip); console.log(`giriş başarılı ip=${ip} kullanıcı=${username}`);
       return send(res, 200, { ok: true }, { 'set-cookie': `mxadm=${makeSession(u.id)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200${secure}` });
     }
     const auth = authOf(req);
@@ -784,5 +793,7 @@ async function runJobs() { if (jobBusy) return; jobBusy = true;
   // Son 24 saatte yedek yoksa hemen alınır; varsa bir sonraki yedek son yedekten 24 saat sonraya planlanır.
   const last = store.listBackups()[0]?.t || 0; for (const t of RECURRING) store.jobs.enqueue(t, {}, { runAt: t === 'backup' ? Math.max(Date.now(), last + 24 * HOUR) : Date.now(), unique: true }); }
 setInterval(runJobs, 5000).unref(); setTimeout(runJobs, 500).unref();
+// Yakalanmayan söz reddi süreci düşürmesin: günlüğe yazılır, sunucu ayakta kalır.
+process.on('unhandledRejection', e => console.error('yakalanmayan söz reddi:', e?.stack || e));
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { console.log(sig + ': kapanıyor'); server.close(() => { try { store.close(); } catch {} process.exit(0); }); setTimeout(() => process.exit(0), 3000).unref(); });
 server.listen(PORT, () => console.log(`Outlet demo: http://127.0.0.1:${PORT}  ·  panel: /admin  ·  asistan modeli: ${MODEL}`));
