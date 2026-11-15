@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Başlangıç için gerekenler · Mixoutlet ve WawiERP</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1c1b19;--mute:#6b675f;--line:#e3dfd6;--acc:#1f5f4a;--acc-bg:#e4f0ea;--warn:#8a5a00;--warn-bg:#fbefd2;--now:#9b2c1f;--now-bg:#fbe5e1}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#161513;--card:#1f1e1b;--ink:#eeebe4;--mute:#a09b90;--line:#34322d;--acc:#7fc8ac;--acc-bg:#1d3329;--warn:#e6bd6a;--warn-bg:#3a2f14;--now:#f0a093;--now-bg:#3d1f1a}}
+:root[data-theme=dark]{--bg:#161513;--card:#1f1e1b;--ink:#eeebe4;--mute:#a09b90;--line:#34322d;--acc:#7fc8ac;--acc-bg:#1d3329;--warn:#e6bd6a;--warn-bg:#3a2f14;--now:#f0a093;--now-bg:#3d1f1a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:920px;margin:0 auto;padding:28px 16px 64px}
+header h1{font-size:clamp(26px,5vw,38px);line-height:1.15;margin:6px 0 10px;letter-spacing:-.02em}
+.kicker{color:var(--acc);font-weight:600;font-size:14px;letter-spacing:.02em}
+.lead{color:var(--mute);max-width:64ch;margin:0 0 18px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--mute);font-size:14px;margin-bottom:22px}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.prog{flex:1;min-width:140px;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--acc);transition:width .25s}
+.bar span{font-size:14px;color:var(--mute);font-variant-numeric:tabular-nums}
+.bar button{font:inherit;font-size:14px;padding:6px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;cursor:pointer}
+.first{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--now);border-radius:12px;padding:16px 18px;margin:22px 0}
+.first h2{margin:0 0 8px;font-size:18px}
+.first ol{margin:0;padding-left:20px}
+.first li{margin:4px 0}
+h2.sec{font-size:21px;margin:38px 0 4px;letter-spacing:-.01em}
+p.secnote{color:var(--mute);margin:0 0 14px;font-size:15px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:12px 0;break-inside:avoid}
+.card.done{opacity:.62}
+.card.done h3{text-decoration:line-through}
+.card.q h3{font-size:16.5px;font-weight:600}
+.card.q .num{font-weight:600;color:var(--acc)}
+.top{display:flex;gap:12px;align-items:flex-start}
+.top input{width:22px;height:22px;margin:3px 0 0;accent-color:var(--acc);flex:none;cursor:pointer}
+.top label{flex:1;cursor:pointer}
+.num{color:var(--mute);font-variant-numeric:tabular-nums;font-size:14px}
+h3{margin:0;font-size:18px;line-height:1.3}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0 34px}
+.tag{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--acc-bg);color:var(--acc);font-weight:600}
+.tag.now{background:var(--now-bg);color:var(--now)}
+.tag.ask{background:var(--warn-bg);color:var(--warn)}
+dl{margin:12px 0 0 34px;display:grid;grid-template-columns:132px 1fr;gap:8px 14px}
+dt{color:var(--mute);font-size:14px}
+dd{margin:0}
+dd ul{margin:0;padding-left:18px}
+dd li{margin:2px 0}
+.note{background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:14px 18px;margin:26px 0}
+.note b{display:block;margin-bottom:4px}
+footer{margin-top:40px;color:var(--mute);font-size:14px;border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:600px){dl{grid-template-columns:1fr;gap:2px 0;margin-left:0}dt{margin-top:8px}.tags{margin-left:0}}
+@media print{.bar{display:none}body{background:#fff}.card,.first{border-color:#bbb}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kicker">Lady Empire GmbH · Mixoutlet ve WawiERP</div>
+  <h1>İşe başlamak için sizden gerekenler</h1>
+  <p class="lead">Aşağıdaki 15 kalem ve sondaki 13 soru, pazarlama kurulumunun, mobil uygulamanın, Instagram yönetiminin ve WawiERP pilotunun başlayabilmesi için sizin tarafınızdan sağlanması ya da birlikte açılması gereken hesap, erişim ve kararlardır. Her kalemde ne istediğimiz, neden gerektiği ve sizden beklenen adım yazıyor.</p>
+  <div class="meta"><span>Hazırlayan: Murat Arslan</span><span>Tarih: 16 Kasım 2026</span><span>Toplantı sırasında kutuları işaretleyebilirsiniz; işaretler bu tarayıcıda saklanır.</span></div>
+</header>
+
+<div class="bar"><div class="prog"><i id="pb"></i></div><span id="pc">0 / 28 tamam</span><button id="rs" type="button">İşaretleri temizle</button><button type="button" onclick="print()">Yazdır</button></div>
+
+<section class="first">
+  <h2>Bu hafta başlatılması gereken üç şey</h2>
+  <ol>
+    <li><b>D-U-N-S numarası başvurusu</b> (kalem 1). Süresi bizim elimizde değil; Apple ve Google hesapları buna bağlı.</li>
+    <li><b>Şirket alan adında bize bir e-posta adresi</b> (kalem 13). Diğer bütün hesaplar bu adresle açılacak.</li>
+    <li><b>Shopify erişimi</b> (kalem 3). Pazarlama kurulumunun ilk adımı; erişim olmadan mağazayı içeriden inceleyemiyoruz.</li>
+  </ol>
+</section>
+
+<div class="note"><b>Güvenlik notu</b>Parola, API anahtarı ya da kart bilgisini e-posta ve mesajla göndermeyin. Erişimleri her platformun kendi "kullanıcı davet et" özelliğiyle verin; anahtar paylaşmak gerekirse bunu şifre yöneticisi üzerinden yapalım. Bütün hesapların sahibi Lady Empire GmbH olur, bize yalnızca kullanıcı yetkisi verilir; iş bittiğinde erişimi tek tıkla kaldırabilirsiniz.</div>
+
+<h2 class="sec">A. Şirket kimliği ve uygulama mağazaları</h2>
+<p class="secnote">Mobil uygulamanın App Store ve Google Play'de şirket adıyla yayınlanması için.</p>
+
+<article class="card" data-id="1">
+  <div class="top"><input type="checkbox" id="c1"><label for="c1"><span class="num">1</span><h3>D-U-N-S numarası ve tüzel kişi bilgileri</h3></label></div>
+  <div class="tags"><span class="tag now">Önce bu</span><span class="tag">Mobil uygulama</span></div>
+  <dl>
+    <dt>Ne istiyoruz</dt><dd>Lady Empire GmbH'nin D-U-N-S numarası; ticaret sicilindeki tam unvan, adres, sicil numarası; şirket adına imza atabilecek kişinin adı ve iletişim bilgisi.</dd>
+    <dt>Neden</dt><dd>Apple ve Google, uygulamayı şirket adına yayınlamak için tüzel kişiliği D-U-N-S üzerinden doğruluyor. Numara olmadan kuruluş hesabı açılamıyor.</dd>
+    <dt>Sizden beklenen</dt><dd>Numaranız varsa bize iletmeniz. Yoksa Dun &amp; Bradstreet'e başvuru; Apple'ın geliştirici sayfasındaki sorgulama aracı üzerinden ücretsiz talep edilebiliyor.</dd>
+    <dt>Süre ve maliyet</dt><dd>Standart başvuru ücretsiz; birkaç iş günü ile birkaç hafta arasında sürebiliyor.</dd>
+  </dl>
+</article>
+
+<article class="card" data-id="2">
+  <div class="top"><input type="checkbox" id="c2"><label for="c2"><span class="num">2</span><h3>Apple Developer ve Google Play kuruluş hesapları</h3></label></div>
+  <div class="tags"><span class="tag">Mobil uygulama</span></div>
+  <dl>
+    <dt>Ne istiyoruz</dt><dd>İki mağazada da şirket (kuruluş) türünde geliştirici hesabı ve bu hesaplarda bize yönetici/geliştirici rolü.</dd>
+    <dt>Neden</dt><dd>Uygulama mağaza sayfasında satıcı olarak şirket adı görünür. AB'de satış yapan uygulamalarda satıcının adres ve iletişim bilgisi de mağaza sayfasında yayınlanır.</dd>
+    <dt>Sizden beklenen</dt><dd><ul><li>Şirket e-postasıyla hesap açılması ve imza yetkilisinin kimlik/şirket doğrulamasını tamamlaması.</li><li>Yıllık ücretin şirket kartıyla ödenmesi.</li><li>Bizi kullanıcı olarak davet etmeniz.</li></ul></dd>
+    <dt>Süre ve maliyet</dt><dd>Apple: yılda 99 $. Google Play: tek seferlik 25 $. Doğrulama D-U-N-S geldikten sonra genellikle birkaç gün.</dd>
+  </dl>
+</article>
+
+<h2 class="sec">B. Shopify ve ürün verisi</h2>
+<p class="secnote">mixoutlet.de üzerinde çalışabilmemiz ve düzeltmelerin kaybolmaması için.</p>
+
+<article class="card" data-id="3">
+  <div class="top"><input type="checkbox" id="c3"><label for="c3"><span class="num">3</span><h3>Shopify erişimi, API anahtarları ve test mağazası</h3></label></div>
+  <div class="tags"><span class="tag now">Bu hafta</span><span class="tag">Pazarlama</span><span class="tag">Mobil uygulama</span></div>
+  <dl>
+    <dt>Ne istiyoruz</dt><dd><ul><li>Ürünler, tema, satış kanalları ve raporlar için iş ortağı (collaborator) erişimi.</li><li>Yönetim panelimiz için Admin API, mobil uygulama için Storefront API erişimi.</li><li>Değişiklikleri önce deneyebileceğimiz bir test mağazası kullanmamıza onay.</li></ul></dd>
+    <dt>Neden</dt><dd>Sorunlu ürün görsellerini ve başlıklarını düzeltmek, ürün akışını Google ve Meta'ya bağlamak, temayı iyileştirmek ve uygulamanın kataloğu Shopify'dan okuması için. Canlı mağazada deneme yapmak istemiyoruz.</dd>
+    <dt>Sizden beklenen</dt><dd>Göndereceğimiz iş ortağı erişim talebini onaylamanız (mağaza ayarlarındaki iş ortağı talep kodu gerekebilir). Toplu ürün değişiklikleri ve tema yayını yine sizin onayınızla yapılır.</dd>
+    <dt>Süre ve maliyet</dt><dd>Aynı gün yapılabilir; ek ücret yok. Mevcut Shopify planınız değişmez.</dd>
+  </dl>
+</article>
+
+<article class="card" data-id="6">
+  <div class="top"><input type="checkbox" id="c6"><label for="c6"><span class="num">4</span><h3>Karar: ürün düzeltmeleri JTL-Wawi'de mi, Shopify'da mı yapılacak?</h3></label></div>
+  <div class="tags"><span class="tag ask">Karar</span><span class="tag">Pazarlama</span></div>
+  <dl>
+    <dt>Ne istiyoruz</dt><dd>Ürün başlığı, fotoğraf ve fiyat düzeltmelerinin hangi sistemde yapılması gerektiğinin yanıtı ve gerekiyorsa o sisteme erişim.</dd>
+    <dt>Neden</dt><dd>Ürün verisinin kaynağı JTL-Wawi görünüyor. Düzeltmeyi Shopify'da yaparsak bir sonraki eşitlemede ezilme riski var; yaptığımız iş kaybolabilir.</dd>
+    <dt>Sizden beklenen</dt><dd>Eşitlemeyi yöneten kişiyle kısa bir görüşme: hangi alanlar JTL'den Shopify'a yazılıyor, hangi sıklıkla.</dd>
+    <dt>Süre</dt><dd>Tek toplantı.</dd>
+  </dl>
+</article>
+
+<h2 class="sec">C. Ölçüm ve reklam</h2>
+<p class="secnote">Hesapların sahibi siz olursunuz; reklam harcaması doğrudan sizin kartınızdan çıkar.</p>
+
+<article class="card" data-id="4">
+  <div class="top"><input type="checkbox" id="c4"><label for="c4"><span class="num">5</span><h3>Google hesapları: Search Console, GA4, Merchant Center, Google Ads</h3></label></div>
+  <div class="tags"><span class="tag">Pazarlama</span></div>
+  <dl>
+    <dt>Ne istiyoruz</dt><dd>Dört hesapta da kullanıcı erişimi. Hesap yoksa şirket Google hesabıyla birlikte açarız.</dd>
+    <dt>Neden</dt><dd><ul><li>Search Console: sitenin Google'da gerçekte nasıl göründüğünü ancak buradan görebiliriz.</li><li>GA4: ziyaret ve satış ölçümü.</li><li>Merchant Center: ürünlerin Google Alışveriş'te ücretsiz ve ücretli listelenmesi.</li><li>Google Ads: ilk reklam testi.</li></ul></dd>
+    <dt>Sizden beklenen</dt><dd>Var olan hesapların kimin adına açık olduğunu söylemeniz ve bizi kullanıcı olarak eklemeniz. Şu an reklam veriyorsanız bunu da bilmemiz gerekiyor.</dd>
+    <dt>Süre ve maliyet</dt><dd>Hesaplar ücretsiz; erişim aynı gün verilebilir.</dd>
+  </dl>
+</article>
+
+<article class="card" data-id="5">
+  <div class="top"><input type="checkbox" id="c5"><label for="c5"><span class="num">6</span><h3>Meta Business, reklam hesabı, piksel, katalog ve Instagram hesabı</h3></label></div>
+  <div class="tags"><span class="tag">Pazarlama</span><span class="tag">Instagram</span></div>
+  <dl>
+    <dt>Ne istiyoruz</dt><dd><ul><li>İşletme doğrulaması tamamlanmış bir Meta Business portföyü.</li><li>Reklam hesabı, piksel ve ürün kataloğu üzerinde yetki.</li><li>Bir Facebook Sayfasına bağlı Instagram profesyonel (işletme) hesabı.</li></ul></dd>
+    <dt>Neden</dt><dd>Instagram hesabının tam yönetimi (gönderi, yorum, mesaj, istatistik) ve katalog reklamları yalnızca doğrulanmış bir işletme üzerinden yapılabiliyor. Meta, bu yetkileri vermeden önce uygulamamızı da inceliyor.</dd>
+    <dt>Sizden beklenen</dt><dd>İşletme doğrulaması için şirket belgelerinin Meta'ya yüklenmesi; bizi portföye iş ortağı olarak eklemeniz; Instagram hesabının kişisel değil işletme hesabı olması.</dd>
+    <dt>Süre</dt><dd>İşletme doğrulaması ve uygulama incelemesi birkaç gün ile birkaç hafta sürebiliyor; erken başlatmakta fayda var.</dd>
+  </dl>
+</article>
+
+<article class="card" data-id="7">
+  <div class="top"><input type="checkbox" id="c7"><label for="c7"><span class="num">7</span><h3>Kategori bazında marj ve aylık reklam bütçesi tavanı</h3></label></div>
+  <div class="tags"><span class="tag ask">Bilgi</span><span class="tag">Pazarlama</span></div>
+  <dl>
+    <dt>Ne istiyoruz</dt><dd>En azından kategori düzeyinde brüt marj; reklam için ayda harcamaya razı olduğunuz üst sınır; son 3–6 ayın trafik ve satış özeti.</dd>
+    <dt>Neden</dt><dd>Marj bilinmeden hangi ürünün reklamının kâr bıraktığı hesaplanamaz. İlk testi yalnızca yüksek marjlı ürün grubunda yapmak istiyoruz.</dd>
+    <dt>Sizden beklenen</dt><dd>Bir tablo yeterli. Ürün bazında veri yoksa kategori ortalaması işimizi görür.</dd>
+    <dt>Referans</dt><dd>İlk Google Alışveriş testi için anlamlı alt sınır ayda yaklaşık 300–500 €. Bu rakam sektör kıyaslarına dayanır, sonuç garantisi değildir.</dd>
+  </dl>
+</article>
+
+<h2 class="sec">D. Müşteri iletişimi ve hukuk</h2>
+<p class="secnote">Yapay zekâ asistanının ve uygulamanın Almanya'daki kurallara uygun çalışması için.</p>
+
+<article class="card" data-id="8">
+  <div class="top"><input type="checkbox" id="c8"><label for="c8"><span class="num">8</span><h3>Müşteri hizmetlerinde devralacak kişi ve mesai kuralı</h3></label></div>
+  <div class="tags"><span class="tag ask">Karar</span><span class="tag">Instagram</span></div>
+  <dl>
+    <dt>Ne istiyoruz</dt><dd>Instagram'da sipariş, iade ve şikâyet içeren mesajların devredileceği bir kişi ya da ekip adresi; mesai saatleri ve mesai dışında ne yapılacağı.</dd>
+    <dt>Neden</dt><dd>Asistan gönderi hazırlar, genel soruları yanıtlar; ama para, iade ve şikâyet konularında karar vermez, insana devreder. Devredeceği biri olmalı.</dd>
+    <dt>Sizden beklenen</dt><dd>Bir sorumlu adı, bildirimin gideceği kanal (e-posta, panel) ve yanıt süresi hedefi.</dd>
+  </dl>
+</article>
+
+<article class="card" data-id="9">
+  <div class="top"><input type="checkbox" id="c9"><label for="c9"><span class="num">9</span><h3>Avukat teyidi ve yasal metinler</h3></label></div>
+  <div class="tags"><span class="tag">Hukuk</span></div>
+  <dl>
+    <dt>Ne istiyoruz</dt><dd>Aşağıdaki dört konuda avukatınızın yazılı görüşü ve güncel yasal metinler (Impressum, AGB, Widerruf, Datenschutz).</dd>
+    <dt>Konular</dt><dd><ul><li><b>Erişilebilirlik (BFSG):</b> tüketiciye satış yapan site ve uygulamalar için yükümlülükler.</li><li><b>Yapay zekâ bildirimi:</b> otomatik yanıt verilen müşteriye bunun bildirilmesi.</li><li><b>Fiyat kuralı (PAngV §11):</b> indirimde son 30 günün en düşük fiyatının gösterilmesi.</li><li><b>Bülten ve bildirim izni:</b> e-postada çift onay, uygulama bildirimlerinde pazarlama izni.</li></ul></dd>
+    <dt>Neden</dt><dd>Bu konularda teknik tarafı biz kurarız, ama hukuki sorumluluk satıcıdadır. Almanya'da ihtar (Abmahnung) riski yüksek; yayından önce netleşmeli.</dd>
+    <dt>Sizden beklenen</dt><dd>Avukatınıza bu dört başlığı iletmeniz; biz teknik açıklamayı hazırlarız.</dd>
+  </dl>
+</article>
+
+<article class="card" data-id="10">
+  <div class="top"><input type="checkbox" id="c10"><label for="c10"><span class="num">10</span><h3>Marka tescil durumu ve veri işleme sözleşmesi</h3></label></div>
+  <div class="tags"><span class="tag">Hukuk</span></div>
+  <dl>
+    <dt>Ne istiyoruz</dt><dd><ul><li>"MixOutlet" adının tescilli olup olmadığı ve kimin adına olduğu.</li><li>Aramızda bir veri işleme sözleşmesi (AVV).</li></ul></dd>
+    <dt>Neden</dt><dd>Uygulama mağazaları ve reklam platformları marka sahipliğini sorabiliyor. Sipariş ve müşteri verisine eriştiğimiz için veri koruma mevzuatı aramızda yazılı sözleşme istiyor.</dd>
+    <dt>Sizden beklenen</dt><dd>Tescil belgesinin bir kopyası; AVV için standart bir metin önerebiliriz, avukatınız gözden geçirir.</dd>
+  </dl>
+</article>
+
+<h2 class="sec">E. Kapsam</h2>
+<p class="secnote">İşin sınırını ve fiyat politikasını belirleyen iki soru.</p>
+
+<article class="card" data-id="11">
+  <div class="top"><input type="checkbox" id="c11"><label for="c11"><span class="num">11</span><h3>Öteki mağazalar ve uygulamaya özel indirim</h3></label></div>
+  <div class="tags"><span class="tag ask">Karar</span></div>
+  <dl>
+    <dt>Sorular</dt><dd><ul><li>Çalışma yalnızca mixoutlet.de için mi, yoksa grubun öteki mağazaları da (LadyToner.de, Parfymonline.de, Parfumverkoop.nl) kapsamda mı?</li><li>Uygulamada ya da kendi sitenizde pazaryerlerinden (eBay, Kaufland, Amazon, OTTO, METRO) daha düşük fiyat verebilir miyiz, yoksa fiyat eşitliği mi istiyorsunuz?</li></ul></dd>
+    <dt>Neden</dt><dd>İlki işin büyüklüğünü ve hesap yapısını değiştirir. İkincisi, komisyonsuz kendi kanalınızı büyütmek için elimizdeki en güçlü araç; ama pazaryeri sözleşmeleriniz buna izin vermiyor olabilir.</dd>
+  </dl>
+</article>
+
+<h2 class="sec">F. WawiERP pilotu</h2>
+<p class="secnote">İstanbul deposuyla başlayacak pilotun girdileri.</p>
+
+<article class="card" data-id="12">
+  <div class="top"><input type="checkbox" id="c12"><label for="c12"><span class="num">12</span><h3>Eski sistemin kaynak kodu, veritabanı şeması ve pazaryeri erişimleri</h3></label></div>
+  <div class="tags"><span class="tag">WawiERP</span></div>
+  <dl>
+    <dt>Ne istiyoruz</dt><dd><ul><li>Mevcut sistemin kaynak kodu ve veritabanı şeması (veri değil, yapı).</li><li>Panelde okuma yetkili bir kullanıcı.</li><li>Trendyol, N11 ve Ozon satıcı hesaplarının API erişimleri.</li></ul></dd>
+    <dt>Neden</dt><dd>Yeni sistem sıfırdan yazılıyor; iş kuralları eski koddan okunarak aktarılacak. Pilot bu üç pazaryeriyle ve iki şirketle başlıyor.</dd>
+    <dt>Sizden beklenen</dt><dd>Kodun ve şemanın güvenli bir yolla paylaşılması; pazaryeri panellerinden API anahtarı üretilmesi. Eski sistem, yenisi hazır olana kadar çalışmaya devam eder; bir kanala aynı anda yalnız bir sistem yazar.</dd>
+  </dl>
+</article>
+
+<h2 class="sec">G. Birlikte açacağımız hesaplar</h2>
+<p class="secnote">Kurulumu biz yaparız; hesabın sahibi ve fatura muhatabı Lady Empire GmbH olur. Sizden gereken: şirket e-postası, ödeme kartı ve onay.</p>
+
+<article class="card" data-id="13">
+  <div class="top"><input type="checkbox" id="c13"><label for="c13"><span class="num">13</span><h3>Şirket e-postası, GitHub organizasyonu ve Claude Console</h3></label></div>
+  <div class="tags"><span class="tag now">Bu hafta</span><span class="tag">Altyapı</span></div>
+  <dl>
+    <dt>Ne açılacak</dt><dd><ul><li>Şirket alan adında bize bir e-posta adresi ve hesap sahipliği için ortak bir grup adresi.</li><li>Kaynak kodun duracağı GitHub organizasyonu.</li><li>Panel asistanının kullandığı yapay zekâ servisi için Claude Console organizasyonu.</li></ul></dd>
+    <dt>Neden</dt><dd>Kod ve hesaplar kişiye değil şirkete ait olmalı. Şu an kod geçici olarak geliştiricinin hesabında duruyor; organizasyon açılınca oraya taşınır.</dd>
+    <dt>Maliyet</dt><dd>GitHub: küçük ekipler için ücretsiz plan yeterli. Yapay zekâ servisi kullanıma göre ücretlenir; harcama üst sınırı tanımlanır.</dd>
+  </dl>
+</article>
+
+<article class="card" data-id="14">
+  <div class="top"><input type="checkbox" id="c14"><label for="c14"><span class="num">14</span><h3>AWS (Frankfurt), bütçe alarmı, Cloudflare ve Sentry</h3></label></div>
+  <div class="tags"><span class="tag">Altyapı</span><span class="tag">WawiERP</span></div>
+  <dl>
+    <dt>Ne açılacak</dt><dd><ul><li>AWS'de şirket hesabı; veri Frankfurt bölgesinde, yani AB içinde kalır.</li><li>Harcama belirlenen tutarı aşarsa uyaran bütçe alarmı.</li><li>Alan adı yönetimi ve koruma için Cloudflare.</li><li>Hata takibi için Sentry.</li></ul></dd>
+    <dt>Neden</dt><dd>WawiERP'nin çalışacağı sunucu, veritabanı ve yedekleme altyapısı. Veritabanı yedeği ve geri dönüş bu hesap üzerinden otomatik alınır.</dd>
+    <dt>Maliyet</dt><dd>Pilot döneminde ayda yaklaşık 160–360 $; kesin tutar kurulumda sağlayıcıların güncel fiyatlarıyla netleşir.</dd>
+  </dl>
+</article>
+
+<article class="card" data-id="15">
+  <div class="top"><input type="checkbox" id="c15"><label for="c15"><span class="num">15</span><h3>Expo, Shopify Partners ve Meta geliştirici uygulaması</h3></label></div>
+  <div class="tags"><span class="tag">Mobil uygulama</span><span class="tag">Instagram</span></div>
+  <dl>
+    <dt>Ne açılacak</dt><dd><ul><li>Expo organizasyonu: uygulamanın iOS ve Android sürümlerini derleyip mağazalara gönderen servis.</li><li>Shopify Partners hesabı: iş ortağı erişimi ve test mağazası için.</li><li>Meta geliştirici uygulaması: Instagram yönetimi için gereken izinlerin başvurusu.</li></ul></dd>
+    <dt>Neden</dt><dd>Üçü de geliştirme tarafının araçları; kalem 2, 3 ve 6'daki hesaplara bağlanarak çalışırlar.</dd>
+    <dt>Sizden beklenen</dt><dd>Meta uygulama incelemesinde şirket bilgilerinin doğrulanması; gerisini biz kurarız.</dd>
+  </dl>
+</article>
+
+<h2 class="sec">H. Toplantıda yanıtını almak istediğimiz sorular</h2>
+<p class="secnote">Bunlar erişim ya da hesap değil, bilgi. Yanıtlar pazarlama planını ve bütçe hesabını doğrudan değiştiriyor. Bazıları yukarıdaki kalemlerle bağlantılı; ilgili kalem parantez içinde.</p>
+
+<article class="card q" data-id="q1"><div class="top"><input type="checkbox" id="q1"><label for="q1"><span class="num">S1</span><h3>Shopify planınız hangisi: Basic, Grow, Advanced, Plus?</h3></label></div>
+<dl><dt>Neden soruyoruz</dt><dd>Plan, kullanabileceğimiz özellikleri ve ürün sayısı sınırını belirliyor. Katalog 45 bin ürüne yakın; büyüme planlanıyorsa sınırı önceden bilmeliyiz.</dd></dl></article>
+
+<article class="card q" data-id="q2"><div class="top"><input type="checkbox" id="q2"><label for="q2"><span class="num">S2</span><h3>Bize Shopify'da hangi yetkilerle erişim verebilirsiniz?</h3></label></div>
+<dl><dt>Neden soruyoruz</dt><dd>Ürünler, tema, satış kanalları ve raporlar ayrı yetkilerdir. Verilmeyen alanlarda işi sizin ekibiniz yapar, biz öneri ve dosya teslim ederiz; iş bölümü buna göre kurulur. (Kalem 3)</dd></dl></article>
+
+<article class="card q" data-id="q3"><div class="top"><input type="checkbox" id="q3"><label for="q3"><span class="num">S3</span><h3>Google Merchant Center, Google Ads, Meta Business ve Search Console hesaplarınız var mı, kimin adına açık? Şu an reklam veriyor musunuz?</h3></label></div>
+<dl><dt>Neden soruyoruz</dt><dd>Var olan hesabı yeniden açmak yerine onu kullanırız; geçmiş veri korunur. Süren bir reklam varsa onunla çakışmamalıyız. (Kalem 5 ve 6)</dd></dl></article>
+
+<article class="card q" data-id="q4"><div class="top"><input type="checkbox" id="q4"><label for="q4"><span class="num">S4</span><h3>mixoutlet.de'de hangi ülkelere satış açık? Pazarlama yalnız Almanya için mi?</h3></label></div>
+<dl><dt>Neden soruyoruz</dt><dd>Reklam hedeflemesi, kargo bilgisi ve ürün akışı ülkeye göre kurulur. Avusturya ya da Hollanda da hedefse baştan planlanmalı.</dd></dl></article>
+
+<article class="card q" data-id="q5"><div class="top"><input type="checkbox" id="q5"><label for="q5"><span class="num">S5</span><h3>Başlık, fotoğraf ve fiyat düzeltmelerini nerede yapmalıyız: JTL-Wawi'de mi, WawiERP panelinde mi, Shopify'da mı? Shopify'da yapılan değişiklik bir sonraki eşitlemede eziliyor mu?</h3></label></div>
+<dl><dt>Neden soruyoruz</dt><dd>Yanlış sistemde yapılan düzeltme bir sonraki eşitlemede silinir. 882 sorunlu ürünün düzeltmesini nereye yazacağımız bu yanıta bağlı. (Kalem 4)</dd></dl></article>
+
+<article class="card q" data-id="q6"><div class="top"><input type="checkbox" id="q6"><label for="q6"><span class="num">S6</span><h3>Kategori ya da ürün bazında brüt marj nedir?</h3></label></div>
+<dl><dt>Neden soruyoruz</dt><dd>WawiERP'deki kâr/zarar kutusu maliyet verisi beklediğini söylüyor; marjı oradan okuyamıyoruz. Marj olmadan hangi reklamın kâr bıraktığını hesaplayamayız. (Kalem 7)</dd></dl></article>
+
+<article class="card q" data-id="q7"><div class="top"><input type="checkbox" id="q7"><label for="q7"><span class="num">S7</span><h3>mixoutlet.de fiyatı pazaryerlerinden düşük olabilir mi, yoksa fiyat eşitliği mi istiyorsunuz?</h3></label></div>
+<dl><dt>Neden soruyoruz</dt><dd>Aynı ürün pazaryerlerinde de satılıyor. Kendi sitenizde komisyon ödemediğiniz için daha düşük fiyat verebilmek, müşteriyi oraya çekmenin en doğrudan yolu. (Kalem 11)</dd></dl></article>
+
+<article class="card q" data-id="q8"><div class="top"><input type="checkbox" id="q8"><label for="q8"><span class="num">S8</span><h3>mixoutlet.de'ye trafik nereden geliyor (arama, doğrudan, reklam)? Aylık ziyaretçi sayısı nedir?</h3></label></div>
+<dl><dt>Neden soruyoruz</dt><dd>Bugünkü durumu bilmeden iyileşmeyi ölçemeyiz. Trafiğin kaynağı, önce hangi kanala yatırım yapacağımızı belirliyor.</dd></dl></article>
+
+<article class="card q" data-id="q9"><div class="top"><input type="checkbox" id="q9"><label for="q9"><span class="num">S9</span><h3>Reklam için aylık bütçe tavanınız nedir?</h3></label></div>
+<dl><dt>Neden soruyoruz</dt><dd>Küçük bütçeyle yalnızca tek kanalı deneyebiliriz; büyük bütçede iki-üç kanal birlikte açılır. Planı tavana göre kurarız. (Kalem 7)</dd></dl></article>
+
+<article class="card q" data-id="q10"><div class="top"><input type="checkbox" id="q10"><label for="q10"><span class="num">S10</span><h3>Temayı kim yaptı, bakımını kim yapıyor? Değişiklik onay süreciniz nedir?</h3></label></div>
+<dl><dt>Neden soruyoruz</dt><dd>Mağaza özel bir tema kullanıyor. Başka bir ajans bakıyorsa değişiklikleri onlarla eşgüdümlü yapmamız gerekir; aksi halde birbirimizin işini ezeriz.</dd></dl></article>
+
+<article class="card q" data-id="q11"><div class="top"><input type="checkbox" id="q11"><label for="q11"><span class="num">S11</span><h3>Yasal metinleri (Impressum, AGB, Widerruf, Datenschutz) kim hazırladı, güncel mi?</h3></label></div>
+<dl><dt>Neden soruyoruz</dt><dd>Reklam platformları ve uygulama mağazaları bu sayfalara bakıyor. Ölçüm ve bülten eklendiğinde gizlilik metninin de güncellenmesi gerekecek. (Kalem 9)</dd></dl></article>
+
+<article class="card q" data-id="q12"><div class="top"><input type="checkbox" id="q12"><label for="q12"><span class="num">S12</span><h3>İade oranınız nedir, en çok hangi kategoriler iade ediliyor?</h3></label></div>
+<dl><dt>Neden soruyoruz</dt><dd>Çok iade edilen kategoride reklam, satış gibi görünüp zarar yazabilir. Bu kategorileri reklamdan çıkarır ya da ürün sayfasını düzeltiriz.</dd></dl></article>
+
+<article class="card q" data-id="q13"><div class="top"><input type="checkbox" id="q13"><label for="q13"><span class="num">S13</span><h3>Pazarlama yalnız mixoutlet.de için mi, yoksa grubun öteki mağazaları da (LadyToner.de, Parfymonline.de, Parfumverkoop.nl) kapsamda mı?</h3></label></div>
+<dl><dt>Neden soruyoruz</dt><dd>Kapsam, hesap yapısını ve iş yükünü değiştirir. Öteki mağazalar sonradan eklenecekse hesapları baştan buna uygun açarız. (Kalem 11)</dd></dl></article>
+
+<footer>Bu sayfa toplantı hazırlığı içindir; fiyat teklifi ya da hukuki görüş değildir. Süre ve ücret bilgileri yaklaşık değerlerdir, ilgili sağlayıcının güncel sayfasından kurulum sırasında doğrulanır.</footer>
+</div>
+<script>
+(function(){
+  var K='talep-v1',st={};try{st=JSON.parse(localStorage.getItem(K)||'{}')||{}}catch(e){}
+  var cards=[].slice.call(document.querySelectorAll('.card'));
+  function paint(){var n=0;cards.forEach(function(c){var b=c.querySelector('input'),on=!!st[c.dataset.id];b.checked=on;c.classList.toggle('done',on);if(on)n++});
+    document.getElementById('pb').style.width=(n/cards.length*100)+'%';document.getElementById('pc').textContent=n+' / '+cards.length+' tamam'}
+  function save(){try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}}
+  cards.forEach(function(c){c.querySelector('input').addEventListener('change',function(e){st[c.dataset.id]=e.target.checked;save();paint()})});
+  document.getElementById('rs').addEventListener('click',function(){st={};save();paint()});
+  paint();
+})();
+</script>
+</body>
+</html>
