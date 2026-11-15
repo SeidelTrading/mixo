@@ -1,0 +1,57 @@
+[
+ {"id": 15426875719838, "status": "bulunamadi", "offers": [], "note": "75 ml teyidi yok. Sephora.de 84,95 EUR kaydi 1699 EUR/l oldugu icin 50 ml gorunuyor; tendance-parfums 74,50 EUR kaydinda boy belirsiz. Ikinci arama yapilamadi (arama limiti)."},
+ {"id": 15426248573086, "status": "bulunamadi", "offers": [], "note": "Basliikta ml yok; kural geregi bulunamadi. Sonuclarda IVORY EdT icin Almanya fiyati teyit edilemedi."},
+ {"id": 15442890064030, "status": "bulundu", "offers": [
+   {"shop": "maisonparfum.com", "country": "EU", "price": 135.00, "url": "https://www.maisonparfum.com/en/perfumes/4638-arabians-eau-de-parfum-100-ml-montale-3760260455770.html", "matched_title": "Arabians Eau de Parfum 100 ml Montale"},
+   {"shop": "4doutfitters.com", "country": "EU", "price": 140.00, "url": "https://www.4doutfitters.com/en/products/arabians-eau-de-parfum-100ml-montale-paris", "matched_title": "Arabians Eau de Parfum 100ml Montale Paris"},
+   {"shop": "parfuma.com", "country": "EU", "price": 145.00, "url": "https://www.parfuma.com/en/montale-arabians-eau-de-parfum-23-arabiansedp", "matched_title": "Arabians Eau de Parfum"}
+  ], "note": "Fiyatlar arama ozetinden alindi; sayfalar acilmadi. Magaza ulkeleri teyit edilmedi (EU isaretlendi). Almanya teklifi bulunamadi."},
+ {"id": 15388000977054, "status": "bulundu", "offers": [
+   {"shop": "ebay.de", "country": "DE", "price": 92.29, "url": "https://www.ebay.de/p/16038026061", "matched_title": "MONTALE Arabians Tonka Unisex Eau de Parfum - 100ml"},
+   {"shop": "ebay.de", "country": "DE", "price": 95.00, "url": "https://www.ebay.de/itm/177229627024", "matched_title": "MONTALE Arabians Tonka Unisex Eau de Parfum - 100ml"},
+   {"shop": "parfuma.com", "country": "EU", "price": 145.00, "url": "https://www.parfuma.com/en/montale-arabians-tonka-eau-de-parfum-23-arabianstonkaedp", "matched_title": "Arabians Tonka Eau de Parfum"}
+  ], "note": "eBay fiyatlari arama ozetinden; hangi fiyatin hangi URL'ye ait oldugu tam dogrulanamadi. Ikinci el degil denildi ama satici teyit edilmedi."},
+ {"id": 15387972272286, "status": "bulundu", "offers": [
+   {"shop": "boots.ie", "country": "IE", "price": 120.00, "url": "https://boots.ie/mugler-alien-hypersense-eau-de-parfum-90ml-10339508", "matched_title": "MUGLER Alien Hypersense Eau de Parfum 90ml"},
+   {"shop": "lookfantastic.de", "country": "DE", "price": 124.14, "url": "https://www.lookfantastic.de/p/mugler-alien-hypersense-eau-de-parfum-90ml/14991046/", "matched_title": "MUGLER Alien Hypersense Eau de Parfum 90ml"},
+   {"shop": "shop.frankfurt-airport.com", "country": "DE", "price": 149.99, "url": "https://shop.frankfurt-airport.com/en-US/product/mugler-alien-hypersense-eau-de-parfum-90-ml_017f9eba4cd1c06f", "matched_title": "Mugler Alien Hypersense Eau de Parfum 90 ml"}
+  ], "note": "lookfantastic.de 124,14 EUR indirimli satis fiyati (liste 146,05 EUR). Kupon yok. Ikinci el (eBay 91,19 nachfuellbar) alinmadi."},
+ {"id": 15387979677854, "status": "bulundu", "offers": [
+   {"shop": "theperfumeshop.com", "country": "IE", "price": 56.00, "url": "https://www.theperfumeshop.com/ie/mugler/angel/eau-de-toilette-spray/p/15800EDTJU", "matched_title": "Mugler Angel Eau de Toilette 50ml"},
+   {"shop": "shop.frankfurt-airport.com", "country": "DE", "price": 74.99, "url": "https://shop.frankfurt-airport.com/en-US/product/thierry-mugler-angel-eau-de-toilette-50-ml_79fc74da623bd010", "matched_title": "Thierry Mugler Angel Eau de Toilette 50 ml"}
+  ], "note": "theperfumeshop IE kaydinda indirim tutari fiyatla tutarsiz; dikkatle kontrol edilmeli. Preisvergleich'teki 44,48 EUR kaydi tutarsiz oldugu icin alinmadi."},
+ {"id": 15387978793118, "status": "bulunamadi", "offers": [], "note": "Angel Edition Passion sinirli/durdurulmus bir baski (2015). Bulunan Angel EdP 50 ml fiyatlari ayni urun degil, kullanilmadi. Ikinci arama yapilamadi (arama limiti)."},
+ {"id": 15444323926174, "status": "bulunamadi", "offers": [], "note": "Basliikta ml yok; kural geregi bulunamadi."},
+ {"id": 15387980562590, "status": "bulunamadi", "offers": [], "note": "90 ml icin EUR ve yeni urun teklifi teyit edilemedi: lookfantastic.co.uk GBP, perfumeforever USD (tukendi), eBay.de fiyatlari ikinci el olabilir, Faces EGP. Ikinci arama yapilamadi (arama limiti)."},
+ {"id": 15388026863774, "status": "bulunamadi", "offers": [], "note": "Basliikta ml yok; arama sonuclarinda SCENTLAB Creamy Almond bulunamadi."},
+ {"id": 15388027682974, "status": "bulunamadi", "offers": [], "note": "Basliikta ml yok. Aranmadi."},
+ {"id": 15388026077342, "status": "bulunamadi", "offers": [], "note": "Basliikta ml yok. Aranmadi."},
+ {"id": 15387976794270, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15387977875614, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15444324024478, "status": "bulunamadi", "offers": [], "note": "Basliikta ml yok. Aranmadi."},
+ {"id": 15387979808926, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15387976728734, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15387975712926, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15387971911838, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15387972993182, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15387974828190, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15442179850398, "status": "bulunamadi", "offers": [], "note": "Konsantrasyon belirsiz (Eau de Parfum mu, baska mi). WebSearch limiti dolunca aranmadi."},
+ {"id": 15442190762142, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15442032853150, "status": "bulunamadi", "offers": [], "note": "Basliikta ml yok. Aranmadi."},
+ {"id": 15442191450270, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15442033377438, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15387991015582, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15387989147806, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15387988230302, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15388018016414, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15429005017246, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15426237431966, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15426238972062, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15429016944798, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15429019271326, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15388035973278, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15426237726878, "status": "bulunamadi", "offers": [], "note": "Basliikta ml yok. Aranmadi."},
+ {"id": 15444324188318, "status": "bulunamadi", "offers": [], "note": "Basliikta ml yok. Aranmadi."},
+ {"id": 15429090148510, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."},
+ {"id": 15429090476190, "status": "bulunamadi", "offers": [], "note": "WebSearch limiti dolunca aranmadi."}
+]

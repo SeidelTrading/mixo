@@ -1,0 +1,142 @@
+[
+ {"id": 15387991081118, "status": "bulunamadi", "offers": [], "note": "Notino FR'de 13,50 € görüldü ancak fiyat ile ürün URL'si arasındaki eşleşme net değil; tahmin edilmedi."},
+ {"id": 15387988492446, "status": "bulundu", "offers": [
+   {"shop": "Lyko", "country": "DE", "price": 39.50, "url": "https://lyko.com/de/french-avenue/french-avenue-liquid-brun-edp-m-100-ml", "matched_title": "French Avenue Liquid Brun EDP M 100 ml"},
+   {"shop": "bestprice.gr (Houseshop)", "country": "GR", "price": 27.16, "url": "https://www.bestprice.gr/item/2160244574/french-avenue-liquid-brun-eau-de-parfum-100ml.html", "matched_title": "French Avenue Liquid Brun Eau de Parfum 100ml"}
+ ], "note": "GR fiyatı karşılaştırma sitesinden, +2,99 € kargo. Liste fiyatı alındı."},
+ {"id": 15387986886814, "status": "bulundu", "offers": [
+   {"shop": "bestprice.gr", "country": "GR", "price": 28.00, "url": "https://www.bestprice.gr/item/2160322698/lattafa-her-confession-eau-de-parfum-100ml.html", "matched_title": "Lattafa Her Confession Eau de Parfum 100ml"}
+ ], "note": "Tek teklif; karşılaştırma sitesinin 'ab' fiyatı, +7 € kargo. Almanya teklifi bulunamadı."},
+ {"id": 15387985936542, "status": "bulunamadi", "offers": [], "note": "Sonuçlarda Euro fiyatı net eşleşmedi (eBay sonuçları karışık, 'Her' ile 'His' ayrımı belirsiz)."},
+ {"id": 15387978498206, "status": "bulundu", "offers": [
+   {"shop": "eBay (gewerblicher Verkäufer)", "country": "DE", "price": 21.89, "url": "https://www.ebay.de/itm/397111910467", "matched_title": "Vintage Radio Eau De Parfum 100 ML von Lattafa"},
+   {"shop": "aio.lv", "country": "LV", "price": 30.49, "url": "https://aio.lv/en/product--lattafa-6290360592909--11902696.md", "matched_title": "Lattafa Pride Vintage Radio EDP U 100 ml"}
+ ], "note": "eBay fiyatına 3,99 € kargo eklenir. Kaynaklar ürünü 'unisex' Lattafa Pride olarak veriyor; girdideki 'für Herren' ifadesi doğrulanmadı."},
+ {"id": 15387971813534, "status": "bulunamadi", "offers": [], "note": "Bulunan fiyatlar yalnız GBP/ZAR; Euro fiyatı yok. 80 ml boyutu doğrulandı."},
+ {"id": 15387971027102, "status": "bulundu", "offers": [
+   {"shop": "bestprice.gr", "country": "GR", "price": 27.24, "url": "https://www.bestprice.gr/item/2159303364/lattafa-eternal-oud-eau-de-parfum-100ml.html", "matched_title": "Lattafa Eternal Oud Eau de Parfum 100ml"},
+   {"shop": "oriental-style.de", "country": "DE", "price": 34.90, "url": "https://www.oriental-style.de/en/products/eternal-oud-lattafa-pride-perfume", "matched_title": "Eternal Oud Lattafa Pride"}
+ ], "note": "bestprice fiyatı karşılaştırma sitesinden, +3 € kargo. Oriental-style indirimli fiyat (normal 49,90 €)."},
+ {"id": 15387969552542, "status": "bulundu", "offers": [
+   {"shop": "dm.de", "country": "DE", "price": 29.95, "url": "https://www.dm.de/p/d/3061570/lattafa-eclaire-eau-de-parfum", "matched_title": "Lattafa Eclaire Eau de Parfum, 100 ml"},
+   {"shop": "Rossmann", "country": "DE", "price": 29.99, "url": "https://www.rossmann.de/de/pflege-und-duft-lattafa-eclaire-edp-100-ml/p/6290362340638", "matched_title": "Lattafa Eclaire EDP 100 ml"},
+   {"shop": "Shop Apotheke", "country": "DE", "price": 32.75, "url": "https://www.shop-apotheke.com/beauty/upmX7G9YH/eclaire-eau-de-parfum.htm", "matched_title": "Eclaire Eau de Parfum"}
+ ], "note": "Üç Alman mağazası; Shop Apotheke'de ürün 'ml' olarak başlıkta yok, boyut teyit edilmedi."},
+ {"id": 15387968635038, "status": "bulundu", "offers": [
+   {"shop": "Rossmann", "country": "DE", "price": 29.99, "url": "https://www.rossmann.de/de/pflege-und-duft-lattafa-eclaire-banofii-edp-100ml/p/6290362349112", "matched_title": "Lattafa Eclaire Banofii EDP 100ml"}
+ ], "note": "Fiyat sayfa fiyatı değil, birim fiyat 299,90 €/L'den türetildi; satış sayfasında doğrudan kontrol edilmeli. Lyko DE 49,50 € stokta yok."},
+ {"id": 15387966668958, "status": "bulundu", "offers": [
+   {"shop": "Notino", "country": "FR", "price": 42.00, "url": "https://www.notino.fr/lattafa/teriaq-intense-eau-de-parfum-mixte/p-16277639/", "matched_title": "Lattafa Teriaq Intense Eau de Parfum Mixte"},
+   {"shop": "Shop Apotheke", "country": "DE", "price": 56.28, "url": "https://www.shop-apotheke.com/beauty/upm929W3K/lattafa-teriaq-intense-parfuemwasser.htm", "matched_title": "Lattafa Teriaq Intense Parfümwasser"}
+ ], "note": "Notino'da süreli 35,50 € promosyon da görüldü; liste fiyatı alındı. 100 ml teyidi kaynaklarda net değil."},
+ {"id": 15387965063326, "status": "bulundu", "offers": [
+   {"shop": "Shop Apotheke (3. parti satıcı)", "country": "DE", "price": 29.21, "url": "https://www.shop-apotheke.com/beauty/upmHCCFFH/teriaq-eau-de-parfum.htm", "matched_title": "Teriaq Eau de Parfum"}
+ ], "note": "Tek teklif. Boozyshop 25,95 € görüldü ancak ml ve ülke teyit edilemedi, dahil edilmedi."},
+ {"id": 15387964276894, "status": "bulundu", "offers": [
+   {"shop": "oriental-style.de", "country": "DE", "price": 29.90, "url": "https://www.oriental-style.de/en/products/lattafa-ajwad-eau-de-parfum-spray-60ml", "matched_title": "Lattafa Ajwad Eau de Parfum Spray 60ml"},
+   {"shop": "Shop Apotheke", "country": "DE", "price": 36.72, "url": "https://www.shop-apotheke.com/beauty/upmWURYWW/lattafa-ajwad-eau-de-parfum.htm", "matched_title": "Lattafa Ajwad Eau de Parfum"}
+ ], "note": "Oriental-style indirimli fiyat (normal 34,90 €). Notino FR 19,80 € promosyon görüldü, ürün adı 'Ajward' yazımıyla farklı olduğu için dahil edilmedi."},
+ {"id": 15387962704030, "status": "bulunamadi", "offers": [], "note": "Girdi başlığı 'Yara Asad' (Yara ve Asad ayrı ürünler). Sonuçlarda yalnız Yara 100 ml veya Asad fiyatları var, ikisi aynı ürün değil; eşleşme yapılmadı."},
+ {"id": 15387962015902, "status": "bulundu", "offers": [
+   {"shop": "Rossmann", "country": "DE", "price": 19.19, "url": "https://www.rossmann.de/de/pflege-und-duft-lattafa-yara-candy-edp-100-ml/p/6290360599168", "matched_title": "Lattafa Yara Candy EDP 100 ml"}
+ ], "note": "Tek teklif, kargo ayrı. Boozyshop 24,95 € ve Shop Apotheke AT 36,46 € görüldü ancak ml teyidi yok, dahil edilmedi."},
+ {"id": 15387960508574, "status": "bulundu", "offers": [
+   {"shop": "easycosmetic.de", "country": "DE", "price": 20.99, "url": "https://www.easycosmetic.de/lattafa/collection-badee-al-oud/lattafa-collection-badee-al-oud-honor-glory-eau-de-parfum-spray.aspx", "matched_title": "Lattafa Collection Bade'e Al Oud Honor & Glory Eau de Parfum Spray (100 ml)"},
+   {"shop": "Rossmann", "country": "DE", "price": 29.99, "url": "https://www.rossmann.de/de/pflege-und-duft-lattafa-badee-al-oud-honor-und-glory-edp-100-ml/p/6290360593135", "matched_title": "Lattafa Badee Al Oud Honor und Glory EDP 100 ml"}
+ ], "note": "Rossmann fiyatı birim fiyattan türetildi; sayfada teyit edilmeli. Sayfa Liefertermin Juli 2026 gösteriyor, güncel olmayabilir."},
+ {"id": 15387958640798, "status": "bulundu", "offers": [
+   {"shop": "eBay (Verkäufer)", "country": "DE", "price": 27.49, "url": "https://www.ebay.de/p/18065632492", "matched_title": "Herrenduft Lattafa Badee Al Oud Sublime Eau de Parfum 100ml"},
+   {"shop": "farma2go.com", "country": "DE", "price": 27.58, "url": "https://farma2go.com/de/products/lattafa-badee-al-oud-sublime-eau-de-parfum-100ml", "matched_title": "Lattafa Badee Al Oud Sublime Eau de Parfum 100ml"},
+   {"shop": "Kruidvat", "country": "NL", "price": 29.99, "url": "https://www.kruidvat.nl/lattafa-badee-al-oud-sublime-100-ml/p/mp-00025904", "matched_title": "Lattafa Badee Al Oud Sublime 100 ml"}
+ ], "note": "eBay satıcı tipi tam teyit edilmedi. Kaynaklar birbirinden farklı tarihli."},
+ {"id": 15387957821598, "status": "bulunamadi", "offers": [], "note": "Euro fiyatı net değil; arabicparfums.com 27,99 € görüldü ancak para birimi doğrulanamadı. Anabis fiyatları stokta yok ya da USD."},
+ {"id": 15442123620510, "status": "bulundu", "offers": [
+   {"shop": "glam4u.gr", "country": "GR", "price": 75.02, "url": "https://www.glam4u.gr/en/perfumes/women-parfume/887167705975-estee-lauder-bronze-goddess-nuit-edp-50ml.html", "matched_title": "Estee Lauder Bronze Goddess Nuit EDP 50ml"},
+   {"shop": "lookfantastic.at", "country": "AT", "price": 78.25, "url": "https://www.lookfantastic.at/p/estee-lauder-bronze-goddess-nuit-eau-de-parfum-50ml/15012158/", "matched_title": "Estée Lauder Bronze Goddess Nuit Eau de Parfum 50ml"},
+   {"shop": "Marks & Spencer", "country": "IE", "price": 84.00, "url": "https://www.marksandspencer.com/ie/bronze-goddess-nuit-eau-de-parfum-50ml/p/hbp60683023", "matched_title": "Bronze Goddess Nuit Eau de Parfum 50ml"}
+ ], "note": "Lookfantastic AT'de UVP 80,50 €. Girdi fiyatı 68 €; Almanya'da teklif bulunamadı."},
+ {"id": 15426237431966, "status": "bulundu", "offers": [
+   {"shop": "Müller (discounto.de)", "country": "DE", "price": 84.95, "url": "https://www.discounto.de/Angebot/Prada-Luna-Rossa-Black-Eau-de-Parfum-Nachfuellbar-100-ml-9956458/", "matched_title": "Prada Luna Rossa Black Eau de Parfum Nachfüllbar, 100 ml"},
+   {"shop": "eBay (Verkäufer)", "country": "DE", "price": 90.75, "url": "https://www.ebay.de/p/20031011146", "matched_title": "PRADA Luna Rossa Schwarz Eau De Parfum für Herren - 100 ml"},
+   {"shop": "Notino", "country": "FR", "price": 111.00, "url": "https://www.notino.fr/prada/luna-rossa-black-eau-de-parfum-pour-homme/p-15748261/", "matched_title": "Prada Luna Rossa Black Eau de Parfum"}
+ ], "note": "Müller ürünü 'Nachfüllbar' olarak listeliyor; standart şişeyle aynı olup olmadığı teyit edilmedi. Notino'da 99,90 € kuponlu fiyat dahil edilmedi."},
+ {"id": 15442126504094, "status": "bulundu", "offers": [
+   {"shop": "Scentia", "country": "FR", "price": 78.50, "url": "https://scentia.fr/en/products/sous-le-pont-mirabeau-etat-libre-d-orange-eau-de-parfum-unisexe-50-ml", "matched_title": "Sous Le Pont Mirabeau Eau de Parfum Unisexe 50 ml"},
+   {"shop": "Notino", "country": "FR", "price": 88.70, "url": "https://www.notino.fr/etat-libre-dorange/sous-le-pont-mirabeau-eau-de-parfum-mixte/p-16275486/", "matched_title": "Etat Libre d'Orange Sous Le Pont Mirabeau Eau de Parfum Mixte"}
+ ], "note": "Notino'da 75,39 € kuponlu fiyat dahil edilmedi. Encapture ve Mazzolari teklifleri ülke teyit edilemediği için alınmadı."},
+ {"id": 15426356707486, "status": "bulundu", "offers": [
+   {"shop": "Shop Apotheke", "country": "DE", "price": 103.55, "url": "https://www.shop-apotheke.com/beauty/upm3YAYF2/versace-dylan-blush-pink-edp-nat-spray.htm", "matched_title": "Versace Dylan Blush Pink EDP Nat Spray"},
+   {"shop": "easycosmetic.at", "country": "AT", "price": 95.99, "url": "https://www.easycosmetic.at/versace/dylan-blush-pink/versace-dylan-blush-pink-edp-vapo.aspx", "matched_title": "Versace Dylan Blush Pink EDP Vapo"},
+   {"shop": "Sephora", "country": "ES", "price": 115.00, "url": "https://www.sephora.es/p/dylan-blush-pink---eau-de-parfum-P1000212169.html", "matched_title": "Dylan Blush Pink Eau de Parfum"}
+ ], "note": "Lookfantastic FR 103,96 € stokta yok, dahil edilmedi. Easycosmetic'te stok az."},
+ {"id": 15428876763294, "status": "bulunamadi", "offers": [], "note": "Girdi konsantrasyon belirtmiyor; 100 ml EdT bulunamadı, EDP ve EDP Intense ayrı ürünler, eşleşme yapılmadı."},
+ {"id": 15387981578398, "status": "bulunamadi", "offers": [], "note": "Olympéa 80 ml için kaynaklarda net EUR fiyat ve boyut teyidi yok (Shop Apotheke 94,82 - 97,50 € ürün/boyut eşleşmesi belirsiz)."},
+ {"id": 15463130497182, "status": "bulundu", "offers": [
+   {"shop": "Lookfantastic", "country": "NL", "price": 104.45, "url": "https://www.lookfantastic.nl/p/valentino-born-in-roma-ivory-uomo-eau-de-toilette-spray-100ml/16962126", "matched_title": "Valentino Born In Roma Ivory Uomo Eau de Toilette Spray 100ml"},
+   {"shop": "Sephora", "country": "FR", "price": 101.50, "url": "https://www.sephora.fr/p/born-in-roma-uomo-rendez-vous-ivory---eau-de-toilette--edition-limitee-P1000208598.html", "matched_title": "Born in Roma Uomo Rendez-Vous Ivory Eau de Toilette, édition limitée"},
+   {"shop": "The Perfume Shop", "country": "IE", "price": 110.00, "url": "https://www.theperfumeshop.com/ie/valentino/born-in-roma-uomo-rendez-vous-ivory/eau-de-toilette-spray/p/77130EDTJU", "matched_title": "Born in Roma Uomo Rendez-Vous Ivory Eau de Toilette Spray"}
+ ], "note": "Ürün sınırlı sayıda Ivory edisyonu. Standart Born in Roma Uomo EdT alınmadı."},
+ {"id": 15442132304030, "status": "bulundu", "offers": [
+   {"shop": "Druni", "country": "ES", "price": 74.95, "url": "https://www.druni.es/mk-homme-absolu-michael-kors-eau-parfum-hombre", "matched_title": "MK Homme Absolu Eau de Parfum"},
+   {"shop": "Notino", "country": "FR", "price": 75.50, "url": "https://www.notino.fr/michael-kors/pour-homme-absolu-eau-de-parfum-pour-homme/p-16346589/", "matched_title": "Michael Kors Pour Homme Absolu Eau de Parfum"},
+   {"shop": "Frankfurt Airport Shop", "country": "DE", "price": 99.99, "url": "https://shop.frankfurt-airport.com/de-DE/product/michael-kors-pour-homme-absolu-eau-de-parfum-100-ml_01626ae0240182bb", "matched_title": "Michael Kors Pour Homme Absolu Eau de Parfum 100 ml"}
+ ], "note": "Brown Thomas 59,50 € set fiyatı olduğu için dahil edilmedi."},
+ {"id": 15442112839838, "status": "bulunamadi", "offers": [], "note": "Terra Mia 50 ml için EUR fiyat yok (AUD, USD, GBP ve 100 ml Almanya fiyatı bulundu, 50 ml değil)."},
+ {"id": 15426238972062, "status": "bulundu", "offers": [
+   {"shop": "Notino", "country": "FR", "price": 83.60, "url": "https://www.notino.fr/prada/luna-rossa-carbon-eau-de-toilette-pour-homme/p-626109/", "matched_title": "Prada Luna Rossa Carbon Eau de Toilette Pour Homme"},
+   {"shop": "bol.com", "country": "NL", "price": 109.99, "url": "https://BOL.com/nl/nl/p/prada-luna-rossa-carbon-eau-de-toilette-spray-100-ml-for-men/9300000036614598/", "matched_title": "Prada Luna Rossa Carbon Eau De Toilette Spray 100 Ml For Men"}
+ ], "note": "Notino'da 75,24 € kuponlu fiyat dahil edilmedi. Lookfantastic DE 90,45 € promosyon URL'si eşleşmediği için alınmadı."},
+ {"id": 15442124374174, "status": "bulundu", "offers": [
+   {"shop": "Notino", "country": "FR", "price": 70.80, "url": "https://www.notino.fr/etat-libre-dorange/exit-the-king-eau-de-parfum-mixte/p-16129475/", "matched_title": "Etat Libre d'Orange Exit The King Eau de Parfum Mixte"},
+   {"shop": "Beautytheshop", "country": "IE", "price": 79.03, "url": "https://www.beautytheshop.com/ie/fragrance/ladies-fragrance/etat-libre-d-orange-exit-the-king-eau-de-parfum-spray-50ml-3", "matched_title": "Etat Libre D'Orange Exit The King Eau De Parfum Spray 50ml"}
+ ], "note": "Notino'da indirimli fiyat (liste 105 €). Galaxus CHF 75,90 ve Encapture 70 € ülke/para birimi teyit edilmediği için dahil edilmedi."},
+ {"id": 15387993637022, "status": "bulundu", "offers": [
+   {"shop": "eBay (ParfumEden, marketplace)", "country": "DE", "price": 54.95, "url": "https://www.ebay.de/p/21035409260", "matched_title": "Versace Crystal Noir Eau De Toilette Spray - 90ml"},
+   {"shop": "Shop Apotheke", "country": "DE", "price": 80.93, "url": "https://www.shop-apotheke.com/beauty/upmL9PGPU/versace-crystal-noir-e-d-t-nat-spray.htm", "matched_title": "Versace Crystal Noir E.d.T. Nat. Spray"}
+ ], "note": "eBay fiyatı marketplace satıcısı. Notino FR 79,50 € URL eşleşmesi net olmadığı için dahil edilmedi."},
+ {"id": 15442113462430, "status": "bulundu", "offers": [
+   {"shop": "eBay (Verkäufer, Neuware)", "country": "DE", "price": 76.99, "url": "https://www.ebay.de/p/20066424274", "matched_title": "Cartier Pasha de Cartier Édition Noire Eau De Toilette 100ml"},
+   {"shop": "Harrods", "country": "AT", "price": 140.00, "url": "https://harrods.com/en-at/p/cartier-pasha-de-cartier-edition-noire-eau-de-toilette-100ml-000000000007562021", "matched_title": "Pasha de Cartier Edition Noire Eau de Toilette (100ml)"}
+ ], "note": "Cartier resmi DE fiyatı bulunamadı. eBay satıcısı marketplace."},
+ {"id": 15442123194526, "status": "bulundu", "offers": [
+   {"shop": "Marks & Spencer", "country": "IE", "price": 64.00, "url": "https://www.marksandspencer.com/ie/beautiful-eau-de-parfum-30ml/p/hbp60645874", "matched_title": "Beautiful Eau de Parfum 30ml"}
+ ], "note": "Tek teklif. Almanya fiyatı bulunamadı; Perfume Shop IE 64 € görüldü ama boyut teyit edilmedi."},
+ {"id": 15430945276062, "status": "bulundu", "offers": [
+   {"shop": "Vanitystock", "country": "DE", "price": 125.21, "url": "https://vanitystock.com/en-de/products/gucci-flora-gorgeous-gardenia-eau-de-parfum-100-ml", "matched_title": "Gucci Flora Gorgeous Gardenia Eau De Parfum 100 ml"}
+ ], "note": "İndirimli fiyat (normal 166,95 €). eBay DE 112,90 € ve Fin karşılaştırma 80,54 € URL/satıcı eşleşmesi net olmadığı için dahil edilmedi."},
+ {"id": 15388039774366, "status": "bulundu", "offers": [
+   {"shop": "aio.lv", "country": "LV", "price": 100.99, "url": "https://aio.lv/en/product--gucci-8005610481005--11425047.md", "matched_title": "Perfume Eau de Parfum GUCCI Bloom 100 ml"},
+   {"shop": "Vanitystock", "country": "DE", "price": 128.79, "url": "https://vanitystock.com/en-de/products/gucci-bloom-eau-de-parfum-100-ml", "matched_title": "Gucci Bloom Eau de Parfum 100 ml"}
+ ], "note": "Vanitystock indirimli (normal 171,72 €). Bloom Parfum ve Intense ayrı ürün, dahil edilmedi."},
+ {"id": 15429098700958, "status": "bulunamadi", "offers": [], "note": "100 ml EDP bulunamadı; 90 ml ve diğer boyutlar var, 100 ml teyit edilemedi."},
+ {"id": 15426505638046, "status": "bulundu", "offers": [
+   {"shop": "Lyko", "country": "DE", "price": 92.50, "url": "https://lyko.com/de/dufte/herrenparfum/parfum/dolce-gabbana-devotion-pour-homme-parfum-100-ml", "matched_title": "Dolce Gabbana Devotion Pour Homme Parfum 100 ml"}
+ ], "note": "Tek teklif; konsantrasyon (Parfum) eşleşiyor. Lookfantastic EDP 79,35 € stokta yok, dahil edilmedi."},
+ {"id": 15442127093918, "status": "bulunamadi", "offers": [], "note": "Bu 50 ml boyutu için Euro fiyatı net değil (GBP, USD, SGD ve Notino stokta yok)."},
+ {"id": 15388037709982, "status": "bulundu", "offers": [
+   {"shop": "Shop Apotheke", "country": "DE", "price": 47.02, "url": "https://www.shop-apotheke.com/beauty/upm4APFU9/burberry-weekend-eau-de-parfum-spray.htm", "matched_title": "Burberry Weekend Eau de Parfum Spray"},
+   {"shop": "eBay (Verkäufer)", "country": "DE", "price": 36.50, "url": "https://www.ebay.de/p/18033825999", "matched_title": "Burberry Weekend Eau de Parfum für Damen - 100ml"}
+ ], "note": "eBay fiyatı marketplace satıcısı; eBay'deki diğer teklif 59,00 €."},
+ {"id": 15388035645598, "status": "bulundu", "offers": [
+   {"shop": "Shop Apotheke (AT)", "country": "AT", "price": 43.27, "url": "https://www.shop-apotheke.at/beauty/upmFPEGCT/lacoste-pour-femme-eau-de-parfum-90-ml.htm", "matched_title": "Lacoste Pour Femme Eau de Parfum 90 ml"},
+   {"shop": "Notino", "country": "FR", "price": 47.50, "url": "https://www.notino.fr/lacoste/pour-femme-eau-de-parfum-pour-femme/p-60757/", "matched_title": "Lacoste Pour Femme Eau de Parfum"}
+ ], "note": "Kaufland 52,59 € ve Shop Apotheke DE 45,38 € URL eşleşmesi net olmadığı için dahil edilmedi."},
+ {"id": 15442131812510, "status": "bulundu", "offers": [
+   {"shop": "Notino", "country": "FR", "price": 122.00, "url": "https://www.notino.fr/maison-margiela/replica-when-the-rain-stops-eau-de-toilette-mixte/p-16106744/", "matched_title": "Replica When the Rain Stops Eau de Toilette Mixte"},
+   {"shop": "Lookfantastic", "country": "EU", "price": 144.95, "url": "https://eu.lookfantastic.com/p/maison-margiela-replica-when-the-rain-stops-eau-de-toilette-100ml/13457834", "matched_title": "Maison Margiela Replica When The Rain Stops Eau de Toilette - 100ml"}
+ ], "note": "Notino'da 109,80 € kuponlu fiyat dahil edilmedi. Girdi fiyatı 61,68 €."},
+ {"id": 15442134007966, "status": "bulunamadi", "offers": [], "note": "Girdi bir set (EdT 50 ml + duschgel 50 ml); tek ürün eşleşmesi yok, set fiyatı alınmadı."},
+ {"id": 15442191089822, "status": "bulundu", "offers": [
+   {"shop": "Notino", "country": "FR", "price": 92.90, "url": "https://www.notino.fr/gucci/flora-gorgeous-gardenia-eau-de-parfum-intense-eau-de-parfum-pour-femme/p-16311433/", "matched_title": "Gucci Flora Gorgeous Gardenia Eau de Parfum Intense 50 ml"}
+ ], "note": "Tek teklif. Excaliburshop 88,35 € ve Parfuma 97,70 € ülke teyit edilmediği için dahil edilmedi."},
+ {"id": 15442124505246, "status": "bulundu", "offers": [
+   {"shop": "Notino", "country": "FR", "price": 105.00, "url": "https://www.notino.fr/etat-libre-dorange/fat-electrician-eau-de-parfum-pour-homme/p-568866/", "matched_title": "Etat Libre d'Orange Fat Electrician Eau de Parfum Pour Homme"}
+ ], "note": "Liste fiyatı; Notino'da 89,25 € kuponlu fiyat dahil edilmedi. aio.lv 75,99 € ürün kodu eşleşmesi net olmadığı için alınmadı."},
+ {"id": 15388026273950, "status": "bulundu", "offers": [
+   {"shop": "Sephora", "country": "DE", "price": 107.95, "url": "https://www.sephora.de/p/sauvage-eau-de-parfum-421405.html", "matched_title": "Sauvage Eau de Parfum"}
+ ], "note": "Tek teklif. Billiger.de 47,49 € görüldü ama ürün tanımı net olmadığı için dahil edilmedi."},
+ {"id": 15426875719838, "status": "bulundu", "offers": [
+   {"shop": "eBay (Verkäufer)", "country": "DE", "price": 179.00, "url": "https://www.ebay.de/p/7035054125", "matched_title": "Gucci Flora 75ml Eau De Parfum"}
+ ], "note": "Tek teklif, marketplace satıcısı ve yüksek; eBay satıldı 70 € (geçmiş satış) dahil edilmedi. Strawberrynet 89 € ülke teyit edilmediği için alınmadı."},
+ {"id": 15388033024158, "status": "bulunamadi", "offers": [], "note": "Libre EDP 90 ml için güvenilir EUR teklif yok. Vanitystock 125,21 € Gardenia ile aynı rakamları verdiği için dahil edilmedi; Lookfantastic AT ürünü Libre Le Parfum (farklı); Shop Apotheke 83,24 € eşleşme belirsiz."}
+]

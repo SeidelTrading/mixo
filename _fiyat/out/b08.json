@@ -1,0 +1,435 @@
+[
+ {
+  "id": 15442190106782,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Notino (FR)",
+    "country": "FR",
+    "price": 67.5,
+    "url": "https://www.notino.fr/hermes/un-jardin-a-cythere-eau-de-toilette-mixte/p-16173275/",
+    "matched_title": "Hermès Un Jardin à Cythère Eau de Toilette 30 ml"
+   }
+  ],
+  "note": "Almanya teklifi bulunamadı; tek fiyat Notino FR (liste fiyatı). Parfumdreams.de fiyatı net okunamadı, kullanılmadı."
+ },
+ {
+  "id": 15387975876766,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "eBay.de (ticari satıcı)",
+    "country": "DE",
+    "price": 79.47,
+    "url": "https://www.ebay.de/itm/406217690017",
+    "matched_title": "Hermès Terre d'Hermès Eau de Toilette 100 ml"
+   },
+   {
+    "shop": "Notino (FR)",
+    "country": "FR",
+    "price": 100.1,
+    "url": "https://www.notino.fr/herms/terre-dhermes-eau-de-toilette-pour-homme/p-63291/",
+    "matched_title": "Terre d'Hermès Eau de Toilette 100 ml"
+   }
+  ],
+  "note": "eBay URL'si fiyatla birebir eşleşmeyebilir (arama özetinden); özel satıcı 59,99 teklifi alınmadı. Tarih belirsiz."
+ },
+ {
+  "id": 15441962139806,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Notino (FR)",
+    "country": "FR",
+    "price": 82.9,
+    "url": "https://www.notino.fr/hugo-boss/boss-the-scent-elixir-for-him-parfum-parfum-pour-homme/p-16287127/",
+    "matched_title": "Hugo Boss BOSS The Scent Elixir Parfum Intense for Him 100 ml"
+   },
+   {
+    "shop": "Lyko (DE)",
+    "country": "DE",
+    "price": 116.5,
+    "url": "https://lyko.com/de/hugo-boss/hugo-boss-the-scent-elixir-parfum-100ml",
+    "matched_title": "Hugo Boss The Scent Elixir Parfum 100 ml"
+   },
+   {
+    "shop": "Lookfantastic (DE)",
+    "country": "DE",
+    "price": 119.6,
+    "url": "https://www.lookfantastic.de/p/hugo-boss-boss-the-scent-elixir-parfum-intense-for-him-100ml/15742059/",
+    "matched_title": "Hugo Boss BOSS The Scent Elixir Parfum Intense for Him 100ml"
+   }
+  ],
+  "note": "Ürün adı Elixir Parfum Intense olarak listelenmiş; eşleşme varsayılmıştır. Notino FR 82,90 liste fiyatı (kuponsuz). Tarih belirsiz."
+ },
+ {
+  "id": 15441958600862,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Kaufland (ParfumGroup)",
+    "country": "DE",
+    "price": 44.56,
+    "url": "https://www.kaufland.de/product/17446181/",
+    "matched_title": "Hugo Boss Bottled Eau de Toilette 100 ml"
+   },
+   {
+    "shop": "Kaufland",
+    "country": "DE",
+    "price": 52.18,
+    "url": "https://www.kaufland.de/product/35778811/",
+    "matched_title": "Hugo Boss Bottled Eau de Toilette 100 ml"
+   },
+   {
+    "shop": "eBay.de",
+    "country": "DE",
+    "price": 51.95,
+    "url": "https://www.ebay.de/p/18063281292",
+    "matched_title": "Hugo Boss Bottled Eau de Toilette 100 ml"
+   }
+  ],
+  "note": "No.6 Bottled, Almanya'da Bottled adıyla da satılıyor; arama özetinde ürün-URL eşlemesi tam doğrulanamadı. Rossmann 59,99 ve Shop-Apotheke 61,84 tam eşleşmediği için alınmadı."
+ },
+ {
+  "id": 15442190434462,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Lyko (DE)",
+    "country": "DE",
+    "price": 227.9,
+    "url": "https://lyko.com/de/initio-parfums-prives/initio-musk-therapy-eau-de-parfum-50-ml",
+    "matched_title": "INITIO Parfums Privés Musk Therapy Eau de Parfum 50 ml"
+   }
+  ],
+  "note": "Konsantrasyon girdide yok; EdP 50 ml fiyatı alındı. Arama özetine göre bu Lyko sayfası geçici olarak stokta yok. Notino FR Extrait 230,00 farklı konsantrasyon olduğu için alınmadı."
+ },
+ {
+  "id": 15388000190622,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Lookfantastic (DE)",
+    "country": "DE",
+    "price": 122.36,
+    "url": "https://www.lookfantastic.de/p/jean-paul-gaultier-scandal-pour-femme-eau-de-parfum-intense-80ml/16374318/",
+    "matched_title": "Jean Paul Gaultier Scandal Pour Femme Eau de Parfum Intense 80ml"
+   },
+   {
+    "shop": "Shop Apotheke (AT)",
+    "country": "AT",
+    "price": 123.5,
+    "url": "https://www.shop-apotheke.at/beauty/upm4TR4YT/jean-paul-gaultier-scandal-intense-edp-80-ml-new.htm",
+    "matched_title": "Jean Paul Gaultier Scandal Intense EdP 80 ml"
+   }
+  ],
+  "note": "Lyko DE 118,20 teklifi arama özetinde geçici olarak stokta yok olarak işaretlendi, alınmadı. Notino FR 127-129 de tarih/eşleşme belirsiz."
+ },
+ {
+  "id": 15388031811742,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Testsieger.de (ParfumGroup)",
+    "country": "DE",
+    "price": 59.98,
+    "url": "https://www.testsieger.de/herrenduefte/9A5U11H1QJWUQ-jean-paul-gaultier-scandal-pour-homme-eau-de-toilette-edt-herrenduft-100-ml-duftfamilie-holzig-orientalisch.html",
+    "matched_title": "Jean Paul Gaultier Scandal Pour Homme Eau de Toilette 100 ml"
+   },
+   {
+    "shop": "Lyko (DE)",
+    "country": "DE",
+    "price": 91.2,
+    "url": "https://lyko.com/de/jean-paul-gaultier/jean-paul-gaultier-scandal-him-eau-de-toilette-100-ml",
+    "matched_title": "Jean Paul Gaultier Scandal Pour Homme Eau de Toilette 100 ml"
+   },
+   {
+    "shop": "Shop Apotheke (AT)",
+    "country": "AT",
+    "price": 98.19,
+    "url": "https://www.shop-apotheke.at/beauty/upmYTCDET/jean-paul-gaultier-scandal-him-e-d-t-nat-spray.htm",
+    "matched_title": "Jean Paul Gaultier Scandal for Him EdT Nat Spray"
+   }
+  ],
+  "note": "Testsieger fiyatı tarihsiz. Preissuchmaschine'nin 54,15 değeri doğrulanamadığı için alınmadı."
+ },
+ {
+  "id": 15442129682590,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Shop Apotheke (AT)",
+    "country": "AT",
+    "price": 76.66,
+    "url": "https://www.shop-apotheke.at/beauty/upmA7UX3A/jimmy-choo-i-want-choo-eau-de-parfum-spray.htm",
+    "matched_title": "Jimmy Choo I Want Choo Eau de Parfum"
+   },
+   {
+    "shop": "AiO.lv",
+    "country": "LV",
+    "price": 93.99,
+    "url": "https://aio.lv/en/product--jimmy-choo-s4516686--11594373.md",
+    "matched_title": "Eau de Parfum Jimmy Choo I Want Choo 100 ml"
+   },
+   {
+    "shop": "Selfridges (IE)",
+    "country": "IE",
+    "price": 133.0,
+    "url": "https://www.selfridges.com/IE/en/product/jimmy-choo-i-want-choo-eau-de-parfum-100ml_R03828211/",
+    "matched_title": "Jimmy Choo I Want Choo Eau de Parfum 100ml"
+   }
+  ],
+  "note": "Shop-Apotheke AT URL'si fiyatla birebir eşleşmeyebilir. Lookfantastic UK 102 GBP (EUR değil) alınmadı. Galaxus CHF hesaplaması alınmadı."
+ },
+ {
+  "id": 15442129977502,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Shop Apotheke (DE)",
+    "country": "DE",
+    "price": 89.4,
+    "url": "https://www.shop-apotheke.com/beauty/upmCRM7HP/jimmy-choo-i-want-choo-forever-e-d-p-nat-spray.htm",
+    "matched_title": "Jimmy Choo I Want Choo Forever E.d.P. Nat. Spray"
+   },
+   {
+    "shop": "Shop Apotheke (AT)",
+    "country": "AT",
+    "price": 96.71,
+    "url": "https://www.shop-apotheke.at/beauty/upmZ4CAWR/jimmy-choo-i-want-choo-forever-eau-de-parfum-100-ml.htm",
+    "matched_title": "Jimmy Choo I Want Choo Forever Eau de Parfum 100 ml"
+   }
+  ],
+  "note": "DE URL'si fiyatla birebir eşleşmeyebilir. Harrods GBP ve Sephora USD alınmadı."
+ },
+ {
+  "id": 15442130239646,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Shop Apotheke (AT)",
+    "country": "AT",
+    "price": 99.75,
+    "url": "https://www.shop-apotheke.at/beauty/upmRY39X7/jimmy-choo-i-want-choo-eau-de-parfum-100.htm",
+    "matched_title": "Jimmy Choo I Want Choo Le Parfum 100 ml"
+   },
+   {
+    "shop": "Lyko (FI)",
+    "country": "FI",
+    "price": 105.6,
+    "url": "https://lyko.com/fi/jimmy-choo/jimmy-choo-i-want-choo-le-parfum-eau-de-parfum-100ml",
+    "matched_title": "Jimmy Choo I Want Choo Le Parfum Eau de Parfum 100 ml"
+   },
+   {
+    "shop": "Boots (IE)",
+    "country": "IE",
+    "price": 134.0,
+    "url": "https://boots.ie/jimmy-choo-i-want-choo-le-parfum-100ml-10343440",
+    "matched_title": "Jimmy Choo I Want Choo Le Parfum 100ml"
+   }
+  ],
+  "note": "Shop-Apotheke AT URL'si fiyatla birebir eşleşmeyebilir. Lookfantastic UK 84 GBP alınmadı (EUR değil)."
+ },
+ {
+  "id": 15442130403486,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "eBay.de",
+    "country": "DE",
+    "price": 21.5,
+    "url": "https://www.ebay.de/p/22034688742",
+    "matched_title": "JOOP GO Eau de Toilette 100ml"
+   },
+   {
+    "shop": "Shop Apotheke (DE)",
+    "country": "DE",
+    "price": 27.02,
+    "url": "https://www.shop-apotheke.com/beauty/upmKC7PZT/joop-go-edt-spray.htm",
+    "matched_title": "Joop! Go Herrenduft Eau de Toilette"
+   },
+   {
+    "shop": "Shop Apotheke (AT)",
+    "country": "AT",
+    "price": 33.14,
+    "url": "https://www.shop-apotheke.at/beauty/upmKC7PZT/joop-go-edt-spray.htm",
+    "matched_title": "Joop! Go Herrenduft Eau de Toilette"
+   }
+  ],
+  "note": "ParfumGroup 16,49 teklifinin URL'si yok, alınmadı. eBay URL'si fiyatla birebir eşleşmeyebilir. dm.at 59,90 tipik değil."
+ },
+ {
+  "id": 15442130665630,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15388011757726,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15444323631262,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15388002975902,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15388035645598,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15428960288926,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15442130895006,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15442131124382,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15428972609694,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15428985192606,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15463077511326,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15463081967774,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387964276894,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387974107294,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387974959262,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387975778462,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387965882526,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387960508574,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387958640798,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387968635038,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387969552542,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387971027102,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387963457694,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387980103838,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15388040921246,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15388040331422,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387986886814,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387985936542,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ },
+ {
+  "id": 15387984265374,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama bütçesi bu turda tükendi; fiyat aranmadı. Yeniden çalıştırılmalı (bulunamadı kesin değil)."
+ }
+]

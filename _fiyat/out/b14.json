@@ -1,0 +1,50 @@
+[
+ {"id": 15387958935710, "status": "bulunamadi", "offers": [], "note": "Almanca/EUR sonuc yok; tek eslesen sonuc USD fiyatli (ABD/CA kargo), kullanilmadi."},
+ {"id": 15387969159326, "status": "bulundu", "offers": [
+   {"shop": "Arabic Parfums", "country": "ES", "price": 23.99, "url": "https://arabicparfums.com/en/collections/perfumes-verano/products/arctic-breeze-volare-100ml", "matched_title": "Arctic Breeze Volaré 100 ml Eau de Parfum"},
+   {"shop": "Parfum Dorient", "country": "BE", "price": 35.99, "url": "https://parfumdorient.be/products/arctic-breeze-eau-de-parfum-100ml-by-volare", "matched_title": "Arctic Breeze Eau de Parfum 100ml by Volaré"}
+  ], "note": "Stok durumu aramada teyit edilmedi. Idealo aramasi sonuc vermedi."},
+ {"id": 15387955855518, "status": "bulundu", "offers": [
+   {"shop": "Shop Apotheke (Cosme'Chic satici)", "country": "DE", "price": 36.70, "url": "https://www.shop-apotheke.com/beauty/upmDGUZ9Z/volare-luxus-eau-de-parfum-blend.htm", "matched_title": "Volare Luxus Eau de Parfum Blend 100 ml"}
+  ], "note": "Tek Almanca fiyat bulundu. Arabic Parfums 29,99 EUR da gorundu ama stok durumu tutarsiz (tukendi), dahil edilmedi."},
+ {"id": 15388043378846, "status": "bulunamadi", "offers": [], "note": "Arabic Parfums'ta Drunk Masters 90 ml olarak goruldu, 100 ml bulunamadi."},
+ {"id": 15387964965022, "status": "bulunamadi", "offers": [], "note": "Arama bu turda basarisiz oldu (sunucu kotasi), 2. arama yapilamadi. Yeniden aranmali."},
+ {"id": 15387951759518, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15388043116702, "status": "bulunamadi", "offers": [], "note": "Volare La Viva 100 ml sonucu bulunamadi; Valentino Voce Viva farkli urun oldugu icin kullanilmadi."},
+ {"id": 15387971059870, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15387969978526, "status": "bulundu", "offers": [
+   {"shop": "Arabic Parfums", "country": "ES", "price": 21.99, "url": "https://arabicparfums.com/en/products/lustre-amour-volare-100ml", "matched_title": "Lustré Amour Volaré 100ml"},
+   {"shop": "Kaufland", "country": "AT", "price": 24.00, "url": "https://www.kaufland.at/product/531872004/", "matched_title": "Lustré Amour 100 ml - Volaré"}
+  ], "note": "Arabic Parfums fiyati indirimli gorundu (orijinal 29,00). Kaufland fiyati ozet metninden alindi."},
+ {"id": 15387952709790, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15387953922206, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15387957756062, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Urun 80 ml, yeniden aranmali."},
+ {"id": 15387956707486, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Urun 80 ml, yeniden aranmali."},
+ {"id": 15388043739294, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15387965980830, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15388027715742, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15387964014750, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15441960829086, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15441963057310, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15441960894622, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15388009627806, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15439334965406, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15388034695326, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15388010479774, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15442133647518, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15388008743070, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15388033024158, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15441963253918, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15388033679518, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15388007858334, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15442133876894, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Set urunu, yeniden aranmali."},
+ {"id": 15388007071902, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15442192400542, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15388035350686, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15388034269342, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15442174115998, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15442134007966, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Set urunu, yeniden aranmali."},
+ {"id": 15442134139038, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15442134237342, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."},
+ {"id": 15388011233438, "status": "bulunamadi", "offers": [], "note": "Aranmadi: web arama butcesi bu turda tukendi. Yeniden aranmali."}
+]

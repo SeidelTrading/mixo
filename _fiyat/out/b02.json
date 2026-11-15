@@ -1,0 +1,62 @@
+[
+ {"id": 15442184896670, "status": "bulundu", "offers": [
+   {"shop": "Heinemann", "country": "DE", "price": 149.90, "url": "https://www.heinemann-shop.com/en/global/chanel/chanel-allure-sensuelle-eau-de-parfum/p/000000000000800687", "matched_title": "Chanel Allure Sensuelle Eau de Parfum (arama özeti, ml açık değil)"},
+   {"shop": "Chanel", "country": "ES", "price": 172.00, "url": "https://www.chanel.com/es/perfumes/p/129730/allure-sensuelle-eau-de-parfum-vaporizador/", "matched_title": "Allure Sensuelle Eau de Parfum vaporizador"}
+ ], "note": "Fiyatlar arama özetlerinden; ml ve tarih tam doğrulanamadı. Heinemann 'ab' fiyatı."},
+ {"id": 15442169823390, "status": "bulundu", "offers": [
+   {"shop": "Chanel", "country": "FR", "price": 128.00, "url": "https://www.chanel.com/fr/parfums/p/118460/antaeus-eau-de-toilette-vaporisateur/", "matched_title": "Antaeus Eau de Toilette Vaporisateur"},
+   {"shop": "Chanel", "country": "GR", "price": 134.00, "url": "https://www.chanel.com/gr/fragrance/p/118460/antaeus-eau-de-toilette-spray/", "matched_title": "Antaeus Eau de Toilette Spray"}
+ ], "note": "Resmi Chanel ülke sayfaları (arama özeti); Almanya fiyatı bulunamadı. 100 ml olduğu özetten çıkarıldı."},
+ {"id": 15442189090974, "status": "bulundu", "offers": [
+   {"shop": "Heinemann", "country": "DE", "price": 149.99, "url": "https://hme.heinemann-shop.com/en/ber/chanel/chanel-bleu-de-chanel-eau-de-parfum/p/000000000001108444/", "matched_title": "Bleu de Chanel Eau de Parfum"},
+   {"shop": "Chanel", "country": "AT", "price": 180.00, "url": "https://www.chanel.com/at/parfum/p/107370/bleu-de-chanel-eau-de-parfum-zerstaeuber", "matched_title": "Bleu de Chanel Eau de Parfum Zerstäuber"},
+   {"shop": "Chanel", "country": "FR", "price": 185.00, "url": "https://www.chanel.com/fr/parfums/p/107370/bleu-de-chanel-eau-de-parfum-vaporisateur/", "matched_title": "Bleu de Chanel Eau de Parfum Vaporisateur"}
+ ], "note": "Arama özetlerinden. Tarih doğrulanamadı; 150 ml olduğu sonuç başlıklarından çıkarıldı."},
+ {"id": 15442168184990, "status": "bulundu", "offers": [
+   {"shop": "Heinemann", "country": "DE", "price": 169.99, "url": "https://www.heinemann-shop.com/de/global/chanel/chanel-chance-eau-fraiche-eau-de-parfum/p/000000000001619897", "matched_title": "Chance Eau Fraîche Eau de Parfum (ab-fiyat)"},
+   {"shop": "Chanel", "country": "FR", "price": 207.00, "url": "https://www.chanel.com/fr/parfums/p/136460/chance-eau-fraiche-eau-de-parfum-vaporisateur/", "matched_title": "Chance Eau Fraîche Eau de Parfum Vaporisateur"}
+ ], "note": "Arama özetlerinden. Heinemann 'ab' fiyatı; aynı mağazada 199,99 € da görüldü."},
+ {"id": 15442173362334, "status": "bulunamadi", "offers": [], "note": "Arama hata verdi (istek limiti); EDT 150 ml fiyatı bulunamadı."},
+ {"id": 15442176114846, "status": "bulunamadi", "offers": [], "note": "Arama hata verdi (istek limiti); fiyat bulunamadı."},
+ {"id": 15447689724062, "status": "bulunamadi", "offers": [], "note": "Arama hata verdi (istek limiti); 100 ml EDP fiyatı bulunamadı."},
+ {"id": 15442187223198, "status": "bulundu", "offers": [
+   {"shop": "Heinemann", "country": "DE", "price": 179.99, "url": "https://www.heinemann-shop.com/en/global/chanel/chanel-chance-eau-splendide-eau-de-parfum/p/000000000001741165", "matched_title": "Chance Eau Splendide Eau de Parfum"},
+   {"shop": "Heinemann", "country": "DE", "price": 199.99, "url": "https://hme.heinemann-shop.com/en/bud/chanel/chanel-chance-eau-splendide-eau-de-parfum/p/000000000001741165/", "matched_title": "Chance Eau Splendide Eau de Parfum (diğer sayfa)"},
+   {"shop": "Chanel", "country": "LU", "price": 207.00, "url": "https://www.chanel.com/lu-fr/parfums/p/136230/chance-eau-splendide-eau-de-parfum-vaporisateur/", "matched_title": "Chance Eau Splendide Eau de Parfum Vaporisateur"}
+ ], "note": "Arama özetlerinden; tarih doğrulanamadı. 150 ml sonuç özetlerinden."},
+ {"id": 15442177327262, "status": "bulunamadi", "offers": [], "note": "Arama hata verdi (istek limiti); fiyat bulunamadı."},
+ {"id": 15441961025694, "status": "bulundu", "offers": [
+   {"shop": "Chanel", "country": "EE", "price": 176.00, "url": "https://www.chanel.com/ee/fragrance/p/126260/chance-eau-tendre-eau-de-parfum-spray/", "matched_title": "Chance Eau Tendre Eau de Parfum Spray"},
+   {"shop": "Chanel", "country": "GR", "price": 181.00, "url": "https://www.chanel.com/gr/fragrance/p/126260/chance-eau-tendre-eau-de-parfum-spray/", "matched_title": "Chance Eau Tendre Eau de Parfum Spray"}
+ ], "note": "Resmi Chanel ülke sayfaları (arama özeti). Almanya resmi fiyatı bulunamadı; eBay ilanları ikinci el/karışık olduğu için alınmadı."},
+ {"id": 15388039479454, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442168578206, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442181488798, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442888687774, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15388018409630, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442175656094, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442181161118, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442175131806, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442181816478, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442170806430, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15441964073118, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15388019097758, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442176671902, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442172313758, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442178211998, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442169397406, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442178539678, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442185748638, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442186469534, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442186731678, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15463049167006, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442168971422, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442173886622, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442180178078, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15388017950878, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442173034654, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442174312606, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442184634526, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442183225502, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."},
+ {"id": 15442184241310, "status": "bulunamadi", "offers": [], "note": "Arama yapılamadı: WebSearch oturum bütçesi tükendi."}
+]

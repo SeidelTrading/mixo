@@ -1,0 +1,12 @@
+# sırlar ve çalışma verisi
+.env*
+demo/.admin-password
+demo/store/
+# bağımlılıklar
+node_modules/
+# büyük ara çıktılar (yeniden üretilebilir)
+_verify/
+_raw/
+video/
+*.log
+__pycache__/

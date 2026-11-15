@@ -1,0 +1,354 @@
+[
+ {
+  "id": 15426744877214,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Baslikta ml yok; bulunamadi"
+ },
+ {
+  "id": 15441958535326,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "billiger.de",
+    "country": "DE",
+    "price": 69.45,
+    "url": "https://www.billiger.de/products/4349654211-givenchy-gentleman-society-eau-de-parfum-100-ml",
+    "matched_title": "Givenchy Gentleman Society Eau de Parfum 100 ml"
+   },
+   {
+    "shop": "ebay.de",
+    "country": "DE",
+    "price": 72.0,
+    "url": "https://www.ebay.de/p/10079234718",
+    "matched_title": "Givenchy Gentleman Society Eau de Parfum 100 ml"
+   }
+  ],
+  "note": "Baslikta konsantrasyon yok; EdP varsayildi. Ilk arama limit hatasi verdi, ikinci aramada bulundu."
+ },
+ {
+  "id": 15441960566942,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "sephora.de",
+    "country": "DE",
+    "price": 78.95,
+    "url": "https://www.sephora.de/p/irresistible---eau-de-parfum-804264.html",
+    "matched_title": "Irresistible - Eau de Parfum 100 ml"
+   },
+   {
+    "shop": "tendance-parfums.de",
+    "country": "DE",
+    "price": 79.5,
+    "url": "https://www.tendance-parfums.com/de/irresistible-givenchy-eau-de-parfum-givenchy.html",
+    "matched_title": "Irresistible Givenchy Eau de Parfum 100 ml"
+   }
+  ],
+  "note": "Baslikta konsantrasyon yok; EdP varsayildi (Irresistible 100 ml EdP)."
+ },
+ {
+  "id": 15426871918750,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "bestprice.gr",
+    "country": "GR",
+    "price": 68.31,
+    "url": "https://www.bestprice.gr/item/2156221928/givenchy-irresistible-eau-de-parfum-80ml.html",
+    "matched_title": "Givenchy Irresistible Eau de Parfum 80ml"
+   },
+   {
+    "shop": "haarspullen.nl",
+    "country": "NL",
+    "price": 104.95,
+    "url": "https://haarspullen.nl/en/givenchy-irresistible-eau-de-parfum.html",
+    "matched_title": "Givenchy Irresistible Eau de Parfum 80ml"
+   }
+  ],
+  "note": "Baslikta konsantrasyon yok; EdP varsayildi. Greek fiyat karsilastirma sitesinin en dusuk degeri, kargo haric."
+ },
+ {
+  "id": 15441962893470,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "aio.lv",
+    "country": "LV",
+    "price": 86.99,
+    "url": "https://aio.lv/en/product--givenchy-b-00-890-00--11641970.md",
+    "matched_title": "Givenchy Irresistible Very Floral Eau de Parfum 80ml"
+   },
+   {
+    "shop": "ebay.de",
+    "country": "DE",
+    "price": 90.92,
+    "url": "https://www.ebay.de/p/9071741309",
+    "matched_title": "Givenchy Irresistible Very Floral Edp Spray 80 ml"
+   },
+   {
+    "shop": "notino.fr",
+    "country": "FR",
+    "price": 96.9,
+    "url": "https://www.notino.fr/givenchy/irresistible-very-floral-eau-de-parfum-pour-femme/",
+    "matched_title": "Givenchy Irresistible Very Floral Eau de Parfum 80ml"
+   }
+  ],
+  "note": "Baslikta konsantrasyon yok; EdP varsayildi."
+ },
+ {
+  "id": 15388034236574,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "ebay.de",
+    "country": "DE",
+    "price": 71.2,
+    "url": "https://www.ebay.de/p/20060995369",
+    "matched_title": "Givenchy Irresistible Rose Velvet Eau de Parfum 80ml Spray For Women"
+   },
+   {
+    "shop": "notino.fr",
+    "country": "FR",
+    "price": 96.5,
+    "url": "https://www.notino.fr/givenchy/irresistible-rose-velvet-eau-de-parfum-pour-femme/p-16163625/",
+    "matched_title": "Irresistible Rose Velvet Eau de Parfum 80ml"
+   }
+  ],
+  "note": "eBay teklifi ucuncu taraf satici (marketplace)."
+ },
+ {
+  "id": 15426873524382,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "ebay.de",
+    "country": "DE",
+    "price": 65.0,
+    "url": "https://www.ebay.de/p/10031009012",
+    "matched_title": "Givenchy L'interdit Eau De Parfum 80ml Spray"
+   },
+   {
+    "shop": "shop-apotheke.com",
+    "country": "DE",
+    "price": 102.38,
+    "url": "https://www.shop-apotheke.com/beauty/upmMMMKXA/givenchy-l-interdit-eau-de-parfum.htm",
+    "matched_title": "Givenchy L'Interdit Eau de Parfum"
+   }
+  ],
+  "note": "Baslikta konsantrasyon yok; EdP varsayildi. eBay teklifi marketplace."
+ },
+ {
+  "id": 15388012773534,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "notino.fr",
+    "country": "FR",
+    "price": 101.9,
+    "url": "https://www.notino.fr/givenchy/linterdit-absolu-eau-de-parfum-intense-pour-femme/",
+    "matched_title": "L'Interdit Absolu Eau de Parfum Intense 80ml"
+   },
+   {
+    "shop": "boots.ie",
+    "country": "IE",
+    "price": 160.0,
+    "url": "https://boots.ie/mens/aftershave/cologne/givenchy-l-interdit-absolu-eau-de-parfum-intense-80ml-10343923",
+    "matched_title": "Givenchy L'Interdit Absolu Eau de Parfum Intense 80ml"
+   }
+  ],
+  "note": "notino.fr fiyatinin para birimi arama ozetinde net degil (EUR varsayildi)."
+ },
+ {
+  "id": 15426874409118,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15426873229470,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Baslikta ml yok; bulunamadi"
+ },
+ {
+  "id": 15426873622686,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15442128699550,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15426194604190,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15387954970782,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15426874769566,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15388039774366,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15430945276062,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15442191089822,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15463866368158,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15428876763294,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15442128896158,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Baslikta ml yok; bulunamadi"
+ },
+ {
+  "id": 15388030468254,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15442129125534,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15387983446174,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15387991081118,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15387995406494,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15387999568030,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15388012019870,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15387997765790,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15387993866398,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15388012839070,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15387996094622,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15387998716062,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15388013559966,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15387993047198,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15388014739614,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15442192826526,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15444323565726,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Baslikta ml yok; bulunamadi"
+ },
+ {
+  "id": 15442186043550,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ },
+ {
+  "id": 15442188501150,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "WebSearch limiti doldu; bu urun aranmadi, fiyat yazilmadi"
+ }
+]

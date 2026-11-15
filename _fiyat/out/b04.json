@@ -1,0 +1,52 @@
+[
+ {"id": 15442117263518, "status": "bulunamadi", "offers": [], "note": "Girdide konsantrasyon belirtilmemiş. Sonuçlarda yalnızca 'Gold Parfum' (Parfum konsantrasyonu) ilanları göründü (notino.fr 38,40 EUR, parfumdreams.ie 54,00 EUR); EDP ile eşleşmediği için alınmadı."},
+ {"id": 15442117558430, "status": "bulundu", "offers": [
+   {"shop": "parfumdreams.ie", "country": "IE", "price": 32.48, "url": "https://www.parfumdreams.ie/Coach/Womens-fragrances/Love/Eau-de-Parfum-Spray/index_123962.aspx", "matched_title": "Coach Love Eau de Parfum Spray 30 ml"},
+   {"shop": "theperfumeshop.com", "country": "IE", "price": 48.00, "url": "https://www.theperfumeshop.com/ie/coach/love/eau-de-parfum-spray/p/35625EDPJU", "matched_title": "COACH Love Eau de Parfum Spray 30ML"}
+ ], "note": "Almanya teklifi bulunamadı; IE teklifleri. Arama özetine dayanıyor, fiyatlar tarihsiz."},
+ {"id": 15442117886110, "status": "bulundu", "offers": [
+   {"shop": "shop-apotheke.com", "country": "DE", "price": 32.55, "url": "https://www.shop-apotheke.com/beauty/upmEG4T2F/coach-wild-rose-e-d-p-nat-spray.htm", "matched_title": "Coach Wild Rose E.d.P. Nat. Spray 30 ml"},
+   {"shop": "parfumdreams.de", "country": "DE", "price": 37.95, "url": "https://en.parfumdreams.de/Coach/Womens-fragrances/Wild-Rose/Eau-de-Parfum-Spray/index_113084.aspx", "matched_title": "Coach Wild Rose Eau de Parfum Spray 30 ml"},
+   {"shop": "notino.fr", "country": "FR", "price": 31.50, "url": "https://www.notino.fr/coach/wild-rose-eau-de-parfum-pour-femme/p-16137704/", "matched_title": "Coach Wild Rose Eau de Parfum 30 ml"}
+ ], "note": "Arama özetine dayanıyor, fiyatlar tarihsiz. Notino fiyatı liste fiyatı (kupon hariç)."},
+ {"id": 15388008251550, "status": "bulunamadi", "offers": [], "note": "Aramada güvenilir EUR teklifi doğrulanamadı (kaufland.at 29,90 EUR ilanı ve eBay ilanları URL/boy eşleşmesi net değil). Arama bütçesi bittiği için ek doğrulama yapılamadı."},
+ {"id": 15388005105822, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15442118115486, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15442118377630, "status": "bulundu", "offers": [
+   {"shop": "kaufland.de", "country": "DE", "price": 37.01, "url": "https://www.kaufland.de/product/445562867/", "matched_title": "Courrèges Seconde Peau Eau de Parfum 30 ml"},
+   {"shop": "notino.ie", "country": "IE", "price": 35.90, "url": "https://www.notino.ie/courreges/seconde-peau-eau-de-parfum-unisex/p-16226427/", "matched_title": "Courrèges Seconde Peau Eau de Parfum 30 ml"}
+ ], "note": "Arama özetinde DE için 29,90 EUR (CosmeticExpress) ve 36,99 EUR (easyCosmetic) da geçiyordu ancak URL'leri doğrulanamadığı için alınmadı. Fiyatlar tarihsiz."},
+ {"id": 15437290340510, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı. Eğitim verisinden fiyat yazılmadı."},
+ {"id": 15441963942046, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15444323369118, "status": "bulunamadi", "offers": [], "note": "Başlıkta ml yok; boy doğrulanamadığı için bulunamadı."},
+ {"id": 15442118639774, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15442118934686, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15442119098526, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15387998060702, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15444323467422, "status": "bulunamadi", "offers": [], "note": "Başlıkta ml yok; ayrıca arama bütçesi bu tur için tükendi."},
+ {"id": 15442119557278, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15442119295134, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15442120343710, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15388024930462, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15442120605854, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15388027027614, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15426435252382, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15388024307870, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15439330377886, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15388022833310, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15388023652510, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15426176778398, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15467618238622, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15388026273950, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15467616567454, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15467614896286, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15467625185438, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15388025684126, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15388027093150, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15388022210718, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15388034859166, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15442830524574, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15442831081630, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15442834096286, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."},
+ {"id": 15442832785566, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu tur için tükendiği için aranamadı."}
+]

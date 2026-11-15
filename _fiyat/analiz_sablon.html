@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Hedef Siteler ve Fiyat Analizi</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--ink:#141413;--ink2:#52514e;--mute:#898781;--line:#e1e0d9;--brand:#3048c8;--brand-soft:#e3e7fb;--navy:#171b38;--gold:#ffd168;--red:#c93434;--red-soft:#fbe6e6;--amber:#9a6500;--amber-soft:#fbefd2;--green:#0c7a0c;--green-soft:#e2f3e2;--grey:#a3a199;--grey-soft:#ecebe6}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--card:#1e1e1c;--ink:#f0efec;--ink2:#c3c2b7;--mute:#8f8d86;--line:#33332f;--brand:#8496f5;--brand-soft:#232a52;--navy:#0e1126;--red:#ee7878;--red-soft:#3d1e1e;--amber:#e0a43a;--amber-soft:#3a2f14;--green:#4fbf4f;--green-soft:#1a3320;--grey:#77756e;--grey-soft:#2a2a27}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:0 16px 64px}
+.hero{background:var(--navy);color:#fff;padding:48px 16px 40px;margin-bottom:8px}
+.hero div{max-width:1008px;margin:0 auto}
+.hero .k{color:var(--gold);font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+.hero h1{font-size:clamp(28px,5vw,40px);line-height:1.1;margin:10px 0 12px;letter-spacing:-.015em}
+.hero p{font-size:18px;color:rgba(255,255,255,.8);max-width:66ch;margin:0}
+h2{font-size:24px;margin:0 0 4px;letter-spacing:-.01em}
+h3{font-size:16px;margin:20px 0 6px}
+p{margin:8px 0}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;margin:20px 0}
+.sub{color:var(--ink2);margin:0 0 16px;max-width:75ch}
+.note{font-size:13px;color:var(--mute);margin-top:10px;max-width:85ch}
+.warn{background:var(--amber-soft);border-radius:10px;padding:12px 16px;font-size:14px;color:var(--ink)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.tile{background:var(--bg);border-radius:10px;padding:14px}
+.tile b{display:block;font-size:28px;line-height:1.15;font-variant-numeric:tabular-nums}
+.tile span{font-size:13px;color:var(--ink2)}
+.tile.p b{color:var(--red)}.tile.u b{color:var(--green)}.tile.a b{color:var(--amber)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--mute);font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tp{color:var(--red)}.tu{color:var(--green)}
+.barcell{min-width:160px;width:30%}
+.bar{display:flex;height:14px;border-radius:4px;overflow:hidden;background:var(--grey-soft)}
+.bar i{display:block;height:100%}
+.bar .p{background:var(--red)}.bar .n{background:var(--grey)}.bar .u{background:var(--green)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin:10px 0 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.tag{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;white-space:nowrap}
+.tag.p{background:var(--red-soft);color:var(--red)}.tag.a{background:var(--amber-soft);color:var(--amber)}
+.tag.n{background:var(--grey-soft);color:var(--ink2)}.tag.u{background:var(--green-soft);color:var(--green)}.tag.x{background:var(--bg);color:var(--mute)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.ctl input,.ctl select{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+.ctl input{flex:1;min-width:180px}
+#say{font-size:13px;color:var(--mute)}
+#liste td:nth-child(2){min-width:220px}
+a{color:var(--brand)}
+ol{padding-left:20px;margin:8px 0}li{margin:6px 0}
+button.more{font:inherit;font-size:14px;margin-top:12px;padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+</style>
+</head>
+<body>
+<div class="hero"><div>
+<span class="k">MixOutlet · 15 Kasım 2026</span>
+<h1>Hedef siteler ve parfüm fiyat analizi</h1>
+<p>idealo, Kaufland, ParfumArena ve Douglas'a çıkmadan önce: {{TOPLAM}} parfümün {{FIYATLI}}'inde fiyatımız piyasayla kıyaslandı. Ortalamada piyasadayız, ama ürünlerin bir kısmı belirgin ucuz, bir kısmı belirgin pahalı.</p>
+</div></div>
+<main>
+
+<section>
+<h2>Özet</h2>
+<p class="sub">Fark, mixoutlet.de fiyatının bulunan tipik piyasa fiyatına oranıdır. ±%15 içi "piyasada" sayıldı.</p>
+<div class="tiles">
+<div class="tile"><b>{{FIYATLI}} / {{TOPLAM}}</b><span>piyasa fiyatı bulunan parfüm</span></div>
+<div class="tile"><b>{{MEDYAN}}</b><span>medyan fark</span></div>
+<div class="tile u"><b>{{UCUZ}}</b><span>piyasadan ucuz</span></div>
+<div class="tile"><b>{{PIYASADA}}</b><span>piyasada</span></div>
+<div class="tile p"><b>{{PAHALI}}</b><span>piyasadan pahalı</span></div>
+<div class="tile a"><b>{{ASIRI}}</b><span>aşırı fark, veri kontrolü</span></div>
+</div>
+<p class="warn" style="margin-top:16px"><b>Verinin sınırı:</b> Fiyatlar web araması sonuç özetlerinden alındı; mağaza sayfaları açılıp doğrulanmadı, tarihsiz ve kargo hariçtir. {{FIYATLI}} ürünün {{TEK}}'inde tek teklif var; en düşük teklifin {{DE}}'i Almanya mağazasından, kalanı başka euro ülkelerinden. Bu bir ön eleme listesidir; fiyat değiştirmeden önce satırdaki bağlantıdan kontrol edin.</p>
+</section>
+
+<section>
+<h2>Fiyat grubuna göre durum</h2>
+<p class="sub">Sorun tek tip değil: {{N69}} üründe fiyat tam 69,00 € ve bunların neredeyse tamamı pahalı. 45–100 € bandında ise çoğu ürün piyasanın altında.</p>
+<div class="scroll"><table>
+<thead><tr><th>Bizim fiyat</th><th class="r">Ürün</th><th class="r">Medyan fark</th><th>Dağılım</th><th class="r">Pahalı</th><th class="r">Piyasada</th><th class="r">Ucuz</th></tr></thead>
+<tbody>{{BANDS}}</tbody></table></div>
+<div class="legend"><span><i style="background:var(--red)"></i>pahalı</span><span><i style="background:var(--grey)"></i>piyasada</span><span><i style="background:var(--green)"></i>ucuz</span></div>
+<p class="note">Aşırı farklı {{ASIRI}} ürün bu tabloya dahil değil. Pahalı ve aşırı farklı {{OVERN}} üründe tipik fiyatın üstündeki toplam fark yaklaşık {{OVERSUM}} € (ürün başına bir adet üzerinden).</p>
+</section>
+
+<section>
+<h2>Örnekler</h2>
+<div class="two">
+<div><h3 style="margin-top:0">Piyasanın üstünde</h3><div class="scroll"><table><thead><tr><th>Ürün</th><th class="r">Bizde</th><th class="r">Piyasa</th><th class="r">Fark</th></tr></thead><tbody>{{EXP}}</tbody></table></div></div>
+<div><h3 style="margin-top:0">Piyasanın altında</h3><div class="scroll"><table><thead><tr><th>Ürün</th><th class="r">Bizde</th><th class="r">Piyasa</th><th class="r">Fark</th></tr></thead><tbody>{{EXU}}</tbody></table></div></div>
+</div>
+<p class="note">69,00 € birçok Arap parfümünde (Lattafa, Riiffs, Gulf Orchid, Zimaya) tekrarlanıyor; piyasada çoğu 20–30 €. Tek tek fiyatlandırma değil, toplu atanmış bir varsayılan fiyat izlenimi veriyor (çıkarım). Chanel'de kıyas çoğu kez markanın resmi sitesindeki liste fiyatıyla yapıldı; bu bizi olduğundan ucuz gösterir.</p>
+</section>
+
+<section>
+<h2>Dört hedef site</h2>
+<p class="sub">Dördü aynı türden değil; her biri için "hedef" farklı bir anlam taşıyor.</p>
+<div class="scroll"><table>
+<thead><tr><th>Site</th><th>Türü</th><th>Maliyet</th><th>Bizim için</th></tr></thead>
+<tbody>
+<tr><td><b>idealo.de</b></td><td>Fiyat karşılaştırma</td><td>Tıklama başı ~0,42–0,56 € (üçüncü taraf kaynak)</td><td>Trafik kanalı. Yalnız EAN'lı ve fiyatı rekabetçi ürünlerde anlamlı.</td></tr>
+<tr><td><b>kaufland.de</b></td><td>Pazaryeri</td><td>Aylık ~40 € + komisyon: elektronik %7, parfüm %10, saat %14, takı %16</td><td>Satış kanalı. Grup JTL üzerinden zaten bağlı görünüyor; önce var olanı ölçmek gerek.</td></tr>
+<tr><td><b>parfumarena.com</b></td><td>Küçük parfüm pazaryeri (~40 ürün)</td><td>Bilinmiyor</td><td>İşleten Woida UG; bu ad mağaza sahibinin JTL panelinde de geçiyor. Büyük olasılıkla rakip değil, grubun kendi sitesi. Teyit edilmeli.</td></tr>
+<tr><td><b>douglas.de</b></td><td>Parfüm perakendecisi, kapalı pazaryeri</td><td>Komisyon pazarlıklı, oran bulunamadı</td><td>Örnek ve fiyat referansı. Satıcı olarak kabul düşük ihtimal.</td></tr>
+</tbody></table></div>
+<p class="note">idealo, Kaufland ve Douglas otomatik erişimi engelledi; ücretler üçüncü taraf kaynaklardan, canlı sayfada doğrulanmadı. idealo ve Kaufland teklifleri toplam fiyata (ürün + kargo) göre sıralar: pahalı ürünlerle çıkmak tıklama ücreti ödeyip satış alamamak demek.</p>
+</section>
+
+<section>
+<h2>Önerilen sıra</h2>
+<ol>
+<li><b>69,00 € olan {{N69}} ürünün fiyat kaynağını netleştirin.</b> JTL'de bir kural hatasıysa tek seferde düzelir.</li>
+<li><b>Aşırı farklı {{ASIRI}} ürünü elle kontrol edin.</b> Büyük olasılıkla veri hatası; aşağıdaki listede "aşırı fark" filtresiyle görünür.</li>
+<li><b>Ucuz {{UCUZ}} ürünü idealo/Kaufland denemesi ve reklam vitrini için aday yapın.</b> Önce stok ve EAN teyidi.</li>
+<li><b>Pahalı {{PAHALI}} ürünü</b> tipik fiyatın altına çekin ya da fiyat karşılaştırma kanallarının dışında tutun.</li>
+<li><b>Kanal sırası:</b> önce Kaufland'daki mevcut bağlantıyı ölçün, sonra idealo'yu EAN'lı ve marjı yeterli küçük bir alt kümeyle deneyin.</li>
+</ol>
+</section>
+
+<section>
+<h2>Ürün listesi</h2>
+<p class="sub">Tüm {{TOPLAM}} parfüm. Arayın, duruma göre süzün, sütun başlığına tıklayıp sıralayın.</p>
+<div class="ctl">
+<input id="q" type="search" placeholder="Ürün ya da marka ara" aria-label="Ürün ya da marka ara">
+<select id="st" aria-label="Durum"><option value="">Tüm durumlar</option><option value="p">Pahalı</option><option value="a">Aşırı fark</option><option value="n">Piyasada</option><option value="u">Ucuz</option><option value="x">Fiyat bulunamadı</option></select>
+<select id="so" aria-label="Sıralama"><option value="fd">Fark: pahalıdan ucuza</option><option value="fa">Fark: ucuzdan pahalıya</option><option value="bd">Bizim fiyat: yüksekten</option><option value="ab">Ürün adı</option></select>
+</div>
+<div id="say"></div>
+<div class="scroll"><table id="liste">
+<thead><tr><th>Durum</th><th>Ürün</th><th class="r">Bizde</th><th class="r">Tipik</th><th class="r">En düşük</th><th class="r">Fark</th><th>Kaynak</th></tr></thead>
+<tbody></tbody></table></div>
+<button class="more" id="more" hidden>Daha fazla göster</button>
+<p class="note">Tipik = bulunan tekliflerin medyanı (en fazla 3 teklif). Fiyatı bulunamayan {{YOK}} ürünün 39'u aramada hiç çıkmayan "Take Off" markası, 36'sının başlığında ml yok.</p>
+</section>
+
+</main>
+<script>
+const D={{DATA}};
+const L={p:'pahalı',a:'aşırı fark',n:'piyasada',u:'ucuz',x:'fiyat yok'};
+const eur=v=>v==null?'–':v.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const pct=v=>v==null?'–':(v>0?'+':v<0?'−':'')+'%'+Math.abs(v);
+const tb=document.querySelector('#liste tbody'),q=document.getElementById('q'),st=document.getElementById('st'),so=document.getElementById('so'),say=document.getElementById('say'),more=document.getElementById('more');
+let lim=60;
+function td(t,c){const e=document.createElement('td');if(c)e.className=c;e.textContent=t;return e}
+function draw(){
+  const s=q.value.trim().toLocaleLowerCase('tr'),f=st.value;
+  let r=D.filter(d=>(!f||d[8]===f)&&(!s||(d[0]+' '+d[1]).toLocaleLowerCase('tr').includes(s)));
+  const k=so.value,inf=v=>v==null;
+  r.sort((a,b)=>k==='ab'?a[1].localeCompare(b[1],'tr'):k==='bd'?b[2]-a[2]:inf(a[7])-inf(b[7])||(k==='fd'?b[7]-a[7]:a[7]-b[7]));
+  tb.textContent='';
+  for(const d of r.slice(0,lim)){
+    const tr=document.createElement('tr');
+    const c=document.createElement('td'),g=document.createElement('span');g.className='tag '+d[8];g.textContent=L[d[8]];c.appendChild(g);tr.appendChild(c);
+    tr.appendChild(td(d[1]));tr.appendChild(td(eur(d[2]),'r'));tr.appendChild(td(eur(d[3]),'r'));tr.appendChild(td(eur(d[4]),'r'));
+    const fk=td(pct(d[7]),'r'+(d[7]>15?' tp':d[7]<-15?' tu':''));tr.appendChild(fk);
+    const kc=document.createElement('td');
+    if(d[9]){const a=document.createElement('a');a.href=d[9];a.target='_blank';a.rel='noopener noreferrer nofollow';a.textContent=(d[5]||'kaynak')+(d[6]?' ('+d[6]+')':'');kc.appendChild(a)}else kc.textContent=d[5]||'–';
+    tr.appendChild(kc);tb.appendChild(tr);
+  }
+  say.textContent=r.length+' ürün'+(r.length>lim?' (ilk '+lim+' gösteriliyor)':'');
+  more.hidden=r.length<=lim;
+}
+for(const e of [q,st,so])e.addEventListener('input',()=>{lim=60;draw()});
+more.addEventListener('click',()=>{lim+=120;draw()});
+draw();
+</script>
+</body>
+</html>

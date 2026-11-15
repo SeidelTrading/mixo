@@ -1,0 +1,1 @@
+MXC("genuss/2",0,[["milupa-trinksauger-silikon-gr-1-fuer-tee-0-6-monate-rundsauger-4-stueck","Milupa Trinksauger Silikon Gr. 1 für Tee, 0-6 Monate, Rundsauger – 4 Stück","milupa",4.0,0,"ebay-photo-84fbd44c1a040c16fc84eaff693c93b3cc7d8d128631e97ec8ab1ce463c9574a.jpg",9,2]])

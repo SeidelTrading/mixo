@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Outlet Demo Sunumu</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--ink:#141413;--ink2:#52514e;--mute:#898781;--line:#e1e0d9;--brand:#3048c8;--brand-soft:#e3e7fb;--navy:#171b38;--gold:#ffd168;--violet:#6250d6;--violet-soft:#e6e2fa;--aqua:#12976a;--aqua-soft:#daf3ea;--orange:#d9601f;--orange-soft:#fbe5db;--red:#c93434;--red-soft:#fbe6e6;--amber:#9a6500;--amber-soft:#fbefd2;--green:#0c7a0c;--green-soft:#e2f3e2}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--card:#1e1e1c;--ink:#f0efec;--ink2:#c3c2b7;--mute:#8f8d86;--line:#33332f;--brand:#8496f5;--brand-soft:#232a52;--navy:#0e1126;--violet:#a096f0;--violet-soft:#2a2550;--aqua:#35b88a;--aqua-soft:#143326;--orange:#e07a4d;--orange-soft:#40251a;--red:#ee7878;--red-soft:#3d1e1e;--amber:#e0a43a;--amber-soft:#3a2f14;--green:#4fbf4f;--green-soft:#1a3320}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:0 16px 64px}
+.hero{background:var(--navy);color:#fff;padding:56px 16px 48px;margin-bottom:8px}
+.hero div{max-width:1008px;margin:0 auto}
+.hero .k{color:var(--gold);font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+.hero h1{font-size:42px;line-height:1.08;margin:10px 0 12px;letter-spacing:-.015em}
+.hero p{font-size:18px;color:rgba(255,255,255,.78);max-width:64ch;margin:0}
+.hero a{display:inline-block;margin-top:22px;background:var(--gold);color:var(--navy);font-weight:700;text-decoration:none;border-radius:999px;padding:10px 20px}
+h2{font-size:24px;margin:0 0 4px;letter-spacing:-.01em}
+h3{font-size:16px;margin:0 0 4px}
+p{margin:8px 0}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;margin:20px 0}
+.num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--brand-soft);color:var(--brand);font-weight:600;font-size:14px;margin-right:8px}
+.sub{color:var(--ink2);margin:0 0 16px;max-width:75ch}
+.note{font-size:13px;color:var(--mute);margin-top:8px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.tile{background:var(--bg);border-radius:10px;padding:14px}
+.tile b{display:block;font-size:28px;line-height:1.15;font-variant-numeric:tabular-nums}
+.tile span{font-size:13px;color:var(--ink2)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--ink2);font-weight:600}
+td.old{color:var(--ink2)}
+.feat{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:22px;align-items:center;padding:20px 0;border-top:1px solid var(--line)}
+.feat:first-of-type{border-top:0;padding-top:4px}
+.feat:nth-of-type(even) .shot{order:2}
+.shot{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg);line-height:0}
+.shot img{width:100%;height:auto;display:block}
+.feat ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:15px}
+.feat li{margin:3px 0}
+.tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;margin-bottom:6px}
+.t1{background:var(--brand-soft);color:var(--brand)}.t2{background:var(--violet-soft);color:var(--violet)}.t3{background:var(--aqua-soft);color:var(--aqua)}.t4{background:var(--orange-soft);color:var(--orange)}.t5{background:var(--amber-soft);color:var(--amber)}
+.why{font-size:13px;color:var(--mute);margin-top:8px}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;margin:10px 0}
+.fn{flex:1 1 140px;border-radius:10px;padding:12px;border:1px solid var(--line);background:var(--bg);font-size:14px}
+.fn b{display:block}.fn span{font-size:12.5px;color:var(--ink2)}
+.fn.a{background:var(--brand-soft);border-color:var(--brand)}.fn.b{background:var(--violet-soft);border-color:var(--violet)}.fn.c{background:var(--aqua-soft);border-color:var(--aqua)}
+.ar{display:flex;align-items:center;color:var(--mute);font-size:20px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px;margin-top:10px}
+.rule{background:var(--bg);border-radius:10px;padding:12px;font-size:14px}
+.rule b{display:block}
+.rule span{color:var(--ink2)}
+.st{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.ok{background:var(--green-soft);color:var(--green)}.mid{background:var(--amber-soft);color:var(--amber)}.no{background:var(--red-soft);color:var(--red)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px}
+ol.q{padding-left:20px;margin:6px 0}ol.q li{margin:6px 0}
+.video{border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#000;line-height:0}
+.video video{width:100%;height:auto;display:block}
+footer{color:var(--mute);font-size:13px;margin-top:24px}
+@media (max-width:760px){.feat{grid-template-columns:1fr}.feat:nth-of-type(even) .shot{order:0}.hero h1{font-size:32px}.ar{display:none}}
+</style>
+</head>
+<body>
+<div class="hero"><div>
+  <span class="k">15 Kasım 2026 · Sunum</span>
+  <h1>Outlet Demo: mağaza ve yönetim paneli</h1>
+  <p>Bir outlet mağazasının 45 bin ürünlük kataloğundan yeni bir vitrin ve onu yöneten bir panel tasarladık. Bu sayfa yapılanların tamamını ekran görüntüleriyle anlatıyor; sonunda seslendirilmiş iki video var.</p>
+  <a href="#video">Videoları izle ↓</a>
+</div></div>
+<main>
+
+<section>
+  <h2><span class="num">1</span>Bir bakışta</h2>
+  <p class="sub">Outlet Demo çalışan bir tasarım demosudur: mağaza gezilir, panel kullanılır; gerçek sipariş ve ödeme alınmaz. Ürünler ve fiyatlar gerçek katalogdan gelir.</p>
+  <div class="tiles">
+    <div class="tile"><b>44.998</b><span>ürün, 10 kategoride</span></div>
+    <div class="tile"><b>882</b><span>üründe görsel ya da başlık sorunu bulundu</span></div>
+    <div class="tile"><b>661</b><span>ürünün fotoğrafı değiştirildi</span></div>
+    <div class="tile"><b>136</b><span>ürün yönetici onayı bekliyor</span></div>
+    <div class="tile"><b>11</b><span>panel ekranı ve bir asistan</span></div>
+    <div class="tile"><b>2</b><span>Türkçe seslendirilmiş video</span></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">2</span>Müşteriyi nerede kaybederiz, ne yaptık?</h2>
+  <table>
+    <tr><th>Aşama</th><th>Kaybetme nedeni</th><th>Demoda</th></tr>
+    <tr><td>İlk 5 saniye</td><td class="old">Ne satıldığı anlaşılmıyor</td><td>Tek sayfalık ilk ekran, 10 kategori, arama üstte</td></tr>
+    <tr><td>Arama</td><td class="old">45 bin üründe aradığını bulamıyor</td><td>Yazarken öneri, yazım toleransı, boş sonuçta çıkış yolu</td></tr>
+    <tr><td>Liste</td><td class="old">Çok ürün, daraltamıyor</td><td>Kategori, fiyat, marka ve stok filtreleri</td></tr>
+    <tr><td>Liste</td><td class="old">Geri tuşu filtreyi sıfırlıyor</td><td>Filtre adres çubuğunda; bağlantı paylaşılır</td></tr>
+    <tr><td>Ürün</td><td class="old">Karar veremiyor, alternatif yok</td><td>Yakın fiyatlı benzer ürünler</td></tr>
+    <tr><td>Ürün</td><td class="old">Fotoğraf ürünü göstermiyor (kutu, logo)</td><td>Görsel denetimi ve yönetici onay kuyruğu</td></tr>
+    <tr><td>Sepet</td><td class="old">Kargo ücreti sürprizi</td><td>Ücretsiz kargo çubuğu ve farkı kapatan ürün önerisi</td></tr>
+    <tr><td>Sepet</td><td class="old">Sepeti bırakıp gidiyor</td><td>Sepet saklanır; hatırlatma kuralı (simülasyon)</td></tr>
+    <tr><td>Sonrası</td><td class="old">Tek seferlik müşteri</td><td>Sarf ürünleri için yeniden sipariş hatırlatması (simülasyon)</td></tr>
+    <tr><td>Yönetim</td><td class="old">Değişiklik için geliştirici gerekiyor</td><td>Ürün, içerik ve kampanya panelden; her değişiklik geri alınır</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2><span class="num">3</span>Mağaza, ekran ekran</h2>
+  <p class="sub">Mağaza arayüzü Almancadır. Ekran görüntüleri tanıtım videosundan alınmıştır.</p>
+
+  <div class="feat"><div class="shot"><img src="img/ilkekran.jpg" alt="Mağazanın ilk ekranı" loading="lazy"></div><div>
+    <span class="tag t1">Vitrin</span><h3>Tek sayfalık ilk ekran</h3>
+    <ul><li>Solda kategori listesi, ortada büyük görsel ve öne çıkan ürün</li><li>Altında güven şeridi ve marka bandı; ekran boyuna göre tam bir sayfaya oturur</li><li>Kaydırınca doğrudan filtreli katalog gelir</li></ul>
+    <p class="why">Yanıt verdiği sorun: ne satıldığı ilk beş saniyede anlaşılmalı.</p></div></div>
+  <div class="feat"><div class="shot"><img src="img/arama.jpg" alt="Yazarken öneri veren arama" loading="lazy"></div><div>
+    <span class="tag t1">Vitrin</span><h3>Yazarken öneren arama</h3>
+    <ul><li>Kategori, marka ve ürün önerileri aynı kutuda</li><li>Yazım toleransı: "g-shock" ile "G Shock" aynı sonucu verir</li><li>/ tuşu aramayı açar, ok tuşlarıyla gezilir</li></ul>
+    <p class="why">Yanıt verdiği sorun: 45 bin üründe aradığını bulamamak.</p></div></div>
+  <div class="feat"><div class="shot"><img src="img/filtre.jpg" alt="Katalog ve filtreler" loading="lazy"></div><div>
+    <span class="tag t1">Vitrin</span><h3>Filtreli katalog</h3>
+    <ul><li>Kategori, alt kategori, fiyat, marka ve stok filtreleri birlikte çalışır</li><li>Seçili filtreler üstte etiket olarak durur, tek tıkla kalkar</li><li>Filtre ve arama adres çubuğunda saklanır; bağlantı paylaşılabilir, geri tuşu çalışır</li></ul></div></div>
+  <div class="feat"><div class="shot"><img src="img/urun.jpg" alt="Ürün sayfası" loading="lazy"></div><div>
+    <span class="tag t1">Vitrin</span><h3>Ürün sayfası ve benzer ürünler</h3>
+    <ul><li>Fiyat, stok, kargo süresi ve 14 günlük cayma hakkı bir arada</li><li>Aynı alt kategoriden, yakın fiyatlı benzer ürünler</li></ul>
+    <p class="why">Yanıt verdiği sorun: müşteri karar veremeyince alternatif görmeden çıkıyor.</p></div></div>
+  <div class="feat"><div class="shot"><img src="img/sepet.jpg" alt="Sepet ve ücretsiz kargo çubuğu" loading="lazy"></div><div>
+    <span class="tag t4">Satış</span><h3>Sepet ve ücretsiz kargo çubuğu</h3>
+    <ul><li>Ücretsiz kargoya kalan tutarı gösterir; eşik geçilince yeşile döner</li><li>Aradaki farkı kapatan gerçek ürünler önerir</li><li>Sepet tarayıcıda saklanır, dönünce yerinde durur</li></ul></div></div>
+  <div class="feat"><div class="shot"><img src="img/kasa.jpg" alt="Demo kasa adımı" loading="lazy"></div><div>
+    <span class="tag t4">Satış</span><h3>Kasa adımı (demo)</h3>
+    <ul><li>Yalnız bir deneme siparişi oluşturur; form bunu açıkça yazar</li><li>Ödeme alınmaz, hiçbir şey gönderilmez</li></ul>
+    <p class="why">Gerçek ödeme (kart, PayPal, Klarna) henüz yok.</p></div></div>
+  <div class="feat"><div class="shot"><img src="img/analiz.jpg" alt="Müşteri analizi paneli" loading="lazy"></div><div>
+    <span class="tag t2">Analiz</span><h3>Müşteri analizi</h3>
+    <ul><li>Ziyaretçinin izniyle davranışı izler: görüntüleme, arama, favori, sepet</li><li>İlgi alanı, marka, fiyat aralığı ve satın alma aşaması çıkarır</li><li>"Für dich" önerileri bu profilden gelir; ziyaretçi verisini silebilir</li></ul>
+    <p class="why">İzin verilmezse analiz kapalı kalır. Sahte geri sayım, uydurma stok baskısı gibi yöntemler bilerek kullanılmadı.</p></div></div>
+</section>
+
+<section>
+  <h2><span class="num">4</span>Yönetim paneli, ekran ekran</h2>
+  <p class="sub">Panel Türkçedir ve şifreyle açılır. Ekran görüntüleri kullanım videosundan, yerel deneme verisiyle alınmıştır.</p>
+
+  <div class="feat"><div class="shot"><img src="img/genel.jpg" alt="Panel genel bakış" loading="lazy"></div><div>
+    <span class="tag t1">Temel</span><h3>Genel bakış</h3>
+    <ul><li>Siparişler, ciro ve dikkat isteyen işler tek ekranda</li><li>Onay bekleyen ve stokta olmayan ürün sayıları</li><li>Her kutu ilgili listeye götürür</li></ul>
+    <p class="why">Ekrandaki siparişler deneme verisidir.</p></div></div>
+  <div class="feat"><div class="shot"><img src="img/urunara.jpg" alt="Ürünler ekranı" loading="lazy"></div><div>
+    <span class="tag t3">Ürün</span><h3>Ürün arama ve düzenleme</h3>
+    <ul><li>45 bin üründe ada, markaya, kategoriye ve duruma göre arama</li><li>Başlık, fiyat, görsel ve kategori panelden değiştirilir; mağazaya hemen yansır</li><li>"Öne çıkar" ile ana sayfa seçkisi belirlenir</li></ul></div></div>
+  <div class="feat"><div class="shot"><img src="img/urungizle.jpg" alt="Toplu gizleme" loading="lazy"></div><div>
+    <span class="tag t3">Ürün</span><h3>Gizleme ve toplu işlem</h3>
+    <ul><li>Tek ürün ya da seçilenler birlikte gizlenir, geri gösterilir</li><li>Tek seferde en fazla 20 ürün; her işlem günlüğe yazılır ve geri alınır</li></ul></div></div>
+  <div class="feat"><div class="shot"><img src="img/onay.jpg" alt="Onay kuyruğu" loading="lazy"></div><div>
+    <span class="tag t5">Kalite</span><h3>Sorunlu ürünler ve onay kuyruğu</h3>
+    <ul><li>Görsel denetiminde işaretlenen ürünler türüne göre listelenir: kutu, yalnız logo, boş, yanlış görsel</li><li>Yönetici onaylayana kadar mağazada görünmezler</li><li>Filtrelenen ürünler topluca onaylanabilir</li></ul>
+    <p class="why">Yanıt verdiği sorun: kutu ya da logo fotoğrafıyla satışa çıkan ürünler.</p></div></div>
+  <div class="feat"><div class="shot"><img src="img/icerik.jpg" alt="İçerik yönetimi" loading="lazy"></div><div>
+    <span class="tag t4">İçerik</span><h3>İçerik ve kategoriler</h3>
+    <ul><li>Ana sayfa başlığı, alt metni ve duyuru şeridi panelden yazılır</li><li>Kategori adları değiştirilir, kategori gizlenir</li><li>Ücretsiz kargo eşiği ayarlanır</li></ul></div></div>
+  <div class="feat"><div class="shot"><img src="img/kampanya.jpg" alt="Kampanya önerileri" loading="lazy"></div><div>
+    <span class="tag t2">Pazarlama</span><h3>Veriden kampanya önerileri</h3>
+    <ul><li>En çok bakılan kategori ve markalardan, en yüksek indirimli ürünlerden öneri üretir</li><li>Her önerinin dayandığı veri yazılıdır</li><li>Tek tıkla vitrine yansır, tek tıkla geri alınır</li></ul>
+    <p class="why">Ziyaretçi verisi azsa panel bunu söyler; sayı uydurmaz.</p></div></div>
+  <div class="feat"><div class="shot"><img src="img/instagram.jpg" alt="Instagram gönderi taslakları" loading="lazy"></div><div>
+    <span class="tag t2">Pazarlama</span><h3>Instagram içerik hattı</h3>
+    <ul><li>Katalogdan ürün seç; Almanca açıklama ve etiketler hazırlanır</li><li>Panelde önizle, düzenle, onayla, kuyruğa ver</li></ul>
+    <p class="why">Şu an simülasyon modunda: gerçek hesaba bağlı değil, hiçbir şey yayınlanmaz.</p></div></div>
+  <div class="feat"><div class="shot"><img src="img/hatirlatma.jpg" alt="Hatırlatma kuralları" loading="lazy"></div><div>
+    <span class="tag t2">Pazarlama</span><h3>Sepet ve yeniden sipariş hatırlatması</h3>
+    <ul><li>Kural: kaç gün sonra, hangi kategori, hangi ileti şablonu</li><li>"Kime gidecekti" önizlemesi</li><li>Toner ve mürekkep gibi sarf ürünleri için yeniden sipariş hatırlatması</li></ul>
+    <p class="why">Gerçek e-posta gönderilmez; yalnız simülasyon kaydı tutulur.</p></div></div>
+  <div class="feat"><div class="shot"><img src="img/ayar.jpg" alt="Değişiklik günlüğü" loading="lazy"></div><div>
+    <span class="tag t5">Güvenlik</span><h3>Ayarlar ve değişiklik günlüğü</h3>
+    <ul><li>Kim, ne zaman, neyi değiştirdi</li><li>Her değişiklik tek tıkla geri alınır</li></ul></div></div>
+</section>
+
+<section>
+  <h2><span class="num">5</span>Asistan</h2>
+  <p class="sub">Panelin sağ alt köşesindeki düğmeyle açılır. İki iş yapar: mağaza hakkındaki soruları yanıtlar ve yönetim işlerini sizin yerinize hazırlar.</p>
+  <div class="cols">
+    <div><div class="shot"><img src="img/asistan.jpg" alt="Panelde asistan penceresi" loading="lazy"></div></div>
+    <div>
+      <h3>Soru sorarsınız</h3>
+      <div class="flow"><div class="fn a"><b>Soru</b><span>"Son 7 günde mağazada ne oldu?"</span></div><div class="ar">›</div><div class="fn b"><b>Veriye bakar</b><span>Panel verisinden hesaplar</span></div><div class="ar">›</div><div class="fn c"><b>Yanıt</b><span>Türkçe, kısa özet</span></div></div>
+      <h3 style="margin-top:12px">İş istersiniz</h3>
+      <div class="flow"><div class="fn a"><b>İstek</b><span>"Kutu fotoğraflı Festina saatlerini gizle"</span></div><div class="ar">›</div><div class="fn b"><b>İşlem</b><span>Panelin kendi işlemleriyle yapar</span></div><div class="ar">›</div><div class="fn c"><b>Günlük</b><span>Kayda geçer, geri alınır</span></div></div>
+    </div>
+  </div>
+  <h3 style="margin-top:18px">Sınırları</h3>
+  <div class="rules">
+    <div class="rule"><b>En fazla 20 ürün</b><span>Tek seferde daha fazlasını değiştirmez.</span></div>
+    <div class="rule"><b>Her işlem geri alınır</b><span>Yaptığı her değişiklik günlükte durur.</span></div>
+    <div class="rule"><b>Yalnız panel işlemleri</b><span>Ürün, içerik, kategori ve pazarlama taslakları; başka bir şeye erişmez.</span></div>
+    <div class="rule"><b>Gönderim yapmaz</b><span>Instagram ve hatırlatmalar simülasyondadır.</span></div>
+  </div>
+  <p class="note">Canlı panelde yapay zekâ anahtarı tanımlı, ancak asistanın canlıda yanıt verdiği henüz denenmedi. Videoda asistanın yanıtı gösterilmiyor; kayıt anahtarsız yerel ortamda alındı.</p>
+</section>
+
+<section>
+  <h2><span class="num">6</span>Ne hazır, ne değil?</h2>
+  <table>
+    <tr><th>Parça</th><th>Durum</th><th>Açıklama</th></tr>
+    <tr><td>Mağaza vitrini</td><td><span class="st ok">Yayında</span></td><td>Arama, filtre, ürün sayfası, favori ve sepet çalışıyor.</td></tr>
+    <tr><td>Katalog</td><td><span class="st ok">Yayında</span></td><td>44.998 ürün; fiyat ve stok alındığı andaki hâliyle, güncellenmiyor.</td></tr>
+    <tr><td>Müşteri analizi</td><td><span class="st ok">Çalışıyor</span></td><td>Tarayıcıda, ziyaretçinin izniyle.</td></tr>
+    <tr><td>Yönetim paneli</td><td><span class="st ok">Yayında</span></td><td>Yerelde denendi; canlıda giriş yapılarak ayrıca denenmedi.</td></tr>
+    <tr><td>Onay kuyruğu</td><td><span class="st ok">Yayında</span></td><td>136 ürün onaya kadar mağazada gizli.</td></tr>
+    <tr><td>Düzeltilen fotoğraflar</td><td><span class="st mid">Demo için</span></td><td>661 fotoğraf başka kaynaklardan bulundu; düşük çözünürlüklü, gerçek mağazada satıcının kendi fotoğrafı gerekir.</td></tr>
+    <tr><td>Asistan</td><td><span class="st mid">Denenmedi</span></td><td>Anahtar tanımlı; canlıda yanıt verdiği doğrulanmadı.</td></tr>
+    <tr><td>Kampanya önerileri</td><td><span class="st mid">Taslak</span></td><td>Çalışıyor; gerçek ziyaretçi verisi az olduğu için öneriler çoğunlukla katalogdan.</td></tr>
+    <tr><td>Instagram</td><td><span class="st mid">Simülasyon</span></td><td>Gerçek bağlantının kodu yazıldı, token olmadığı için hiç çalıştırılmadı.</td></tr>
+    <tr><td>Hatırlatmalar</td><td><span class="st mid">Simülasyon</span></td><td>Gerçek e-posta gönderilmiyor.</td></tr>
+    <tr><td>Sipariş ve ödeme</td><td><span class="st no">Yok</span></td><td>Kasa adımı yalnız deneme siparişi oluşturur.</td></tr>
+    <tr><td>Kendi alan adı</td><td><span class="st no">Yok</span></td><td>Site geçici bir adreste; Chrome güvenlik uyarısı gösterebilir.</td></tr>
+    <tr><td>Ürün fotoğraflarının yedeği</td><td><span class="st no">Yok</span></td><td>Fotoğrafların çoğu hâlâ eski mağazanın sunucusundan geliyor; orası kapanırsa görünmezler.</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2><span class="num">7</span>Sıradaki adımlar</h2>
+  <div class="cols">
+    <div><h3>Bizden</h3><ol class="q">
+      <li>Ürün fotoğraflarını kendi sunucumuza yedeklemek</li>
+      <li>Asistanı ve paneli canlıda uçtan uca denemek</li>
+      <li>Instagram bağlantısını gerçek hesapla denemek</li>
+      <li>Toner ve mürekkep için "yazıcı modeline göre bul"</li>
+      <li>Gerçek ödeme adımı: misafir ödeme, kart, PayPal</li></ol></div>
+    <div><h3>Sizden</h3><ol class="q">
+      <li>Kendi alan adı ve mağazanın kalıcı adı</li>
+      <li>Onay kuyruğundaki 136 ürün için karar</li>
+      <li>Instagram hesabı ve Meta uygulaması erişimi</li>
+      <li>Hatırlatma e-postaları için gönderici ve izin metni</li>
+      <li>Güncel fiyat ve stok kaynağı</li></ol></div>
+  </div>
+</section>
+
+<section id="video">
+  <h2><span class="num">8</span>Videolar</h2>
+  <p class="sub">İkisi de Türkçe seslendirilmiştir.</p>
+  <div class="cols">
+    <div><h3>Tanıtım · 2 dk 29 sn</h3><div class="video"><video controls preload="metadata" poster="tanitim-kapak.jpg" src="outlet-demo-tanitim.mp4">Tarayıcınız videoyu oynatamıyor. Dosya: outlet-demo-tanitim.mp4</video></div></div>
+    <div><h3>Panel kullanımı · 3 dk 51 sn</h3><div class="video"><video controls preload="metadata" poster="kullanim-kapak.jpg" src="outlet-demo-kullanim.mp4">Tarayıcınız videoyu oynatamıyor. Dosya: outlet-demo-kullanim.mp4</video></div></div>
+  </div>
+  <p class="note">Ses bilgisayarda üretilmiş sentetik bir sestir. Kayıtlar yerel deneme ortamından alındı; paneldeki siparişler ve ziyaretçi verileri örnektir.</p>
+</section>
+
+<footer>Outlet Demo bir tasarım çalışmasıdır; canlı bir mağaza değildir. · Mağaza: <a href="/" style="color:inherit">ana sayfa</a> · Videoları yeniden üretmek için: <code>video/tanitim.py</code>, <code>video/kullanim.py</code></footer>
+</main>
+</body>
+</html>

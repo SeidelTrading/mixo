@@ -1,0 +1,56 @@
+[
+ {"id": 15448058593438, "status": "bulundu", "offers": [
+   {"shop": "Check24 Preisvergleich", "country": "DE", "price": 128.70, "url": "https://preisvergleich.check24.de/ul/hersteller/bdk-parfums/", "matched_title": "BDK Parfums French Bouquet Eau de Parfum (EdP) Unisexduft 100 ml"},
+   {"shop": "retreat.nl", "country": "NL", "price": 225.00, "url": "https://www.retreat.nl/en/products/parfums-bdk-french-bouquet-100ml", "matched_title": "BDK Parfums French Bouquet 100ml"}
+  ], "note": "Check24 fiyatı arama özetinden; sayfadaki litre fiyatıyla çeliştiği için doğrulanmadı. Liste fiyatı kesin değil."},
+ {"id": 15444800897182, "status": "bulunamadi", "offers": [], "note": "Başlıkta ml yok; konsantrasyon/boy eşleşmesi doğrulanamadı."},
+ {"id": 15388037021854, "status": "bulundu", "offers": [
+   {"shop": "Heinemann", "country": "DE", "price": 129.99, "url": "https://hme.heinemann-shop.com/en/ber/burberry/burberry-goddess-eau-de-parfum-100-ml/p/000000000001564274/", "matched_title": "Burberry Goddess Eau de Parfum 100 ml"},
+   {"shop": "flaconi (Preisvergleich)", "country": "FR", "price": 85.65, "url": "https://www.achatmoinscher.com/comparateur-de-prix-Parfum-femme/burberry-burberry-goddess-eau-de-parfum-100-ml.html", "matched_title": "Burberry Goddess Eau de Parfum 100 ml"}
+  ], "note": "Heinemann 'ab' fiyatı ve flaconi fiyatı arama özetinden; varyant eşleşmesi tam doğrulanmadı. Ülke kodu FR, karşılaştırma sitesinin ülkesine göre."},
+ {"id": 15388029419678, "status": "bulundu", "offers": [
+   {"shop": "Notino", "country": "FR", "price": 106.00, "url": "https://www.notino.fr/burberry/goddess-intense-eau-de-parfumintense-pour-femme/", "matched_title": "Burberry Goddess Intense Eau de Parfum"},
+   {"shop": "shop-apotheke.at", "country": "AT", "price": 123.75, "url": "https://www.shop-apotheke.at/beauty/upmZCWHTK/burberry-goddess-intense-eau-de-parfum-100-ml.htm", "matched_title": "Burberry Goddess Intense Eau de Parfum 100 ml"},
+   {"shop": "Burberry (Malta)", "country": "MT", "price": 172.00, "url": "https://mt.burberry.com/-p40844151", "matched_title": "Burberry Goddess Eau de Parfum Intense for Women 100ml"}
+  ], "note": "Notino sayfasında 100 ml görünmüyor; ml doğrulanmadı."},
+ {"id": 15447688478878, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; net EUR teklif doğrulanamadı."},
+ {"id": 15442108416158, "status": "bulunamadi", "offers": [], "note": "Başlıkta konsantrasyon (EDP/EDT/Parfum) yok; eşleşme güvenilir değil."},
+ {"id": 15388028666014, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15426236612766, "status": "bulundu", "offers": [
+   {"shop": "shop-apotheke.at", "country": "AT", "price": 106.66, "url": "https://www.shop-apotheke.at/beauty/upmEGFCZL/burberry-hero-eau-de-parfum-100-ml.htm", "matched_title": "Burberry Hero Eau de Parfum 100 ml"}
+  ], "note": "Fiyat arama özetindeki 100 ml EdP rakamı; ürün-fiyat eşleşmesi tam doğrulanmadı. Diğer varyant fiyatları (115,92) karışık olabilir."},
+ {"id": 15447689167006, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; 'Elixir' ayrı ürün, sorgulanamadı."},
+ {"id": 15441963548830, "status": "bulundu", "offers": [
+   {"shop": "shop-apotheke.at", "country": "AT", "price": 115.92, "url": "https://www.shop-apotheke.at/beauty/upmMYLLWG/burberry-hero-parfum-100-ml.htm", "matched_title": "Burberry Hero Parfum 100 ml"}
+  ], "note": "Tek güvenilir EUR teklif. Privat satıcı ilanları (74 EUR) ikinci el sayıldığı için alınmadı."},
+ {"id": 15426235367582, "status": "bulunamadi", "offers": [], "note": "Başlıkta ml yok."},
+ {"id": 15428999282846, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı (90 ml)."},
+ {"id": 15426237268126, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı (90 ml)."},
+ {"id": 15426237071518, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı (90 ml)."},
+ {"id": 15388037709982, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442162614430, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15444938817694, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15387970109598, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442112118942, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442112315550, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442112512158, "status": "bulunamadi", "offers": [], "note": "Set ürünü; tek boy eşleşmesi yok (aranmadı)."},
+ {"id": 15442112610462, "status": "bulunamadi", "offers": [], "note": "Set ürünü; tek boy eşleşmesi yok (aranmadı)."},
+ {"id": 15444323238046, "status": "bulunamadi", "offers": [], "note": "Başlıkta ml yok."},
+ {"id": 15388036464798, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15388036989086, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442112839838, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442112970910, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442113167518, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442113331358, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442113462430, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442886361246, "status": "bulunamadi", "offers": [], "note": "Başlıkta konsantrasyon yok; eşleşme güvenilir değil."},
+ {"id": 15442974605470, "status": "bulunamadi", "offers": [], "note": "Başlıkta konsantrasyon yok; eşleşme güvenilir değil."},
+ {"id": 15442179522718, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442174836894, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442174607518, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442176999582, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442182865054, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15448158208158, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442187583646, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."},
+ {"id": 15442176376990, "status": "bulunamadi", "offers": [], "note": "Arama bütçesi bu turda doldu; sorgulanamadı."}
+]

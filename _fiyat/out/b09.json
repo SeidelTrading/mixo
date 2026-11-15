@@ -1,0 +1,392 @@
+[
+ {
+  "id": 15387985084574,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Notino",
+    "country": "FR",
+    "price": 28.6,
+    "url": "https://www.notino.fr/lattafa/khamrah-qahwa-eau-de-parfum-mixte/p-16221835/",
+    "matched_title": "Lattafa Khamrah Qahwa Eau de Parfum 100 ml"
+   },
+   {
+    "shop": "Oriental-Style",
+    "country": "DE",
+    "price": 29.9,
+    "url": "https://www.oriental-style.de/en/khamrah-qahwa-lattafa.html",
+    "matched_title": "Khamrah Qahwa Lattafa EDP 100 ml"
+   },
+   {
+    "shop": "Rossmann",
+    "country": "DE",
+    "price": 29.99,
+    "url": "https://www.rossmann.de/de/pflege-und-duft-lattafa-khamra-qahwa-edp-100-ml/p/6290360593661",
+    "matched_title": "Lattafa Khamra Qahwa EDP 100 ml"
+   }
+  ],
+  "note": "Aktions/satis fiyatlari; kupon yok. Notino FR promo fiyati."
+ },
+ {
+  "id": 15387980988574,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Notino",
+    "country": "FR",
+    "price": 29.5,
+    "url": "https://www.notino.fr/lattafa/mayar-cherry-intense-eau-de-parfum-mixte/",
+    "matched_title": "Lattafa Mayar Cherry Intense Eau de Parfum 100 ml"
+   },
+   {
+    "shop": "Dubai Perfume Shop",
+    "country": "IE",
+    "price": 39.0,
+    "url": "https://www.dubaiperfumeshop.ie/products/mayar-cherry-intense-100ml-lattafa",
+    "matched_title": "Mayar Cherry Intense 100ml Lattafa"
+   }
+  ],
+  "note": "Notino son dusuk gorulen fiyat 27,90 (kayit disi); eBay 16,13 satici yorumunda sahtelik uyarisi oldugu icin alinmadi."
+ },
+ {
+  "id": 15387983610014,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Lyko",
+    "country": "DE",
+    "price": 23.46,
+    "url": "https://lyko.com/de/lattafa/lattafa-mayar-natural-intense-edp-w-100-ml",
+    "matched_title": "Lattafa Mayar Natural Intense EDP W 100 ml"
+   },
+   {
+    "shop": "Parfumdorient",
+    "country": "BE",
+    "price": 39.99,
+    "url": "https://parfumdorient.be/products/mayar-natural-intense-eau-de-parfum-100ml-by-lattafa-perfumes",
+    "matched_title": "Mayar Natural Intense Eau de Parfum 100ml"
+   }
+  ],
+  "note": "Lyko 25% kampanya indirimli fiyat (liste 31,28). Kaufland 18,34 ml teyit edilemedi, alinmadi."
+ },
+ {
+  "id": 15387959558302,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "dm",
+    "country": "DE",
+    "price": 29.95,
+    "url": "https://www.dm.de/p/d/3036464/lattafa-bade-e-al-oud-oud-for-glory-eau-de-parfum",
+    "matched_title": "Lattafa Bade'e Al Oud Oud for Glory Eau de Parfum 100 ml"
+   },
+   {
+    "shop": "Boozyshop",
+    "country": "IT",
+    "price": 29.95,
+    "url": "https://boozyshop.com/products/lattafa-badee-al-oud-for-glory-eau-de-parfum",
+    "matched_title": "Lattafa Badee Al Oud for Glory Eau De Parfum"
+   }
+  ],
+  "note": "Notino 22,90 'pro 100 ml' ifadesi belirsiz oldugu icin alinmadi. Kargo haric."
+ },
+ {
+  "id": 15387981742238,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Boozyshop",
+    "country": "IT",
+    "price": 19.95,
+    "url": "https://www.boozyshop.com/products/lattafa-oud-mood-elixer-eau-de-parfum",
+    "matched_title": "Lattafa Oud Mood Elixer Eau De Parfum"
+   }
+  ],
+  "note": "Tek guvenilir teklif. eBay 19,25 ve Check24 satici sayfalari ml/satici netlestirilemedi."
+ },
+ {
+  "id": 15387982790814,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Notino",
+    "country": "FR",
+    "price": 18.2,
+    "url": "https://www.notino.fr/lattafa/oud-mood-reminiscence-eau-de-parfum-pour-homme/",
+    "matched_title": "Lattafa Oud Mood Reminiscence Eau de Parfum 100 ml"
+   },
+   {
+    "shop": "Aio.lv",
+    "country": "LV",
+    "price": 20.49,
+    "url": "https://aio.lv/en/product--lattafa-6291106068184--11443682.md",
+    "matched_title": "Lattafa Oud Mood Reminiscence Eau de Parfum 100 ml"
+   }
+  ],
+  "note": "Notino fiyati tedarikci onerili fiyat 22,40 uzerinden; Farma2go 14,00 netlestirilemedi."
+ },
+ {
+  "id": 15387973386398,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Aio.lv",
+    "country": "LV",
+    "price": 50.99,
+    "url": "https://aio.lv/en/product--lattafa-6290360593036--11681503.md",
+    "matched_title": "Lattafa Pisa Eau de Parfum 100 ml"
+   }
+  ],
+  "note": "Tek teklif. Kruidvat 47,99 birim fiyat belirsiz oldugu icin alinmadi; Notino FR stokta yok."
+ },
+ {
+  "id": 15387972567198,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Notino",
+    "country": "FR",
+    "price": 30.2,
+    "url": "https://www.notino.fr/lattafa/pride-al-quiam-gold-eau-de-parfum-pour-femme/",
+    "matched_title": "Lattafa Pride Al Qiam Gold Eau de Parfum 100 ml"
+   },
+   {
+    "shop": "Lyko",
+    "country": "FI",
+    "price": 39.1,
+    "url": "https://lyko.com/fi/lattafa/lattafa-pride-al-qiam-gold-edp-u-100-ml",
+    "matched_title": "Lattafa Pride Al Qiam Gold EDP U 100 ml"
+   }
+  ],
+  "note": "Notino 'verkaufspreis' 30,20; 26,50 son dusuk fiyat kayit disi."
+ },
+ {
+  "id": 15387979415710,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Notino",
+    "country": "FR",
+    "price": 39.4,
+    "url": "https://www.notino.fr/lattafa/pride-art-of-arabia-iii-eau-de-parfum-mixte/",
+    "matched_title": "Lattafa Pride Art of Arabia III Eau de Parfum 100 ml"
+   },
+   {
+    "shop": "Lyko",
+    "country": "DE",
+    "price": 55.2,
+    "url": "https://lyko.com/de/lattafa/lattafa-pride-art-of-arabia-iii-edp-u-100-ml",
+    "matched_title": "Lattafa Pride Art of Arabia III EDP U 100 ml"
+   }
+  ],
+  "note": "Notino kupon kodsuz 39,40 alindi (35,46 kodlu)."
+ },
+ {
+  "id": 15387987640478,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "Boozyshop",
+    "country": "IT",
+    "price": 26.96,
+    "url": "https://www.boozyshop.com/it/products/sehr-eau-de-parfum",
+    "matched_title": "Sehr Eau de Parfum 100 ml"
+   },
+   {
+    "shop": "Aio.lv",
+    "country": "LV",
+    "price": 39.49,
+    "url": "https://aio.lv/en/product--lattafa-0228663--11902244.md",
+    "matched_title": "Eau de Parfum Lattafa Sehr 100 ml"
+   },
+   {
+    "shop": "Oriental-Style",
+    "country": "DE",
+    "price": 39.99,
+    "url": "https://www.oriental-style.de/en/products/sehr-lattafa",
+    "matched_title": "Sehr Lattafa EDP 100 ml"
+   }
+  ],
+  "note": "Italyan teklifi 26,96 (35,95 yerine) arama ozetinden; magaza adi tam teyit edilemedi. eBay 29,90 satici sayfasi netlesmedigi icin alinmadi."
+ },
+ {
+  "id": 15387967553694,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15387965063326,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15387966668958,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15387978498206,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15387962704030,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15387962015902,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15387961295006,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15442131255454,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15388035088542,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15388016279710,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15388021129374,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15387994620062,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15387991834782,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15388041773214,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15388015493278,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15388042428574,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15388040462494,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15388041904286,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15442131452062,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15442131615902,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15442131812510,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15387961753758,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15387959984286,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15387960869022,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15441960730782,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15463120273566,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15442132140190,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15442132304030,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15442191843486,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ },
+ {
+  "id": 15442975686814,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Arama limiti doldugu icin bu urun aranamadi; fiyat yazilmadi. Yeniden calistirilmali."
+ }
+]

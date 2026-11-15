@@ -1,0 +1,30 @@
+[
+  {
+    "id": 15388035776670,
+    "status": "bulundu",
+    "offers": [
+      {
+        "shop": "Notino",
+        "country": "FR",
+        "price": 32.5,
+        "url": "https://www.notino.fr/zimaya/tiramisu-coco-eau-de-parfum-mixte/p-16276376/",
+        "matched_title": "Zimaya Tiramisu Coco Eau de Parfum 100 ml"
+      }
+    ],
+    "note": "Almanya teklifi bulunamadi; tek EUR teklif Notino FR (Prix actuel 32,50 EUR, 100 ml EDP). Arama ozetinde 31,60 EUR 'en dusuk' ibaresi vardi, ayri teklif olarak alinmadi. idealo.de sonuclarda yoktu. Fiyatlar arama ozetinden; sayfa acilmadi, guncel dogrulanmadi."
+  },
+  {
+    "id": 15388036661406,
+    "status": "bulundu",
+    "offers": [
+      {
+        "shop": "Notino",
+        "country": "FR",
+        "price": 32.5,
+        "url": "https://www.notino.fr/zimaya/tiramisu-smores-eau-de-parfum-pour-femme/p-16351160/",
+        "matched_title": "Zimaya Tiramisu S'Mores Eau de Parfum 100 ml"
+      }
+    ],
+    "note": "Almanya teklifi bulunamadi; Notino FR 32,50 EUR (100 ml) arama ozetinden alindi. URL, ozetteki iki Notino listesinden hangisinin 100 ml oldugu tam belirlenemedigi icin sayfa no ile yazildi; dogrulanmadi. Notino FR 29,00 EUR listesi boy teyidi olmadigi icin alinmadi. Sayfa acilmadi."
+  }
+]

@@ -1,0 +1,145 @@
+[
+ {"id": 15388002975902, "status": "bulunamadi", "offers": [], "note": "Sonuçta yalnız GBP/AED fiyatı var (Sephora UK, Feelunique UK, Paris Gallery); EUR fiyat bulunamadı."},
+ {"id": 15442185748638, "status": "bulundu", "offers": [
+   {"shop": "Chanel (chanel.com/at)", "country": "AT", "price": 122.0, "url": "https://www.chanel.com/at/parfum/p/116310/coco-mademoiselle-nachfuellbarer-eau-de-toilette-zerstaeuber/", "matched_title": "COCO MADEMOISELLE NACHFÜLLBARER EAU DE TOILETTE ZERSTÄUBER - 50 ml"},
+   {"shop": "Chanel (chanel.com/gr)", "country": "GR", "price": 128.0, "url": "https://www.chanel.com/gr/fragrance/p/116310/coco-mademoiselle-eau-de-toilette-refillable-spray/", "matched_title": "Coco Mademoiselle Eau de Toilette refillable spray 50 ml"}
+ ], "note": "Almanya teklifi yok; resmi Chanel AT ve GR sayfaları (nachfüllbarer Zerstäuber, 116310). Arama özetinden alındı."},
+ {"id": 15388024930462, "status": "bulundu", "offers": [
+   {"shop": "Heinemann-Shop", "country": "DE", "price": 124.9, "url": "https://www.heinemann-shop.com/en/global/dior/dior-addict-eau-fraiche-eau-de-toilette-100-ml/p/000000000001079983", "matched_title": "Dior Addict Eau Fraiche Eau de Toilette 100 ml"}
+ ], "note": "Tek güvenilir EUR teklifi. eBay (89 €, durum belirsiz) ve easycosmetic.de (94,99 €, tükendi) alınmadı. Heinemann ülke kodu DE varsayıldı, doğrulanmadı."},
+ {"id": 15442174115998, "status": "bulunamadi", "offers": [], "note": "40 ml Le Parfum için net fiyat yok; 89,95 € (sephora.de) boy belirtilmemiş, 123,50 € (Lyko) 60 ml."},
+ {"id": 15441963352222, "status": "bulunamadi", "offers": [], "note": "Başlıktaki 'Najim' açıklanamadı. Eros Parfum 100 ml için ~77,85-80,43 € görüldü (heise, eBay.de) ama eşleşme emin değil; kaufland 100,55 € set olduğu için alınmadı."},
+ {"id": 15442173624478, "status": "bulundu", "offers": [
+   {"shop": "Chanel (chanel.com/lu-fr)", "country": "LU", "price": 115.0, "url": "https://www.chanel.com/lu-fr/parfums/p/125470/n5-vaporisateur-rechargeable-eau-de-parfum/", "matched_title": "N°5 Vaporisateur rechargeable Eau de Parfum 60 ml (recharge)"},
+   {"shop": "Chanel (chanel.com/lv)", "country": "LV", "price": 121.0, "url": "https://www.chanel.com/lv/fragrance/p/125470/n5-refillable-spray-eau-de-parfum/", "matched_title": "N°5 Refillable spray Eau de Parfum 60 ml (refill)"}
+ ], "note": "Almanya teklifi yok. Resmi Chanel LU ve LV sayfaları. 145 € (dolu şişe) ve Sephora FR hesaplanmış fiyatı alınmadı."},
+ {"id": 15442170806430, "status": "bulunamadi", "offers": [], "note": "Resmi sayfalar 'refillable spray' (şişe, ref 113551) 115-121 € gösteriyor; ayrı 'Nachfüllung' fiyatı bulunamadı. Eşleşme emin değil."},
+ {"id": 15442113757342, "status": "bulundu", "offers": [
+   {"shop": "Chloé (chloe.com/en-lu)", "country": "LU", "price": 122.0, "url": "https://www.chloe.com/en-lu/p/fragrances/eau-de-parfum/CHCA50217681.html", "matched_title": "Atelier des Fleurs Herba Mimosa Eau de Parfum 50 ml"}
+ ], "note": "Almanya teklifi yok. Cult Beauty (132,25 €) para birimi/bölge belirsiz olduğu için alınmadı. Tek teklif."},
+ {"id": 15442163138718, "status": "bulundu", "offers": [
+   {"shop": "Notino.fr", "country": "FR", "price": 154.0, "url": "https://www.notino.fr/giardini-di-toscana/blu-mare-eau-de-parfum-mixte/p-16314956/", "matched_title": "Giardini di Toscana Blu Mare Eau de Parfum 100 ml"},
+   {"shop": "Cavani Boutique", "country": "IT", "price": 155.0, "url": "https://cavaniboutique.it/en/giardini-di-toscana-blu-mare-eau-de-parfum-100ml.html", "matched_title": "Giardini di Toscana Blu Mare Eau de Parfum 100 ml"}
+ ], "note": "Almanya teklifi yok. Galaxus (CHF) ve ABD/BAE fiyatları alınmadı."},
+ {"id": 15441964073118, "status": "bulundu", "offers": [
+   {"shop": "Heinemann-Shop", "country": "DE", "price": 139.99, "url": "https://www.heinemann-shop.com/en/global/chanel/chanel-coco-eau-de-toilette/p/000000000000035382", "matched_title": "Chanel Coco Eau de Toilette 100 ml"},
+   {"shop": "Chanel (chanel.com/fi)", "country": "FI", "price": 155.0, "url": "https://www.chanel.com/fi/fragrance/p/123460/coco-eau-de-toilette-spray/", "matched_title": "COCO EAU DE TOILETTE SPRAY 100 ml"}
+ ], "note": "Heinemann üye fiyatı (129,90 €) ve eBay özel satıcı (80 €, ikinci el/belirsiz) alınmadı. Heinemann DE varsayıldı. Almanya'daki Chanel 148 € sayfası URL'si doğrulanamadığı için alınmadı."},
+ {"id": 15448158208158, "status": "bulundu", "offers": [
+   {"shop": "Chanel (chanel.com/de)", "country": "DE", "price": 128.0, "url": "https://www.chanel.com/de/parfum/p/123630/allure-homme-sport-eau-de-toilette-zerstaeuber/", "matched_title": "ALLURE HOMME SPORT EAU DE TOILETTE ZERSTÄUBER 100 ml"},
+   {"shop": "Chanel (chanel.com/be-fr)", "country": "BE", "price": 128.0, "url": "https://www.chanel.com/be-fr/parfums/p/123630/allure-homme-sport-eau-de-toilette-vaporisateur/", "matched_title": "ALLURE HOMME SPORT EAU DE TOILETTE VAPORISATEUR 100 ml"}
+ ], "note": "Resmi Chanel sayfaları. Heinemann 'ab 109,90 €' ve All-over Spray varyantı alınmadı."},
+ {"id": 15442185158814, "status": "bulunamadi", "offers": [], "note": "Resmi sayfalar 'refillable spray' (105550, şişe mi dolum mu belirsiz) FR 110 €, EE 116 € gösteriyor; başlıktaki 'Nachfüllung' ile eşleşme emin değil (bkz. id 15442183880862)."},
+ {"id": 15441960894622, "status": "bulundu", "offers": [
+   {"shop": "Notino.fr", "country": "FR", "price": 201.0, "url": "https://www.notino.fr/xerjoff/ouverture-eau-de-parfum-mixte/", "matched_title": "Xerjoff Ouverture Eau de Parfum 100 ml"},
+   {"shop": "Heinemann-Shop", "country": "DE", "price": 279.99, "url": "https://www.heinemann-shop.com/en/global/xerjoff/xerjoff-v-ouverture-eau-de-parfum-100-ml/p/000000000001210430/", "matched_title": "Xerjoff Ouverture Eau de Parfum 100 ml"}
+ ], "note": "eBay yeni (174,95 €+) özel satıcı olduğu için alınmadı."},
+ {"id": 15442121490590, "status": "bulundu", "offers": [
+   {"shop": "Notino.fr", "country": "FR", "price": 70.0, "url": "https://www.notino.fr/eisenberg/eau-fraiche-delicate-eau-de-parfum-pour-femme/p-16185640/", "matched_title": "EISENBERG Eau Fraîche Délicate Eau de Parfum 30 ml"}
+ ], "note": "Tek teklif. Resmi Eisenberg sitesi de 70 € gösteriyor ama ülke doğrulanmadı, alınmadı."},
+ {"id": 15442122506398, "status": "bulundu", "offers": [
+   {"shop": "Notino.fr", "country": "FR", "price": 118.0, "url": "https://www.notino.fr/eisenberg/secret-viii-souffle-du-desir-eau-de-parfum-pour-femme/p-16256442/", "matched_title": "EISENBERG Secret VIII Souffle du Désir Eau de Parfum 30 ml"}
+ ], "note": "Tek teklif. Parfumdreams 124 € boy/ülke netleşmediği için alınmadı."},
+ {"id": 15442122277022, "status": "bulundu", "offers": [
+   {"shop": "Notino.fr", "country": "FR", "price": 118.0, "url": "https://www.notino.fr/eisenberg/secret-viii-de-lumiere-et-dombre-eau-de-parfum-pour-homme/p-16256439/", "matched_title": "EISENBERG Secret VIII De Lumière et D'Ombre Eau de Parfum 30 ml"}
+ ], "note": "Tek teklif. Resmi site 124 € (ürün eşleşmesi net değil) alınmadı."},
+ {"id": 15442122047646, "status": "bulundu", "offers": [
+   {"shop": "Notino.fr", "country": "FR", "price": 118.0, "url": "https://www.notino.fr/eisenberg/secret-vii-echo-lumineux-eau-de-parfum-pour-homme/p-16256436/", "matched_title": "EISENBERG Secret VII Écho Lumineux Eau de Parfum 30 ml"}
+ ], "note": "Tek teklif. Resmi site 124 € alınmadı (ülke netleşmedi)."},
+ {"id": 15442174836894, "status": "bulundu", "offers": [
+   {"shop": "Chanel (chanel.com/at)", "country": "AT", "price": 148.0, "url": "https://www.chanel.com/at/parfum/p/112460/allure-eau-de-toilette-zerstaeuber/", "matched_title": "ALLURE EAU DE TOILETTE ZERSTÄUBER 100 ml"},
+   {"shop": "Chanel (chanel.com/fi)", "country": "FI", "price": 155.0, "url": "https://www.chanel.com/fi/fragrance/p/112460/allure-eau-de-toilette-spray/", "matched_title": "ALLURE EAU DE TOILETTE SPRAY 100 ml"}
+ ], "note": "Resmi Chanel sayfaları. guenstiger.de (149,99 €+) ve eBay (103 €, özel satıcı) alınmadı; Allure Homme ile karıştırılmadı."},
+ {"id": 15441960829086, "status": "bulundu", "offers": [
+   {"shop": "Lamaisonduparfum", "country": "BE", "price": 180.0, "url": "https://lamaisonduparfum.com/products/amabile", "matched_title": "Xerjoff Amabile Eau de Parfum 100 ml"},
+   {"shop": "Notino.fr", "country": "FR", "price": 181.0, "url": "https://www.notino.fr/xerjoff/amabile-eau-de-parfum-mixte/", "matched_title": "Xerjoff Amabile Eau de Parfum 100 ml"},
+   {"shop": "Dasparfum-beauty", "country": "DE", "price": 265.0, "url": "https://www.dasparfum-beauty.com/products/amabile-eau-de-parfum", "matched_title": "Xerjoff Amabile Eau de Parfum 100 ml"}
+ ], "note": "Notino kupon fiyatı (153,85 €) alınmadı. Dağınık fiyatlar, arama özetine dayalı."},
+ {"id": 15442185486494, "status": "bulunamadi", "offers": [], "note": "Parfum 7,5 ml dolum için güvenilir fiyat yok; Parfumdo 89,90 € ürün tükendi göründüğü için alınmadı. Eşleşme de emin değil."},
+ {"id": 15444793065630, "status": "bulundu", "offers": [
+   {"shop": "Chanel (chanel.com/de)", "country": "DE", "price": 128.0, "url": "https://www.chanel.com/de/parfum/p/124460/platinum-egoiste-eau-de-toilette-zerstaeuber/", "matched_title": "Platinum Égoïste Eau de Toilette 100 ml"},
+   {"shop": "Chanel (chanel.com/fr)", "country": "FR", "price": 128.0, "url": "https://www.chanel.com/fr/parfums/p/124460/platinum-egoiste-eau-de-toilette-vaporisateur/", "matched_title": "Platinum Égoïste Eau de Toilette 100 ml"}
+ ], "note": "Resmi Chanel sayfaları. Galaxus deodorant listesi ve ikinci el satışlar alınmadı."},
+ {"id": 15442189484190, "status": "bulundu", "offers": [
+   {"shop": "Notino.fr", "country": "FR", "price": 86.5, "url": "https://www.notino.fr/-/pd/GIO08144", "matched_title": "Emporio Armani Stronger With You Parfum 100 ml"},
+   {"shop": "Shop-Apotheke", "country": "DE", "price": 119.2, "url": "https://www.shop-apotheke.com/beauty/upmD4HHKL/emporio-armani-stronger-with-you-parfum-100-ml.htm", "matched_title": "Emporio Armani Stronger With You Parfum 100 ml"}
+ ], "note": "Arama özetine dayanıyor; Notino fiyatı bir anlık görüntü. Absolu/Intensely varyantları alınmadı."},
+ {"id": 15387975778462, "status": "bulundu", "offers": [
+   {"shop": "Shop-Apotheke", "country": "DE", "price": 23.65, "url": "https://www.shop-apotheke.com/beauty/upm3AACWH/asad-zanzibar-eau-de-parfum.htm", "matched_title": "Lattafa Asad Zanzibar Eau de Parfum 100 ml"},
+   {"shop": "Notino.fr", "country": "FR", "price": 29.0, "url": "https://www.notino.fr/-/pd/LTF00813", "matched_title": "Lattafa Asad Zanzibar Eau de Parfum 100 ml"}
+ ], "note": "eBay ilanları (özel satıcı, 35 ml ihtimali) alınmadı."},
+ {"id": 15467614896286, "status": "bulundu", "offers": [
+   {"shop": "Sephora.de", "country": "DE", "price": 70.45, "url": "https://www.sephora.de/sauvage-eau-de-toilette-335956.html", "matched_title": "Sauvage Eau de Toilette 100 ml"}
+ ], "note": "Tek teklif; sayfada 56,45 € ve 93,95 € ibareleri de var, ilan fiyatı netleşmedi. Eau Sauvage ve Eau de Parfum alınmadı."},
+ {"id": 15387984265374, "status": "bulundu", "offers": [
+   {"shop": "Shop-Apotheke.at (pazaryeri satıcısı)", "country": "AT", "price": 30.11, "url": "https://www.shop-apotheke.at/beauty/upmAUGALR/lattafa-khamrah-eau-de-parfum-unisex-100-ml.htm", "matched_title": "Lattafa Khamrah Eau de Parfum Unisex 100 ml"}
+ ], "note": "Tek teklif. Dukhan varyantı (dm 44,90 €, Rossmann) ve 'Khamra' ilanı (29,99 €) alınmadı."},
+ {"id": 15426190770334, "status": "bulunamadi", "offers": [], "note": "Leather Exclusive Edition için güvenilir EUR fiyat yok: billiger.de en düşük 89,50 € pazaryeri satıcısı; eBay 229,90 €; Notino FR stokta yok. Başlıktaki boş '()' nedeniyle varyant doğrulanamadı."},
+ {"id": 15426668691614, "status": "bulunamadi", "offers": [], "note": "Arama sonuçları yalnız 50 ml Elixir fiyatı verdi (Armani DE 126 €, Notino FR 122 €); 100 ml Elixir bulunamadı."},
+ {"id": 15442121162910, "status": "bulundu", "offers": [
+   {"shop": "Shop-Apotheke", "country": "DE", "price": 43.74, "url": "https://www.shop-apotheke.com/beauty/upm79P974/dolce-gabbana-3-l-imperatrice-e-d-t-nat-spray.htm", "matched_title": "Dolce&Gabbana L'Imperatrice Eau de Toilette 100 ml"},
+   {"shop": "Lookfantastic.it", "country": "IT", "price": 46.0, "url": "https://www.lookfantastic.it/p/dolce-gabbana-l-imperatrice-eau-de-toilette-spray-100ml/14990916/", "matched_title": "Dolce&Gabbana L'Imperatrice Eau de Toilette Spray 100 ml"},
+   {"shop": "Lookfantastic.at", "country": "AT", "price": 53.48, "url": "https://www.lookfantastic.at/p/dolce-gabbana-l-imperatrice-eau-de-toilette-spray-100ml/14990916/", "matched_title": "Dolce&Gabbana L'Imperatrice Eau de Toilette Spray 100 ml"}
+ ], "note": "Shop-Apotheke sayfası ürün adında '3 L'Imperatrice' ibaresi taşıyor; doğrulanmadı. eBay (31,90 €, özel satıcı) alınmadı."},
+ {"id": 15388019097758, "status": "bulundu", "offers": [
+   {"shop": "Chanel (chanel.com/at)", "country": "AT", "price": 172.0, "url": "https://www.chanel.com/at/parfum/p/116520/coco-mademoiselle-eau-de-parfum-zerstaeuber/", "matched_title": "COCO MADEMOISELLE EAU DE PARFUM ZERSTÄUBER 100 ml"},
+   {"shop": "Chanel (chanel.com/lv)", "country": "LV", "price": 176.0, "url": "https://www.chanel.com/lv/fragrance/p/116520/coco-mademoiselle-eau-de-parfum-spray", "matched_title": "COCO MADEMOISELLE EAU DE PARFUM SPRAY 100 ml"},
+   {"shop": "Chanel (chanel.com/ee)", "country": "EE", "price": 181.0, "url": "https://www.chanel.com/ee/fragrance/p/116520/coco-mademoiselle-eau-de-parfum-spray/", "matched_title": "COCO MADEMOISELLE EAU DE PARFUM SPRAY 100 ml"}
+ ], "note": "Almanya için resmi fiyat bulunamadı. eBay (89-92 €, özel satıcı) alınmadı."},
+ {"id": 15442186469534, "status": "bulundu", "offers": [
+   {"shop": "Chanel (chanel.com/fi)", "country": "FI", "price": 102.0, "url": "https://www.chanel.com/fi/fragrance/p/116320/coco-mademoiselle-1-spray-refill-50-ml-eau-de-toilette/", "matched_title": "COCO MADEMOISELLE 1 SPRAY REFILL 50 ML EAU DE TOILETTE"},
+   {"shop": "Chanel (chanel.com/lt)", "country": "LT", "price": 102.0, "url": "https://www.chanel.com/lt/fragrance/p/116320/coco-mademoiselle-1-spray-refill-50-ml-eau-de-toilette/", "matched_title": "COCO MADEMOISELLE 1 SPRAY REFILL 50 ML EAU DE TOILETTE"}
+ ], "note": "Resmi Chanel refill sayfaları (ref 116320). Almanya fiyatı bulunamadı; Kanada 130 CAD alınmadı."},
+ {"id": 15442192826526, "status": "bulundu", "offers": [
+   {"shop": "Easycosmetic.at", "country": "AT", "price": 45.99, "url": "https://www.easycosmetic.at/hermes/barenia/hermes-barenia-edp-vapo-refillable.aspx", "matched_title": "Hermès Barénia Eau de Parfum 30 ml (nachfüllbar)"}
+ ], "note": "Tek teklif. Sayfa UVP'yi 86 € gösteriyor; indirim ilanı doğrulanmadı. Cult Beauty (GBP), Sephora US (USD) ve Intense varyantı alınmadı."},
+ {"id": 15442118934686, "status": "bulundu", "offers": [
+   {"shop": "Notino.fr", "country": "FR", "price": 165.0, "url": "https://www.notino.fr/creed/eladaria-eau-de-parfum-pour-femme/p-16308646/", "matched_title": "Creed Eladaria Eau de Parfum 30 ml"},
+   {"shop": "Lyko.de", "country": "DE", "price": 175.05, "url": "https://lyko.com/de/creed/creed-eladaria-edp-30-ml", "matched_title": "Creed Eladaria EDP 30 ml"}
+ ], "note": "Cult Beauty EU (189,95 €) ülke netleşmediği için alınmadı."},
+ {"id": 15467618238622, "status": "bulundu", "offers": [
+   {"shop": "Flaconi.de", "country": "DE", "price": 75.68, "url": "https://www.flaconi.de/parfum/dior/sauvage/dior-sauvage-eau-forte-parfum.html", "matched_title": "Dior Sauvage Eau Forte Parfum 60 ml"},
+   {"shop": "Notino.fr", "country": "FR", "price": 90.7, "url": "https://www.notino.fr/dior/sauvage-eau-forte-parfum-sans-alcool-pour-homme/p-16263555/", "matched_title": "Dior Sauvage Eau Forte Parfum 60 ml"}
+ ], "note": "Notino para birimi arama özetinde net değil (EUR varsayıldı). billiger.de en düşük 82,42 € (sadece kupon ile 87,32 €) ve Flaconi IT alınmadı."},
+ {"id": 15442131615902, "status": "bulundu", "offers": [
+   {"shop": "Notino.fr", "country": "FR", "price": 113.0, "url": "https://www.notino.fr/maison-margiela/replica-coffee-break-eau-de-toilette-mixte/", "matched_title": "Maison Margiela REPLICA Coffee Break Eau de Toilette 100 ml"},
+   {"shop": "Lookfantastic.it", "country": "IT", "price": 116.84, "url": "https://www.lookfantastic.it/p/maison-margiela-replica-coffee-break-eau-de-toilette-100ml/13183536/", "matched_title": "Maison Margiela Replica Coffee Break Eau de Toilette 100 ml"}
+ ], "note": "Notino fiyatı sınırlı süreli promosyon. Almanya fiyatı bulunamadı. Fiyatlar 113-146 € arası; liste fiyatı yaklaşık 145 €."},
+ {"id": 15442133254302, "status": "bulunamadi", "offers": [], "note": "Güvenilir EUR fiyat yok: achatmoinscher'deki 194 € teklif kargo dahil ve satıcı ülkesi belirsiz; eBay 269,10 € özel satıcı; nutritienda 100,95 € stokta yok."},
+ {"id": 15442183880862, "status": "bulundu", "offers": [
+   {"shop": "Chanel (chanel.com/fr)", "country": "FR", "price": 110.0, "url": "https://www.chanel.com/fr/parfums/p/105550/n5-vaporisateur-rechargeable-eau-de-toilette/", "matched_title": "N°5 Vaporisateur rechargeable Eau de Toilette 50 ml"},
+   {"shop": "Chanel (chanel.com/ee)", "country": "EE", "price": 116.0, "url": "https://www.chanel.com/ee/fragrance/p/105550/n5-refillable-spray-eau-de-toilette/", "matched_title": "N°5 Refillable spray Eau de Toilette 50 ml"}
+ ], "note": "Resmi Chanel sayfaları (ref 105550, 'refillable spray'). Almanya fiyatı bulunamadı; eBay 220 € alınmadı. Refill-only ile şişe ayrımı doğrulanmadı."},
+ {"id": 15442114576542, "status": "bulundu", "offers": [
+   {"shop": "Chloé (chloe.com/en-lu)", "country": "LU", "price": 135.0, "url": "https://www.chloe.com/en-lu/p/fragrances/eau-de-parfum/CHCA50195363.html", "matched_title": "Atelier des Fleurs Orchidée de Minuit Eau de Parfum 50 ml"}
+ ], "note": "Tek teklif. Selfridges US (138 $) ve diğer para birimleri alınmadı."},
+ {"id": 15442114117790, "status": "bulundu", "offers": [
+   {"shop": "Chloé (chloe.com/en-be)", "country": "BE", "price": 122.0, "url": "https://www.chloe.com/en-be/p/fragrances/eau-de-parfum/CHCA50217683.html", "matched_title": "Atelier des Fleurs Neroli Eau de Parfum 50 ml"}
+ ], "note": "Tek teklif. Cult Beauty (132,25 €) bölgesi belirsiz olduğu için alınmadı."},
+ {"id": 15442133876894, "status": "bulunamadi", "offers": [], "note": "Ürün bir set (Le Parfum 60 ml + EDP 10 ml); tek ürün fiyatı alınmadı."},
+ {"id": 15387970109598, "status": "bulundu", "offers": [
+   {"shop": "Preissuchmaschine (karşılaştırma, DE satıcılar)", "country": "DE", "price": 29.42, "url": "https://www.preissuchmaschine.de/in-Kosmetik/Damen-Parfum/Cacharel-Amor-Amor-Eau-de-Toilette-100-ml.html", "matched_title": "Cacharel Amor Amor Eau de Toilette 100 ml"}
+ ], "note": "Tek teklif, mağaza adı doğrulanmadı; eBay ilanları (35 €) ikinci el/durum belirsiz olduğu için alınmadı. Lookfantastic stokta yok."},
+ {"id": 15442129125534, "status": "bulundu", "offers": [
+   {"shop": "Easycosmetic.at", "country": "AT", "price": 74.99, "url": "https://www.easycosmetic.at/guerlain/absolus-allegoria/guerlain-absolus-allegoria-florabloom-eau-de-parfum-spray.aspx", "matched_title": "Guerlain Absolus Allegoria Florabloom Eau de Parfum Spray 75 ml"},
+   {"shop": "Parfumdreams.ie", "country": "IE", "price": 109.65, "url": "https://www.parfumdreams.ie/GUERLAIN/Womens-fragrances/Absolus-Allegoria/Eau-de-Parfum-Spray/index_140409.aspx", "matched_title": "Guerlain Absolus Allegoria Florabloom 75 ml"}
+ ], "note": "Heinemann 'ab 129,90 €' (havaalanı teslim) ve LookFantastic GBP alınmadı."},
+ {"id": 15441963253918, "status": "bulundu", "offers": [
+   {"shop": "Easycosmetic.de", "country": "DE", "price": 91.99, "url": "https://www.easycosmetic.de/yves-saint-laurent/libre/yves-saint-laurent-libre-edp-refill.aspx", "matched_title": "Yves Saint Laurent Libre Nachfüllung EdP 100 ml"},
+   {"shop": "Lookfantastic.de", "country": "DE", "price": 121.44, "url": "https://www.lookfantastic.de/p/yves-saint-laurent-libre-eau-de-parfum-100ml-refill/14991044/", "matched_title": "Yves Saint Laurent Libre Eau de Parfum 100 ml Refill"},
+   {"shop": "Shop-Apotheke", "country": "DE", "price": 124.63, "url": "https://www.shop-apotheke.com/beauty/upmUDR3ZK/yves-saint-laurent-libre-eau-de-parfum-refill.htm", "matched_title": "Yves Saint Laurent Libre Eau de Parfum Refill 100 ml"}
+ ], "note": "Easycosmetic indirimli ilan (liste 145 €); eBay 86,90 € özel satıcı alınmadı."},
+ {"id": 15442181816478, "status": "bulundu", "offers": [
+   {"shop": "Chanel (chanel.com/at)", "country": "AT", "price": 87.0, "url": "https://www.chanel.com/at/parfum/p/113420/coco-eau-de-parfum-zerstaeuber/", "matched_title": "COCO EAU DE PARFUM ZERSTÄUBER 35 ml"},
+   {"shop": "Chanel (chanel.com/ee)", "country": "EE", "price": 91.0, "url": "https://www.chanel.com/ee/fragrance/p/113420/coco-eau-de-parfum-spray/", "matched_title": "COCO EAU DE PARFUM SPRAY 35 ml"}
+ ], "note": "Resmi Chanel sayfaları. AT fiyatı nachfüllbarer Zerstäuber varyantı. Geizhals 86,99 € (AT satıcı) ve eBay 89,95 € alınmadı; Almanya fiyatı yok."},
+ {"id": 15442188501150, "status": "bulundu", "offers": [
+   {"shop": "Easycosmetic.at", "country": "AT", "price": 52.99, "url": "https://www.easycosmetic.at/hermes/un-jardin-sur-le-nil/hermes-un-jardin-sur-le-nil-edt-vapo-refillable.aspx", "matched_title": "Hermès Un Jardin sur le Nil Eau de Toilette Spray (nachfüllbar) 50 ml"},
+   {"shop": "Notino.fr", "country": "FR", "price": 75.0, "url": "https://www.notino.fr/herms/un-jardin-sur-le-nil-eau-de-toilette-mixte/p-80850/", "matched_title": "Hermès Un Jardin sur le Nil Eau de Toilette 50 ml"}
+ ], "note": "Nachfüllbar varyant. billiger.de 50,89-79,99 € (çok satıcı, kupon/kargo koşulları) alınmadı; Aio.lv 2025 tarihli olduğu için alınmadı."},
+ {"id": 15442033836190, "status": "bulundu", "offers": [
+   {"shop": "Zalando.de", "country": "DE", "price": 59.45, "url": "https://en.zalando.de/armani-beauty-my-way-intense-eau-de-parfum-a4u31i01o-s11.html", "matched_title": "Armani My Way Intense Eau de Parfum 90 ml"},
+   {"shop": "Frankfurt Airport Shop", "country": "DE", "price": 134.99, "url": "https://shop.frankfurt-airport.com/en-US/product/giorgio-armani-my-way-intense-eau-de-parfum-90-ml_a0eb870fb5c57d2d", "matched_title": "Giorgio Armani My Way Intense Eau de Parfum 90 ml"},
+   {"shop": "Armani (armani.com/en-at)", "country": "AT", "price": 163.0, "url": "https://www.armani.com/en-at/giorgio-armani/woman/fragrances/my-way", "matched_title": "My Way Intense Eau de Parfum 90 ml"}
+ ], "note": "Zalando fiyatı süreli kampanya; eBay özel satıcı (65 €+) alınmadı."}
+]

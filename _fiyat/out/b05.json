@@ -1,0 +1,317 @@
+[
+ {
+  "id": 15442831868062,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "2 arama yapildi; Docks Pfirsich 110 ml sonuclarda gorunmedi."
+ },
+ {
+  "id": 15442833375390,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "2 arama yapildi; Docks Red Velvet 110 ml sonuclarda gorunmedi."
+ },
+ {
+  "id": 15442833703070,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "1. arama hata verdi (too_many_requests), 2. arama butce nedeniyle yapilamadi. Tekrar denenmeli."
+ },
+ {
+  "id": 15442890490014,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "1. arama hata verdi (too_many_requests), 2. arama butce nedeniyle yapilamadi. Tekrar denenmeli."
+ },
+ {
+  "id": 15426505638046,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "1. arama hata verdi (too_many_requests), 2. arama butce nedeniyle yapilamadi. Tekrar denenmeli."
+ },
+ {
+  "id": 15388029124766,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "eBay (ParfumGroup)",
+    "country": "DE",
+    "price": 64.86,
+    "url": "https://www.ebay.de/itm/187328243046",
+    "matched_title": "Dolce&Gabbana Devotion Eau de Parfum fuer Damen - 100ml"
+   }
+  ],
+  "note": "Tek dogrulanabilen teklif. Diger aramada gorulen fiyatlar (flaconi 94,65, dressinn 73,99) URL'si olmadigi icin alinmadi. Intense ve Men varyantlari dahil edilmedi."
+ },
+ {
+  "id": 15387999305886,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "eBay.de",
+    "country": "DE",
+    "price": 69.9,
+    "url": "https://www.ebay.de/p/19040386914",
+    "matched_title": "K by Dolce & Gabbana Eau de Parfum 100 ml (eBay katalog)"
+   }
+  ],
+  "note": "Tek teklif; urun eslesmesi ozet uzerinden, sayfa acilarak teyit edilmedi. Intense varyanti (88,13) dahil edilmedi."
+ },
+ {
+  "id": 15441962238110,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "eBay.de",
+    "country": "DE",
+    "price": 42.19,
+    "url": "https://www.ebay.de/p/25063589820",
+    "matched_title": "3 L'Imperatrice EDT spray 100ml (EAN 8057971182053)"
+   },
+   {
+    "shop": "shop-apotheke.com",
+    "country": "DE",
+    "price": 43.74,
+    "url": "https://www.shop-apotheke.com/beauty/upm79P974/dolce-gabbana-3-l-imperatrice-e-d-t-nat-spray.htm",
+    "matched_title": "3 L'Imperatrice E.D.T. nat. Spray"
+   },
+   {
+    "shop": "achatmoinscher.com",
+    "country": "FR",
+    "price": 49.85,
+    "url": "https://www.achatmoinscher.com/comparateur-de-prix-Parfum-femme/dolce-gabbana-3-l-imperatrice-eau-de-toilette-100ml.html",
+    "matched_title": "DOLCE&GABBANA 3 L'Imperatrice - Eau de Toilette 100ml"
+   }
+  ],
+  "note": "Fiyatlar aramadaki ozetten; eBay URL'si fiyatin geldigi sayfa olarak teyit edilmedi. Harrods (99,00) ve Vanitystock (85,05) cok pahali oldugu icin alinmadi."
+ },
+ {
+  "id": 15388031254686,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "billiger.de",
+    "country": "DE",
+    "price": 48.59,
+    "url": "https://www.billiger.de/pricelist/9736593",
+    "matched_title": "Light Blue Pour Femme Eau de Toilette 100 ml"
+   },
+   {
+    "shop": "notino.fr",
+    "country": "FR",
+    "price": 102.0,
+    "url": "https://www.notino.fr/dolcegabbana/light-blue-eau-de-toilette-pour-femme/p-16295062/",
+    "matched_title": "Light Blue Eau de Toilette pour Femme"
+   }
+  ],
+  "note": "billiger.de 'neu ab' fiyati (kargo dahil degil). Monsterdealz 37,99 tarihsiz eski deal oldugu icin alinmadi. dm.at 84,90 farkli urun adi oldugu icin alinmadi."
+ },
+ {
+  "id": 15388033548446,
+  "status": "bulundu",
+  "offers": [
+   {
+    "shop": "dm.at",
+    "country": "AT",
+    "price": 29.9,
+    "url": "https://www.dm.at/p/d/1689490/dolce-und-gabbana-light-blue-eau-de-toilette",
+    "matched_title": "DOLCE&GABBANA Eau de Toilette Light Blue, 25 ml"
+   },
+   {
+    "shop": "eBay.de",
+    "country": "DE",
+    "price": 29.95,
+    "url": "https://www.ebay.de/p/1804727373",
+    "matched_title": "Dolce & Gabbana Light Blue 25 ml"
+   },
+   {
+    "shop": "lookfantastic.de",
+    "country": "DE",
+    "price": 39.95,
+    "url": "https://www.lookfantastic.de/p/dolce-gabbana-light-blue-eau-de-toilette-25ml/14568058",
+    "matched_title": "Dolce&Gabbana Light Blue Eau de Toilette 25ml"
+   }
+  ],
+  "note": "dm.at fiyati KDV dahil, kargo haric. eBay 29,95 + 6,19 kargo. Ust kisim fiyatlar tarihsiz ozetlerden."
+ },
+ {
+  "id": 15387968274590,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15388029845662,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15426512617630,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442120802462,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442121031838,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442121162910,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15426517893278,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442121490590,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442121752734,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442122047646,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442122277022,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442122506398,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442122735774,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442122932382,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15388017229982,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15388006056094,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442123194526,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442123391134,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442123620510,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15444569522334,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442123915422,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442124144798,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442124374174,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442124505246,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442125258910,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442126176414,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442126504094,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442126766238,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15442127093918,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ },
+ {
+  "id": 15388001140894,
+  "status": "bulunamadi",
+  "offers": [],
+  "note": "Bu turda web arama butcesi tukendi; aranmadi. Sonraki turda tekrar denenmeli."
+ }
+]
