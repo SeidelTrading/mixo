@@ -1,71 +1,17 @@
-import { MAX_ITEMS, DAY, MIN_EVENTS } from './shared.mjs';
+import { DAY, MIN_EVENTS, MAX_ITEMS } from './shared.mjs';
+import { aggregate, makeSuggestHelpers } from './suggest-helpers.mjs';
 
 // Veriden kampanya önerisi ve uygulama.
 export function makeSuggest(c) {
-  const { effP, shopOk, P, getEvents, norm, CATS, settings, searchProducts, eur, actions } = c;
-  /* ───────── 1. kampanya önerileri ───────── */
-  const row = (p, note) => {
-    const e = effP(p);
-    return {
-      id: p.id,
-      title: e.title,
-      vendor: p.vendor,
-      price: e.price,
-      was: e.was || 0,
-      img: e.img,
-      cat: p.cat,
-      note,
-    };
-  };
-  const usable = p => p && shopOk(p) && effP(p).price > 0 && effP(p).img;
-  // kaynak (olay verisinden gelenler) önce; yetmezse katalogdan (marka başına ≤2) tamamlanır ve notla işaretlenir
-  function fill(primary, pad, label) {
-    const out = [],
-      seen = new Set();
-    for (const [id, n] of primary) {
-      const p = P.get(id);
-      if (usable(p) && !seen.has(id)) {
-        seen.add(id);
-        out.push(row(p, `${n} kez ${label}`));
-        if (out.length >= MAX_ITEMS) return out;
-      }
-    }
-    const v = {};
-    for (const p of pad()) {
-      if (!usable(p) || seen.has(p.id) || (v[p.vendor] = (v[p.vendor] || 0) + 1) > 2) continue;
-      seen.add(p.id);
-      out.push(row(p, 'katalogdan (davranış verisi değil)'));
-      if (out.length >= MAX_ITEMS) break;
-    }
-    return out;
-  }
-  const top = m => [...m].sort((a, b) => b[1] - a[1]);
+  const { P, getEvents, norm, CATS, settings, searchProducts, eur, actions, effP } = c;
+  const { row, usable, fill, top } = makeSuggestHelpers(c);
   function suggestions(daysIn = 7) {
     const days = Math.min(90, Math.max(1, Number(daysIn) || 7)),
       from = Date.now() - days * DAY,
       ev = getEvents().filter(x => x.t >= from);
     const views = ev.filter(x => x.e === 'view'),
       vis = new Set(ev.map(x => x.vid));
-    const pv = new Map(),
-      pa = new Map(),
-      cats = new Map(),
-      brands = new Map(),
-      sq = new Map();
-    for (const x of ev) {
-      if (x.e === 'view') {
-        if (x.id) pv.set(x.id, (pv.get(x.id) || 0) + 1);
-        if (x.c) cats.set(x.c, (cats.get(x.c) || 0) + 1);
-        if (x.b) brands.set(x.b, (brands.get(x.b) || 0) + 1);
-      }
-      if (x.e === 'add' && x.id) pa.set(x.id, (pa.get(x.id) || 0) + 1);
-      if (x.e === 'search' && x.q) {
-        const k = norm(x.q),
-          q = sq.get(k) || { q: x.q, count: 0, results: x.n ?? null };
-        q.count++;
-        q.results = x.n ?? q.results;
-        sq.set(k, q);
-      }
-    }
+    const { pv, pa, cats, brands, sq } = aggregate(ev, norm);
     const enough = ev.length >= MIN_EVENTS,
       items = [];
     const data = {
