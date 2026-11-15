@@ -44,6 +44,12 @@ npm run test:coverage  # c8: birim + uçtan uca (sunucu alt süreci dahil)
 
 CI: `.github/workflows/ci.yml` (lint, biçim, tip, birim, uçtan uca, `npm audit`).
 
+## İşletme notları
+
+- `GET /api/admin/health`: bellekteki sipariş/olay sayıları ve tavanları, bellek, veritabanı boyutu, yedek durumu; tavanın %80'inde `warnings` dolar. Bellekte tutma modelinin bırakılma sinyali budur (bkz. aşağıdaki sınırlar).
+- `SUNUM_PROTECT=1`: `/sunum/*` yalnız panel oturumuna açılır (varsayılan herkese açık).
+- Instagram webhook: kimlik listesi kalıcıdır (14 gün, 5000 kayıt), 7 günden eski zaman damgalı yük yok sayılır.
+
 ## Bilinen sınırlar
 
-Tek süreç ve tek disk (yatay ölçek yok); siparişler (≤5000) ve olaylar (≤200 bin) bellekte tutuluyor; `settings` tek belge olarak yazılıyor; mobil uygulama (`mobile/`) bu yapının dışında ve testsiz. Birleşik kapsam (`npm run test:coverage`, birim + uçtan uca): satır ≈ %68.
+Tek süreç ve tek disk (yatay ölçek yok); siparişler (≤5000) ve olaylar (≤200 bin) bellekte tutuluyor; `settings` tek JSON belge (tek süreçte tutarlı; çok kopyada son yazan kazanır); mobil uygulama (`mobile/`) bu yapının dışında ve testsiz. Birleşik kapsam (`npm run test:coverage`, birim + uçtan uca): satır ≈ %68.

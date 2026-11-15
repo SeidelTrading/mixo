@@ -13,3 +13,5 @@ export const SITE_URL = (process.env.SITE_URL || 'https://web-production-a959d0b
   '',
 );
 export const BACKUP_KEEP = Math.max(1, Number(process.env.BACKUP_KEEP) || 14);
+// SUNUM_PROTECT=1: /sunum/* (satış sunumları ve videolar) yalnız panel oturumu olanlara açılır. Varsayılan: herkese açık.
+export const SUNUM_PROTECT = /^(1|true|on)$/i.test(process.env.SUNUM_PROTECT || '');

@@ -9,7 +9,7 @@ import { hiddenIds, isHidden, openProblems } from './visibility.mjs';
 import { homeCache } from '../lib/cache.mjs';
 import { freeShip, SHIP_FEE, money } from './pricing.mjs';
 
-const MAX_ORDERS = 5000;
+export const MAX_ORDERS = 5000;
 // Sipariş doğrulaması: yeni sipariş "Doğrulanmadı" olarak açılır; müşteri e-postadaki bağlantıyla (ya da yönetici panelden) doğrulayana kadar
 // ciroya, çok satanlara ve analize girmez. 48 saatte doğrulanmayan sipariş iptal edilir. ORDER_VERIFY=off eski davranışa döner.
 export const ORDER_VERIFY = !/^(off|0|false)$/i.test(process.env.ORDER_VERIFY || ''),

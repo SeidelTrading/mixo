@@ -6,9 +6,28 @@ export function makeInbox(c) {
   const inFlight = new Set(),
     busy = new Set();
   // işlenmekte olan webhook kimlikleri · süren yayın/yanıt gönderimleri
+  // Kalıcı tekrar listesi: gelen kutusu 500 kayda kırpılsa ve süreç yeniden başlasa da aynı webhook kimliği 14 gün işlenmez.
+  const SEEN_MS = 14 * 864e5,
+    SEEN_MAX = 5000,
+    STALE_MS = 7 * 864e5;
+  db.seenExt ||= {};
+  function markSeen(ext) {
+    const now = Date.now(),
+      keys = Object.keys(db.seenExt);
+    for (const k of keys) if (now - db.seenExt[k] > SEEN_MS) delete db.seenExt[k];
+    while (Object.keys(db.seenExt).length >= SEEN_MAX) delete db.seenExt[Object.keys(db.seenExt)[0]];
+    db.seenExt[ext] = now;
+  }
   async function addInbox(it) {
-    if (it.ext && (inFlight.has(it.ext) || db.inbox.some(x => x.ext === it.ext))) return null; // webhook tekrarını yoksay (işlenmekte olan dahil)
-    if (it.ext) inFlight.add(it.ext);
+    // 7 günden eski zaman damgalı yük (ör. yeniden gönderilmiş eski imzalı istek) yok sayılır.
+    if (Number.isFinite(it.t) && Date.now() - it.t > STALE_MS) return null;
+    if (it.ext && (inFlight.has(it.ext) || db.seenExt[it.ext] || db.inbox.some(x => x.ext === it.ext)))
+      return null; // webhook tekrarını yoksay (işlenmekte olan dahil)
+    if (it.ext) {
+      inFlight.add(it.ext);
+      markSeen(it.ext);
+      save();
+    }
     try {
       const item = {
         id: uid(),

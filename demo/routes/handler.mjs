@@ -1,4 +1,5 @@
 import { actorCtx } from '../lib/store.mjs';
+import { SUNUM_PROTECT } from '../lib/config.mjs';
 import { authOf, clientIp, endSession } from '../lib/auth.mjs';
 import { SEC_HEADERS, readBody, send, serveStatic } from '../lib/http.mjs';
 import { publicRoutes } from './public.mjs';
@@ -6,13 +7,14 @@ import { adminAuthRoutes } from './admin-auth.mjs';
 import { adminMeRoutes } from './admin-me.mjs';
 import { adminSystemRoutes } from './admin-system.mjs';
 import { adminDataRoutes } from './admin-data.mjs';
+import { adminHealthRoutes } from './admin-health.mjs';
 import { adminStoreRoutes } from './admin-store.mjs';
 import { adminAssistantRoutes } from './admin-assistant.mjs';
 
 // Uç işleyicileri: her biri bağlamı (c) alır, eşleşirse yanıtı yazar. Yanıt yazıldıysa (headersSent) zincir durur.
 // Sıra önemlidir: herkese açık uçlar → oturum → yetki kapıları → okuma uçları → yazma uçları (yalnız POST) → asistan.
 const PUBLIC = [publicRoutes, adminAuthRoutes, adminMeRoutes];
-const ADMIN = [adminSystemRoutes, adminDataRoutes, adminStoreRoutes, adminAssistantRoutes];
+const ADMIN = [adminSystemRoutes, adminDataRoutes, adminHealthRoutes, adminStoreRoutes, adminAssistantRoutes];
 
 async function run(handlers, c) {
   for (const h of handlers) {
@@ -36,10 +38,15 @@ export const handle = async (req, res) => {
     secure =
       req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production' ? '; Secure' : '';
   try {
-    if (!p.startsWith('/api/'))
+    if (!p.startsWith('/api/')) {
+      if (SUNUM_PROTECT && p.startsWith('/sunum') && !authOf(req)) {
+        res.writeHead(401, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' });
+        return res.end('Bu sunum için panel girişi gerekir: /admin');
+      }
       return req.method === 'GET' || req.method === 'HEAD'
         ? serveStatic(req, res, url)
         : (res.writeHead(405), res.end());
+    }
     if (req.method === 'POST') {
       const ct = req.headers['content-type'] || '',
         adm = p.startsWith('/api/admin/');

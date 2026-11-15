@@ -27,8 +27,8 @@ const EVENT_TYPES = new Set([
 ]);
 export let events = store.allEvents();
 // Saklama tavanı: analiz en çok 90 güne bakar; daha eskisi ve EVENT_MAX üstü silinir (dosya ve bellek sınırsız büyümez).
-const EVENT_DAYS = 90,
-  EVENT_MAX = 200000;
+const EVENT_DAYS = 90;
+export const EVENT_MAX = 200000;
 export function pruneEvents() {
   const from = Date.now() - EVENT_DAYS * 864e5;
   let keep = events.filter(x => x.t >= from);

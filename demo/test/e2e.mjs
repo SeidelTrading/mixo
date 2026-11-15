@@ -651,6 +651,65 @@ try {
       ).s,
     );
   ok(sp.includes(429), 'X-Real-IP sahteciliği adres başı sınırı aşmaya yetmez: ' + sp.join(','));
+
+  console.log('17) Webhook tekrarı: kalıcı kimlik listesi ve eski zaman damgası');
+  await stop();
+  await start({ ADMIN_PASSWORD: PW2, IG_APP_SECRET: 'wh-secret', IG_VERIFY_TOKEN: 'verif-1' });
+  const AW = await login('admin', PW2);
+  const inboxN = async () => (await call(AW.j, '/api/admin/instagram/state')).j?.inbox?.length;
+  const dm = (mid, t) =>
+    JSON.stringify({
+      object: 'instagram',
+      entry: [
+        {
+          messaging: [
+            { sender: { id: 'kullanici-1' }, message: { mid, text: 'Ist das lieferbar?' }, timestamp: t },
+          ],
+        },
+      ],
+    });
+  const n0i = await inboxN();
+  const p1 = dm('m-tekrar-1', Date.now());
+  const whSign2 = raw => 'sha256=' + crypto.createHmac('sha256', 'wh-secret').update(raw).digest('hex');
+  const post = raw =>
+    call(null, '/api/instagram/webhook', {}, { raw, headers: { 'x-hub-signature-256': whSign2(raw) } });
+  ok((await post(p1)).s === 200, 'webhook DM kabul edildi');
+  ok((await inboxN()) === n0i + 1, 'DM gelen kutusuna düştü');
+  await post(p1);
+  ok((await inboxN()) === n0i + 1, 'aynı webhook kimliği tekrar işlenmez');
+  await stop();
+  await start({ ADMIN_PASSWORD: PW2, IG_APP_SECRET: 'wh-secret', IG_VERIFY_TOKEN: 'verif-1' });
+  const AW2 = await login('admin', PW2);
+  await post(p1);
+  ok(
+    ((await call(AW2.j, '/api/admin/instagram/state')).j?.inbox?.length ?? -1) === n0i + 1,
+    'yeniden başlatmadan sonra da tekrar işlenmez',
+  );
+  await post(dm('m-eski-1', Date.now() - 30 * 864e5));
+  ok(
+    ((await call(AW2.j, '/api/admin/instagram/state')).j?.inbox?.length ?? -1) === n0i + 1,
+    '30 günlük eski zaman damgalı yük yok sayılır',
+  );
+
+  console.log('18) /sunum koruması (SUNUM_PROTECT=1)');
+  ok((await call(null, '/sunum/')).s === 200, 'varsayılan: sunum herkese açık');
+  await stop();
+  await start({ ADMIN_PASSWORD: PW2, SUNUM_PROTECT: '1' });
+  ok((await call(null, '/sunum/')).s === 401, 'koruma açıkken oturumsuz sunum 401');
+  ok((await call(null, '/')).s === 200, 'vitrin yine herkese açık');
+  const AS = await login('admin', PW2);
+  ok((await call(AS.j, '/sunum/')).s === 200, 'oturumlu yönetici sunumu görür');
+
+  console.log('19) Sağlık ucu');
+  const AH = await login('admin', PW2);
+  const hl = await call(AH.j, '/api/admin/health');
+  ok(
+    hl.s === 200 && hl.j.orders.max === 5000 && hl.j.events.max === 200000 && Array.isArray(hl.j.warnings),
+    'sağlık ucu sayaçları ve tavanları döndürür',
+    hl.t.slice(0, 120),
+  );
+  ok(hl.j.memory.rssMb > 0 && hl.j.dbMb >= 0, 'bellek ve veritabanı boyutu raporlanır');
+  ok((await call(null, '/api/admin/health')).s === 401, 'oturumsuz sağlık ucu 401');
 } catch (e) {
   failN++;
   console.error('DENEME ÇÖKTÜ:', e, '\n--- sunucu günlüğü ---\n' + logs.slice(-1500));

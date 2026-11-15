@@ -204,3 +204,13 @@ Kalan uyarılar (ESLint, toplam 10): bölüm sarmalayıcıları 170–340 satır
 ESLint uyarıları 10 → 0: vitrin 22 bölüme (en büyüğü <150 satır) ayrıldı, 27 dallı tıklama işleyicisi `CLICK_ACTIONS_1-3` tablolarına çevrildi, `instagram/admin` üç dosyaya, `marketing/suggest` iki dosyaya + `aggregate` yardımcısına bölündü. Testler: 17 birim (asistan onay kapısı: küçük yazma uygulanır/geri alınır, BULK_LIMIT üstü ve dış kaynaklı metinde onaya düşer), 104 uçtan uca, 16 tarayıcı. Birleşik satır kapsamı (c8, birim + uçtan uca, sunucu alt süreci dahil, `npm run test:coverage`) ≈ %70, dal kapsamı ≈ %71.
 
 Yapılmayanlar: siparişlerin ve olayların bellekten depo katmanına taşınması ve `settings`'in alan bazlı yazımı (davranış değiştiren, ölçek sınırı belgeli), mobil (`mobile/`, başka oturumun commit edilmemiş işi), G5, `sunum/` koruması, CI'ın ilk gerçek koşusu.
+
+### Altıncı tur: "yapılmayanlar"
+
+- **G5 kapandı:** webhook kimlik listesi kalıcı (14 gün, yeniden başlatmada da geçerli), 7 günden eski zaman damgalı yük yok sayılır (uçtan uca testli).
+- **`sunum/` koruması:** `SUNUM_PROTECT=1` ile yalnız panel oturumuna açılır; varsayılan değişmedi (paylaşılmış bağlantılar kopmasın). Testli.
+- **Veri katmanı:** bellekteki sipariş/olay modeli bilinçli olarak korundu (tek süreç içinde tutarlı, tavanlı: 5000 sipariş, 200 bin olay). Yerine `GET /api/admin/health` eklendi: sayaçlar, tavanlar, bellek, veritabanı boyutu, yedek durumu, %80 uyarısı. Depo katmanı/PostgreSQL geçişi tavan yaklaşınca ya da ikinci kopya gerekince yapılmalı; şimdi yapmak davranış riski getirir, kazanç sağlamaz.
+- **Mobil (`mobile/`):** 6 saf mantık testi (kargo, arama eşleştirici, görsel adresi, kapsam çözümleme; `npm test`, Node ≥ 22.18, ek bağımlılık yok), `typecheck`, `typecheck:test` ve `expo lint` temiz. Önceki incelemedeki mobil bulgulardan kargo eşiği (`freeShip` parametresi) ve boş `catch` bu çalışmadan önce düzeltilmiş görünüyor. `mobile/` başka oturumun commit edilmemiş işi olduğu için commit edilmedi.
+- Testler: 116 uçtan uca, 17 birim, 16 tarayıcı; lint 0 uyarı.
+
+Hâlâ açık: CI'ın ilk gerçek koşusu, G3'ün şifreleme/disk dışı yedek kısmı, G10 CSP nonce, mobil için CI işi (mobil depoya girince), canlıda Railway başlık davranışı.
