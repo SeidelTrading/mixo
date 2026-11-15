@@ -583,7 +583,7 @@ $('#msg').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('#
 $('#chatF').onsubmit=async e=>{e.preventDefault();const text=$('#msg').value.trim();if(!text||busy)return;busy=true;$('#sendB').disabled=true;$('#msg').value='';$('#sugg').hidden=true;
   say('u',esc(text));const w=say('a','<span class="dots">Düşünüyor</span>');
   try{const r=await api('/api/admin/assistant',{conversation:conv,text});
-    w.innerHTML=esc(r.reply)+(r.tools.length?`<small>Kullanılan araçlar: ${esc([...new Set(r.tools)].join(', '))}</small>`:'');
+    w.innerHTML=esc(r.reply).replace(/\*\*(?=\S)([^*\n]+?)(?<=\S)\*\*/g,'<b>$1</b>')+(r.tools.length?`<small>Kullanılan araçlar: ${esc([...new Set(r.tools)].join(', '))}</small>`:'');
     r.applied.forEach(c=>say('sys','✓ Uygulandı: '+esc(c.summary)));
     r.pending.forEach(p=>say('pend',`<b>Onayınız gerekiyor</b>${esc(p.text)}<div><button class="btn sm" data-pend="${p.id}" data-apply="1">Onayla</button> <button class="btn ghost sm" data-pend="${p.id}" data-apply="0">Vazgeç</button></div>`));
     if(r.applied.length||r.pending.length){loadProblems();loadProducts();loadSettings()}
