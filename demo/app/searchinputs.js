@@ -34,6 +34,8 @@
   $('#q').addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      /* IME ile yazarken Enter harf seçimini onaylar, aramayı başlatmamalı. keyCode 229: Safari'de isComposing erken sıfırlanır */
+      if (e.isComposing || e.keyCode === 229) return;
       commitSearch($('#q').value);
       $('#q').blur();
     } else if (e.key === 'ArrowDown' && !sg.hidden) {

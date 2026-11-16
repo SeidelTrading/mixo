@@ -592,7 +592,8 @@ const conv=crypto.randomUUID(); let busy=false;
 const say=(cls,html)=>{const m=document.createElement('div');m.className='m '+cls;m.innerHTML=html;$('#chat').append(m);m.scrollIntoView({block:'end'});return m};
 say('a','Merhaba. Mağazanın analizini sorabilir, sorunlu ürünleri yönetebilir, ürün başlığı/fiyatı/stok durumunu düzenleyebilir, duyuru ve ana sayfa metinlerini, kategorileri ve öne çıkan ürünleri değiştirebilirsiniz.');
 $('#sugg').innerHTML=['Son 7 günde mağazada ne oldu?','Sorunlu ürünlerin özetini ver','Kutu fotoğraflı Festina saatlerini gizle','Ziyaretçiler en çok neyi arayıp bulamıyor?','Duyuruya ücretsiz kargo mesajı yaz'].map(q=>`<button data-ask="${esc(q)}">${esc(q)}</button>`).join('');
-$('#msg').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('#chatF').requestSubmit()}};
+/* IME (Japonca/Çince/Korece) ile yazarken Enter harf seçimini onaylar; o sırada gönderme. keyCode 229: Safari'de isComposing erken sıfırlanır */
+$('#msg').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(e.isComposing||e.keyCode===229)return;$('#chatF').requestSubmit()}};
 $('#chatF').onsubmit=async e=>{e.preventDefault();const text=$('#msg').value.trim();if(!text||busy)return;busy=true;$('#sendB').disabled=true;$('#msg').value='';$('#sugg').hidden=true;
   say('u',esc(text));const w=say('a','<span class="dots">Düşünüyor</span>');
   try{const r=await api('/api/admin/assistant',{conversation:conv,text});
