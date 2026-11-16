@@ -549,6 +549,12 @@ try {
   ok((await consent()) === n0 + 1, 'çerezi olmayan, başkasının iznini silemez');
   await call(own, '/api/cart-save', cartBody(false));
   ok((await consent()) === n0, 'çerez sahibi izni kaldırabilir');
+  await call(own, '/api/cart-save', cartBody(true));
+  const thief = jar();
+  await call(thief, '/api/cart-save', { ...cartBody(true), name: 'Hirsiz' });
+  ok(!thief.c.includes('mxc='), 'kayıtlı e-posta için başka tarayıcıya sahiplik çerezi verilmez');
+  ok((await consent()) === n0 + 1, 'kayıtlı e-postaya başkası ikinci kayıt açamaz');
+  await call(own, '/api/cart-save', cartBody(false));
 
   console.log('14) CSRF ve içerik türü (yönetici uçları)');
   ok(
@@ -606,12 +612,14 @@ try {
 
   console.log('16) Güvenlik düzeltmeleri: çerez sahipliği, dosya izni, vekil adresi, bağlantı süzgeci');
   const mj = jar();
+  const c16 = await consent();
   const om = await call(mj, '/api/orders', {
     items: [{ id: pid, qty: 1 }],
     customer: cust('izinli@example.com'),
     marketing: true,
   });
   ok(om.s === 200 && om.j.order.verify === true, 'izinli sipariş doğrulama bekliyor');
+  ok((await consent()) === c16, 'doğrulanmamış siparişle pazarlama izni kaydı açılmaz');
   ok(!mj.c.includes('mxc='), 'doğrulanmamış siparişte izin sahipliği çerezi verilmez');
   let mmail;
   for (let i = 0; i < 30 && !mmail; i++) {
@@ -623,6 +631,11 @@ try {
   const mu = new URL(mmail?.body.match(/http\S+/)?.[0] || 'http://x/');
   const cr = await fetch(BASE + '/api/orders/confirm' + mu.search, { redirect: 'manual' });
   ok(cr.status === 200, 'doğrulama bağlantısı çalıştı');
+  ok((await consent()) === c16 + 1, 'izin kaydı e-posta doğrulamasından sonra açıldı');
+  ok(
+    (await call(AD.j, '/api/admin/order-status', { id: om.j.order.id, status: 'unverified' })).s === 400,
+    'sipariş "Doğrulanmadı" durumuna geri alınamaz',
+  );
   ok(
     (cr.headers.getSetCookie?.() || []).some(x => x.startsWith('mxc=')),
     'çerez doğrulamadan sonra verildi',

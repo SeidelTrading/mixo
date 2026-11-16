@@ -11,7 +11,7 @@ import {
   resolveIds,
 } from './assistant-gate.mjs';
 import { analytics, problemSummary } from './analytics.mjs';
-import { ORDER_STATUS, dashboard, orders } from './orders.mjs';
+import { ORDER_STATUS, canMoveOrder, dashboard, orders } from './orders.mjs';
 import { actions, undo, undoConflict } from './actions.mjs';
 import { mk } from './channels.mjs';
 
@@ -43,8 +43,11 @@ export const TOOL_HANDLERS = {
     const id = String(input.id || ''),
       status = String(input.status || ''),
       o = orders.find(x => x.id === id);
-    if (!o || !Object.hasOwn(ORDER_STATUS, status) || o.status === status)
-      return { error: 'Sipariş bulunamadı ya da durum aynı/geçersiz.' };
+    if (!o || !Object.hasOwn(ORDER_STATUS, status) || !canMoveOrder(o, status, true))
+      return {
+        error:
+          'Sipariş bulunamadı, durum aynı/geçersiz ya da bu geçiş asistana kapalı (doğrulanmamış siparişi yalnız panelden elle doğrulayın; süresi dolan sipariş yeniden açılamaz).',
+      };
     return gate(conv, 1, `Sipariş ${id}: ${ORDER_STATUS[o.status]} → ${ORDER_STATUS[status]}`, by =>
       actions.set_order_status({ id, status }, by),
     );

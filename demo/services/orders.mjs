@@ -24,6 +24,15 @@ export const ORDER_VERIFY = !/^(off|0|false)$/i.test(process.env.ORDER_VERIFY ||
   VERIFY_MAX_OPEN = 3;
 export const orders = store.allOrders();
 export const saveOrder = o => store.putOrder(o);
+// Durum geçişi kuralı: hiçbir sipariş "Doğrulanmadı"ya geri alınmaz; süresi dolup sistemce iptal edilen sipariş yeniden açılamaz
+// (yeni sipariş gerekir). Doğrulanmamış siparişi elle doğrulamak (unverified→new) yalnız panelden mümkündür; asistan bunu yapamaz.
+export const canMoveOrder = (o, status, viaAssistant = false) => {
+  if (!o || status === 'unverified' || o.status === status) return false;
+  const h = o.history?.[o.history.length - 1];
+  if (o.status === 'cancelled' && String(h?.by || '').startsWith('sistem')) return false;
+  if (viaAssistant && o.status === 'unverified' && status !== 'cancelled') return false;
+  return true;
+};
 export const ORDER_STATUS = {
   unverified: 'Doğrulanmadı',
   new: 'Yeni',
@@ -120,7 +129,8 @@ export function createOrder(body) {
     setImmediate(() => hooks.runJobs?.());
   }
   hooks.orderPlaced?.(cu.email);
-  if (o.marketing) hooks.optIn?.(cu.email, cu.name, 'checkout');
+  // Pazarlama izni doğrulama açıkken yalnız e-posta onayından sonra (confirmOrder) kaydedilir; sahte siparişle başkası adına izin açılamasın.
+  if (o.marketing && !ORDER_VERIFY) hooks.optIn?.(cu.email, cu.name, 'checkout');
   return { order: o };
 }
 export const orderRow = o => ({
@@ -146,6 +156,7 @@ export function confirmOrder(id, token) {
   o.status = 'new';
   (o.history ||= []).push({ t: Date.now(), status: 'new', by: 'müşteri (e-posta onayı)' });
   saveOrder(o);
+  if (o.marketing) hooks.optIn?.(o.customer.email, o.customer.name, 'checkout');
   homeCache.t = 0;
   return 'ok';
 }

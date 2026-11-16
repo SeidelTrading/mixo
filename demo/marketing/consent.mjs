@@ -1,6 +1,12 @@
 import { EMAIL_RE } from './shared.mjs';
 
 // Açık izin (opt-in), sepet anlık görüntüsü, sipariş sonrası kayıt.
+// Ad alanı e-posta konusuna da girer: satır sonu/NUL gibi başlık enjeksiyonu karakterleri atılır.
+const cleanName = n =>
+  String(n || '')
+    .replace(/[\r\n\0\u2028\u2029]+/g, ' ')
+    .trim()
+    .slice(0, 80);
 export function makeConsent(c) {
   const { db, MAX_OPTINS, CONSENT_TEXT, save, P, uid } = c;
   // vitrin: açık izin kaydı + sepet anlık görüntüsü (yalnız izin verenler)
@@ -13,7 +19,7 @@ export function makeConsent(c) {
     // confirmed:false = çift onay (doğrulama e-postası) yapılmadı. Gerçek gönderim açılmadan önce yalnız confirmed:true kayıtlar alıcı olmalı.
     db.optins[email] ??= {
       t: Date.now(),
-      name: String(name || '').slice(0, 80),
+      name: cleanName(name),
       source,
       confirmed: false,
       text: CONSENT_TEXT,
@@ -39,11 +45,14 @@ export function makeConsent(c) {
       .map(i => ({ id: String(i?.id || ''), qty: Math.floor(Number(i?.qty)) }))
       .filter(i => P.has(i.id) && i.qty >= 1 && i.qty <= 20);
     if (!items.length) return { err: 'Warenkorb leer.' };
+    // Kayıtlı bir e-postanın sepetini/adını yalnız izni veren tarayıcı (own) değiştirebilir; başkası sessizce yok sayılır (kayıtlı olup olmadığı sızmaz).
+    const known = !!(db.optins[email] || db.carts[email]);
+    if (known && !own) return { ok: true, created: false };
     if (Object.keys(db.carts).length > 5000) return { err: 'voll' };
     optIn(email, body.name, 'cart');
-    db.carts[email] = { t: Date.now(), name: String(body.name || '').slice(0, 80), items };
+    db.carts[email] = { t: Date.now(), name: cleanName(body.name), items };
     save();
-    return { ok: true };
+    return { ok: true, created: !known };
   }
   const orderPlaced = email => {
     email = String(email).toLowerCase();

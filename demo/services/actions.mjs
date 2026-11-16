@@ -1,7 +1,7 @@
 import { store } from '../lib/store.mjs';
 import { CATS, P } from './catalog.mjs';
 import { changes, logChange, saveSettings, settings } from './settings.mjs';
-import { ORDER_STATUS, orders, saveOrder } from './orders.mjs';
+import { ORDER_STATUS, canMoveOrder, orders, saveOrder } from './orders.mjs';
 import { CONTENT_KEYS, baseOf, catDefaultLabel, effP } from './overrides.mjs';
 import { PROBLEM_IDS, isProblem } from './visibility.mjs';
 
@@ -185,7 +185,7 @@ export const actions = {
   },
   set_order_status({ id, status }, by) {
     const o = orders.find(x => x.id === id);
-    if (!o || !Object.hasOwn(ORDER_STATUS, status) || o.status === status) return null;
+    if (!o || !Object.hasOwn(ORDER_STATUS, status) || !canMoveOrder(o, status)) return null;
     const prev = o.status;
     o.status = status;
     (o.history ||= []).push({ t: Date.now(), status, by });

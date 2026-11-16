@@ -34,7 +34,7 @@ export async function publicRoutes(c) {
       res,
       200,
       { ok: true },
-      r.removed || own || b.optin !== true
+      r.removed || !r.created || b.optin !== true
         ? {}
         : {
             'set-cookie': `mxc=${sign('c:' + em)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000${secure}`,

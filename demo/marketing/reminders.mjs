@@ -84,7 +84,7 @@ export function makeReminders(c) {
         .replace(/\{link\}/g, link)
         .replace(/\{datum\}/g, new Date(r.ref).toLocaleDateString('de-DE'))
         .replace(/\{abmelden\}/g, `${SITE}/abmelden (Echtversand: persönlicher Abmelde-Link)`);
-    return { subject: fill(rule.subject), body: fill(rule.body) };
+    return { subject: fill(rule.subject).replace(/[\r\n\0]+/g, ' '), body: fill(rule.body) };
   }
   const rowOut = (rule, r) => ({
     key: r.key,
