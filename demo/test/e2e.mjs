@@ -64,7 +64,7 @@ async function call(j, p, body, opt = {}) {
     ...(opt.headers || {}),
   };
   const r = await fetch(BASE + p, {
-    method: body !== undefined ? 'POST' : 'GET',
+    method: opt.method || (body !== undefined ? 'POST' : 'GET'),
     headers: h,
     body: body !== undefined ? (opt.raw ?? JSON.stringify(body)) : undefined,
     redirect: 'manual',
@@ -275,6 +275,12 @@ try {
     'yabancı Origin → 403',
   );
   ok((await call(A.j, '/api/admin/announcement', {}, { raw: 'null' })).s === 400, 'gövde null → 400');
+  for (const m of ['PUT', 'PATCH', 'DELETE'])
+    ok(
+      (await call(A.j, '/api/admin/instagram/draft', { x: 1 }, { method: m })).s === 405,
+      `yönetici ucunda ${m} → 405`,
+    );
+  ok((await call(A.j, '/api/admin/logout', undefined, { method: 'GET' })).s === 405, 'çıkış ucu GET → 405');
 
   console.log('4) Sipariş doğrulaması');
   const home = (await call(null, '/api/shop/home')).j,

@@ -61,6 +61,9 @@ export const handle = async (req, res) => {
         if (h !== req.headers.host) return send(res, 403, { error: 'Yabancı kaynaktan istek reddedildi.' });
       }
     }
+    // Yönetici uçları yalnız GET, HEAD ve POST kabul eder: PUT/PATCH/DELETE, POST için konan içerik türü, Origin ve rol denetimlerini atlamasın.
+    if (p.startsWith('/api/admin/') && !['GET', 'HEAD', 'POST'].includes(req.method))
+      return send(res, 405, { error: 'Yöntem desteklenmiyor.' }, { allow: 'GET, HEAD, POST' });
     const auth = authOf(req);
     const c = { req, res, url, p, ip, secure, auth };
     if (await run(PUBLIC, c)) return;
@@ -68,6 +71,8 @@ export const handle = async (req, res) => {
     if (!auth) return send(res, 401, { error: 'Oturum açmanız gerekiyor.' });
     c.body = req.method === 'POST' ? await readBody(req) : {};
     if (p === '/api/admin/logout') {
+      if (req.method !== 'POST')
+        return send(res, 405, { error: 'Yöntem desteklenmiyor.' }, { allow: 'POST' });
       endSession(auth.sid);
       return send(
         res,

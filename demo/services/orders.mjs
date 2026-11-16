@@ -9,7 +9,14 @@ import { hiddenIds, isHidden, openProblems } from './visibility.mjs';
 import { homeCache } from '../lib/cache.mjs';
 import { freeShip, SHIP_FEE, money } from './pricing.mjs';
 
-export const MAX_ORDERS = 5000;
+export const MAX_ORDERS = 5000,
+  MAX_UNVERIFIED = 1000;
+// E-posta karşılaştırma anahtarı: "+etiket" atılır, Gmail'de noktalar yok sayılır (a+1@x.de ile a+2@x.de aynı kişi sayılsın).
+const emailKey = e => {
+  const [l = '', d = ''] = String(e).toLowerCase().split('@'),
+    base = l.split('+')[0];
+  return (d === 'gmail.com' || d === 'googlemail.com' ? base.replace(/\./g, '') : base) + '@' + d;
+};
 // Sipariş doğrulaması: yeni sipariş "Doğrulanmadı" olarak açılır; müşteri e-postadaki bağlantıyla (ya da yönetici panelden) doğrulayana kadar
 // ciroya, çok satanlara ve analize girmez. 48 saatte doğrulanmayan sipariş iptal edilir. ORDER_VERIFY=off eski davranışa döner.
 export const ORDER_VERIFY = !/^(off|0|false)$/i.test(process.env.ORDER_VERIFY || ''),
@@ -40,7 +47,8 @@ export function createOrder(body) {
     items.push({ id, title: e.title, vendor: p.vendor, price: e.price, qty, img: e.img });
   }
   if (!items.length) return { err: 'Der Warenkorb ist leer.' };
-  if (orders.filter(x => x.status !== 'cancelled').length >= MAX_ORDERS)
+  // Tavan yalnız gerçek (doğrulanmış) siparişleri sayar; doğrulanmamışların ayrı tavanı aşağıdadır (sahte siparişle mağaza kapatılamasın).
+  if (orders.filter(x => x.status !== 'cancelled' && x.status !== 'unverified').length >= MAX_ORDERS)
     return { err: 'Die Demo nimmt zurzeit keine weiteren Bestellungen an.' };
   const c = body.customer || {},
     str = (v, n) =>
@@ -64,11 +72,22 @@ export function createOrder(body) {
     return { err: 'Bitte alle Felder korrekt ausfüllen.' };
   if (
     ORDER_VERIFY &&
-    orders.filter(x => x.status === 'unverified' && x.customer.email === cu.email).length >= VERIFY_MAX_OPEN
+    orders.filter(x => x.status === 'unverified' && emailKey(x.customer.email) === emailKey(cu.email))
+      .length >= VERIFY_MAX_OPEN
   )
     return {
       err: 'Für diese E-Mail-Adresse warten bereits Bestellungen auf Bestätigung. Bitte bestätigen Sie diese zuerst über den Link in der E-Mail.',
     };
+  // Doğrulanmamış siparişlerin genel tavanı: dolunca en eskisi sistemce iptal edilir (iptal kaydı 7 gün sonra silinir).
+  if (ORDER_VERIFY) {
+    const open = orders.filter(x => x.status === 'unverified');
+    if (open.length >= MAX_UNVERIFIED) {
+      const old = open.reduce((a, b) => (b.t < a.t ? b : a));
+      old.status = 'cancelled';
+      (old.history ||= []).push({ t: Date.now(), status: 'cancelled', by: 'sistem (doğrulanmadı)' });
+      saveOrder(old);
+    }
+  }
   const subtotal = money(items.reduce((a, i) => a + i.price * i.qty, 0)),
     shipping = subtotal >= freeShip() ? 0 : SHIP_FEE;
   let oid;
