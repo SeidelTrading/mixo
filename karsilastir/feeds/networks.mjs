@@ -120,6 +120,121 @@ export const NETWORKS = {
       merchantName: 'programName',
     },
   },
+
+  /**
+   * Webgains CSV (Product Feeds). TAMAMI UNVERIFIED: sütun adları genel dokümandan tahmin; gerçek dosya gelince
+   * admin'deki mapping JSON ile düzeltin. Kayıt: https://www.webgains.com (yayıncı hesabı).
+   */
+  webgains: {
+    label: 'Webgains (CSV, unverified)',
+    format: 'csv',
+    blankOutOfStock: false,
+    columns: {
+      ean: ['ean', 'gtin'],
+      mpn: 'mpn',
+      title: ['product_name', 'name'],
+      brand: 'brand',
+      price: 'price',
+      shipping: 'delivery_cost',
+      currency: 'currency',
+      deepLink: ['deeplink', 'deep_link'],
+      image: 'image_url',
+      category: 'category',
+      inStock: 'in_stock',
+      merchantId: 'program_id',
+      merchantName: 'program_name',
+    },
+  },
+
+  /** TradeTracker (XML/CSV ürün beslemesi). TAMAMI UNVERIFIED: alan adları tahmin. */
+  tradetracker: {
+    label: 'TradeTracker (XML, unverified)',
+    format: 'xml',
+    itemTag: 'product',
+    blankOutOfStock: false,
+    columns: {
+      ean: ['properties/EAN', 'EAN', 'ean'],
+      mpn: ['properties/MPN', 'MPN'],
+      title: 'name',
+      brand: ['properties/brand', 'brand'],
+      price: 'price',
+      shipping: ['properties/shipping_costs', 'shippingCosts'],
+      currency: 'currency',
+      deepLink: 'productURL',
+      image: 'imageURL',
+      category: ['categories/category', 'categories'],
+      inStock: ['properties/availability', 'availability'],
+      merchantId: 'campaignID',
+      merchantName: 'campaignName',
+    },
+  },
+
+  /** ADCELL (belboon ile aynı grup) CSV. TAMAMI UNVERIFIED: alan adları tahmin. */
+  adcell: {
+    label: 'ADCELL (CSV, unverified)',
+    format: 'csv',
+    blankOutOfStock: false,
+    columns: {
+      ean: 'EAN',
+      mpn: 'MPN',
+      title: ['Titel', 'title'],
+      brand: ['Hersteller', 'brand'],
+      price: ['Preis', 'price'],
+      shipping: ['Versandkosten', 'shipping'],
+      currency: ['Waehrung', 'currency'],
+      deepLink: ['Deeplink', 'deeplink'],
+      url: ['Produkt-URL', 'url'],
+      image: ['Bild-URL', 'image'],
+      category: ['Kategorie', 'category'],
+      inStock: ['Lieferstatus', 'availability'],
+      merchantId: 'programId',
+      merchantName: 'programName',
+    },
+  },
+
+  /** belboon (ADCELL grubu) CSV. TAMAMI UNVERIFIED: alan adları tahmin. */
+  belboon: {
+    label: 'belboon (CSV, unverified)',
+    format: 'csv',
+    blankOutOfStock: false,
+    columns: {
+      ean: ['EAN', 'ean'],
+      mpn: ['MPN', 'mpn'],
+      title: ['Product_Name', 'name'],
+      brand: ['Brand', 'brand'],
+      price: ['Price', 'price'],
+      shipping: ['Shipping_Costs', 'shipping'],
+      currency: ['Currency', 'currency'],
+      deepLink: ['Deeplink', 'deeplink'],
+      image: ['Image_URL', 'image'],
+      category: ['Category', 'category'],
+      inStock: ['Availability', 'availability'],
+      merchantId: 'Program_ID',
+      merchantName: 'Program_Name',
+    },
+  },
+
+  /** CJ (Commission Junction) ürün kataloğu CSV. TAMAMI UNVERIFIED: alan adları tahmin. */
+  cj: {
+    label: 'CJ (CSV, unverified)',
+    format: 'csv',
+    blankOutOfStock: false,
+    columns: {
+      ean: ['UPC', 'EAN', 'GTIN'],
+      mpn: 'MANUFACTURERID',
+      title: 'NAME',
+      brand: 'MANUFACTURER',
+      price: ['SALEPRICE', 'PRICE'],
+      currency: 'CURRENCY',
+      deepLink: 'BUYURL',
+      url: 'BUYURL',
+      image: 'IMAGEURL',
+      category: 'ADVERTISERCATEGORY',
+      inStock: 'INSTOCK',
+      merchantId: 'ADVERTISERID',
+      merchantName: 'PROGRAMNAME',
+    },
+  },
 };
 
 export const isNetwork = n => Object.hasOwn(NETWORKS, n);

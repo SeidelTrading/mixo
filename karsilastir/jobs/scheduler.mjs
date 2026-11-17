@@ -1,5 +1,6 @@
 import { runDueFeeds } from '../feeds/run.mjs';
 import { runDueNetworkFeeds } from '../feeds/network.mjs';
+import { runLookups } from '../lookup/run.mjs';
 import { STORES } from '../lib/stores.mjs';
 
 /** Zamanlayıcı: besleme çalıştırma (15 dk'da bir kontrol) ve - yalnızca CRAWLER_ENABLED=1 ise - tarayıcı turu. */
@@ -13,6 +14,10 @@ export function startScheduler(ctx) {
       .catch(e => console.error('network feed', e));
   timers.push(setInterval(feeds, 15 * 60 * 1000));
   setTimeout(feeds, 5000).unref();
+  // Anahtarlı bağlayıcılar (eBay, Amazon, bol, SerpAPI): anahtar yoksa hiçbir şey yapmaz.
+  const look = () => runLookups(ctx.db, { now: ctx.now }).catch(e => console.error('lookup', e));
+  timers.push(setInterval(look, 30 * 60 * 1000));
+  setTimeout(look, 20_000).unref();
   if (ctx.config.crawlerEnabled) {
     // Önceki tur bitmeden yenisi başlamaz (aynı tohum iki kez istenmesin). Tur başına 200 tohum, mağazalar arası
     // sırayla: 10 sn/host sınırıyla her mağazaya turda ~15 istek düşer.
