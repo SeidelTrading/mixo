@@ -37,8 +37,12 @@ export const NETWORKS = {
    * Awin "Create-a-Feed" CSV. Kaynak: https://help.awin.com/developers/docs/hosting-feeds
    * VERIFIED: ean, product_name, brand_name, delivery_cost, currency, merchant_category, in_stock, aw_deep_link
    *   (aw_deep_link: "enhanced feed" SSS). in_stock: boş ya da 0 = stokta yok -> _blankOutOfStock.
-   * UNVERIFIED: search_price / store_price, merchant_deep_link, merchant_image_url / aw_image_url,
-   *   merchant_id, merchant_name, product_GTIN (EAN alternatifi).
+   * VERIFIED (yayıncı çıktı sütunları, Awin standart alan listesi:
+   *   https://help.awin.com/developers/docs/telco-data-feeds-mobile-phones-standard-fields): search_price,
+   *   store_price, merchant_deep_link, aw_deep_link, merchant_image_url, aw_image_url, merchant_id,
+   *   merchant_name, product_GTIN (ean ile aynı), category_name, in_stock (1/0). mpn: hosting-feeds sayfasında.
+   * Hâlâ gerçek bir Create-a-Feed dosyasıyla teyit edilmedi: o sayfa telekom beslemesi içindir; perakende
+   *   beslemede sütunlar aynı adla geliyor varsayıldı.
    * Ülke sütunu yok: pazar para biriminden ve beslemenin varsayılan pazarından çıkar.
    */
   awin: {
@@ -46,20 +50,20 @@ export const NETWORKS = {
     format: 'csv',
     blankOutOfStock: true,
     columns: {
-      ean: ['ean', 'product_gtin'], // product_GTIN: UNVERIFIED
-      mpn: 'mpn', // UNVERIFIED
+      ean: ['ean', 'product_gtin'],
+      mpn: 'mpn',
       title: 'product_name',
       brand: 'brand_name',
-      price: ['search_price', 'store_price'], // UNVERIFIED
+      price: ['search_price', 'store_price'],
       shipping: 'delivery_cost',
       currency: 'currency',
-      url: 'merchant_deep_link', // UNVERIFIED
+      url: 'merchant_deep_link',
       deepLink: 'aw_deep_link',
-      image: ['merchant_image_url', 'aw_image_url'], // UNVERIFIED
+      image: ['merchant_image_url', 'aw_image_url'],
       category: 'merchant_category',
       inStock: 'in_stock',
-      merchantId: 'merchant_id', // UNVERIFIED
-      merchantName: 'merchant_name', // UNVERIFIED
+      merchantId: 'merchant_id',
+      merchantName: 'merchant_name',
     },
   },
 
