@@ -302,3 +302,100 @@ test('arama Türkçe ve Almanca harflerde büyük/küçük ve aksan duyarsız', 
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('marka+mpn eşleştirme: tek eşleşme teklif, belirsiz/markasız unmatched, normalizasyon', async () => {
+  const { mpnKey } = await import('../lib/ingest.mjs');
+  assert.equal(mpnKey('Logitech', 'MX-Master 3S'), mpnKey(' LOGITECH ', 'mxmaster3s'));
+  assert.equal(mpnKey('', 'ABC123'), null);
+  assert.equal(mpnKey('Acme', 'A-1'), null); // mpn 3 karakterden kısa
+  const dir = mkdtempSync(join(tmpdir(), 'kb-mpn-'));
+  const db = openDb(dir);
+  try {
+    const shopA = db
+      .prepare('SELECT * FROM shops WHERE id = ?')
+      .get(addShop(db, { market: 'de', name: 'A', domain: 'a.test', shippingDefault: 0 }));
+    const shopB = db
+      .prepare('SELECT * FROM shops WHERE id = ?')
+      .get(addShop(db, { market: 'de', name: 'B', domain: 'b.test', shippingDefault: 0 }));
+    const now = Date.now();
+    const base = { price: '10,00', currency: 'EUR' };
+    // EAN + mpn'li ürün: mpnKey yazılır
+    assert.equal(
+      ingestOffer(
+        db,
+        shopA,
+        {
+          ...base,
+          ean: '4006381333931',
+          title: 'Mouse',
+          brand: 'Logitech',
+          mpn: '910-006559',
+          url: 'https://a.test/1',
+        },
+        now,
+      ),
+      'offer',
+    );
+    const p = db.prepare('SELECT mpn, mpnKey FROM products WHERE ean = ?').get('4006381333931');
+    assert.deepEqual({ ...p }, { mpn: '910-006559', mpnKey: mpnKey('Logitech', '910-006559') });
+    // EAN'sız, marka+mpn tek ürüne denk geliyor (büyük/küçük harf, boşluk, tire farkı) -> teklif
+    assert.equal(
+      ingestOffer(
+        db,
+        shopB,
+        { ...base, title: 'Logi Mouse', brand: 'LOGITECH', mpn: '910 006559', url: 'https://b.test/1' },
+        now,
+      ),
+      'offer',
+    );
+    assert.equal(db.prepare('SELECT ean FROM offers WHERE shopId = ?').get(shopB.id).ean, '4006381333931');
+    // Marka yok -> unmatched; mpn/sku unmatched'a yazılır
+    assert.equal(
+      ingestOffer(
+        db,
+        shopB,
+        { ...base, title: 'Mouse', mpn: '910-006559', sku: 'SKU-9', url: 'https://b.test/2' },
+        now,
+      ),
+      'unmatched',
+    );
+    const u = db.prepare('SELECT mpn, sku FROM unmatched WHERE url = ?').get('https://b.test/2');
+    assert.deepEqual({ ...u }, { mpn: '910-006559', sku: 'SKU-9' });
+    // Aynı anahtarlı ikinci ürün -> belirsiz -> unmatched
+    ingestOffer(
+      db,
+      shopA,
+      {
+        ...base,
+        ean: '96385074',
+        title: 'Mouse 2',
+        brand: 'logitech',
+        mpn: '910006559',
+        url: 'https://a.test/2',
+      },
+      now,
+    );
+    assert.equal(
+      ingestOffer(
+        db,
+        shopB,
+        { ...base, title: 'Mouse', brand: 'Logitech', mpn: '910-006559', url: 'https://b.test/3' },
+        now,
+      ),
+      'unmatched',
+    );
+    // Bilinmeyen mpn -> unmatched (bulanık başlık eşleştirmesi yok)
+    assert.equal(
+      ingestOffer(
+        db,
+        shopB,
+        { ...base, title: 'Mouse', brand: 'Logitech', mpn: 'ZZZ999', url: 'https://b.test/4' },
+        now,
+      ),
+      'unmatched',
+    );
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

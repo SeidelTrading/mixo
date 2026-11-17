@@ -172,3 +172,114 @@ test('JSON-LD: metne gömülü HTML varlıkları çözülür', async () => {
   })}</script>`;
   assert.equal(extractProducts(html)[0].name, 'CASIO SİYAH & Beyaz');
 });
+
+test('site haritası keşfi (sahte fetch): gzip, dizin önceliği, URL süzgeci, robots bir kez, ≥10 sn aralık', async () => {
+  const { gzipSync } = await import('node:zlib');
+  const { rankSitemaps, looksLikeProductUrl } = await import('../crawler/crawler.mjs');
+  const O = 'https://shop.example';
+  const urlset = locs =>
+    `<?xml version="1.0"?><urlset>${locs.map(l => `<url><loc>${l}</loc></url>`).join('')}</urlset>`;
+  const files = {
+    '/robots.txt': [
+      'text/plain',
+      `User-agent: *\nDisallow: /p/gizli\nSitemap: ${O}/sitemap_index.xml\nSitemap: https://other.example/s.xml\n`,
+    ],
+    '/sitemap_index.xml': [
+      'application/xml',
+      `<sitemapindex><sitemap><loc>${O}/sitemap-brands.xml</loc></sitemap><sitemap><loc>${O}/sitemap-blog.xml</loc></sitemap>` +
+        `<sitemap><loc>${O}/sitemap-misc.xml</loc></sitemap><sitemap><loc>${O}/sitemap-products-1.xml.gz</loc></sitemap></sitemapindex>`,
+    ],
+    '/sitemap-products-1.xml.gz': [
+      'application/x-gzip',
+      gzipSync(
+        urlset([
+          `${O}/`,
+          `${O}/p/kulaklik-123`,
+          `${O}/marka/sony`,
+          `${O}/tr/kategori/ses`,
+          `${O}/blog/yazi`,
+          `${O}/p/gizli-1`,
+          `https://other.example/p/1`,
+          `${O}/urun/mouse-9?renk=siyah&amp;x=1`,
+        ]),
+      ),
+    ],
+    '/sitemap-misc.xml': ['application/octet-stream', gzipSync(urlset([`${O}/p/laptop-5`]))], // uzantısız gzip: sihirli bayt
+  };
+  const calls = [];
+  let t = Date.parse('2026-11-17T10:00:00Z');
+  const fetchImpl = async (href, init) => {
+    const { pathname } = new URL(href);
+    calls.push({ path: pathname, at: t, ua: init.headers['user-agent'] });
+    const f = files[pathname];
+    return f
+      ? new Response(f[1], { status: 200, headers: { 'content-type': f[0] } })
+      : new Response('x', { status: 404 });
+  };
+  const now = () => t;
+  const limiter = new RateLimiter({ minIntervalMs: 10_000, now, sleep: async ms => void (t += ms) });
+  const db = openDb(mkdtempSync(join(dir, 'd-')));
+  const shopId = addShop(db, { market: 'tr', name: 'Örnek', domain: 'shop.example' });
+  const crawler = createCrawler({ db, siteUrl: 'https://kb.example', fetchImpl, now, limiter });
+  const shop = db.prepare('SELECT * FROM shops WHERE id = ?').get(shopId);
+  const stats = {};
+  assert.equal(await crawler.discoverSeeds(shop, O, { stats }), 3);
+  assert.deepEqual(
+    db
+      .prepare('SELECT url FROM seeds ORDER BY id')
+      .all()
+      .map(r => r.url),
+    [`${O}/p/kulaklik-123`, `${O}/urun/mouse-9?renk=siyah&x=1`, `${O}/p/laptop-5`],
+  );
+  // robots bir kez; ürün haritası önce; marka/blog haritası ve başka host hiç istenmez
+  assert.deepEqual(
+    calls.map(c => c.path),
+    ['/robots.txt', '/sitemap_index.xml', '/sitemap-products-1.xml.gz', '/sitemap-misc.xml'],
+  );
+  for (let i = 1; i < calls.length; i++) assert.ok(calls[i].at - calls[i - 1].at >= 10_000);
+  assert.ok(calls.every(c => c.ua === `${BOT_TOKEN}/0.1 (+https://kb.example/bot)`));
+  // yardımcılar
+  assert.deepEqual(
+    rankSitemaps([`${O}/s-category.xml`, `${O}/s-other.xml`, `${O}/s-urun-1.xml`, `${O}/s-page.xml`]),
+    [`${O}/s-urun-1.xml`, `${O}/s-other.xml`],
+  );
+  assert.equal(looksLikeProductUrl(`${O}/`), false);
+  assert.equal(looksLikeProductUrl(`${O}/de/marken/sony`), false);
+  assert.equal(looksLikeProductUrl(`${O}/search?q=x`), false);
+  assert.equal(looksLikeProductUrl(`${O}/Sony/WH-1000XM5/html/product/123`), true);
+  db.close();
+});
+
+test('site haritası: 403 alınırsa host bekletilir; sıkıştırma bombası reddedilir', async () => {
+  const { gzipSync } = await import('node:zlib');
+  const O = 'https://shop.example';
+  const bomb = gzipSync(Buffer.alloc(60 * 1024 * 1024, 0x20));
+  const files = {
+    '/robots.txt': ['text/plain', `Sitemap: ${O}/big.xml.gz\nSitemap: ${O}/s2.xml\n`],
+    '/big.xml.gz': ['application/gzip', bomb],
+  };
+  const paths = [];
+  let t = 0;
+  const fetchImpl = async href => {
+    const p = new URL(href).pathname;
+    paths.push(p);
+    if (p === '/s2.xml') return new Response('no', { status: 403 });
+    const f = files[p];
+    return f
+      ? new Response(f[1], { status: 200, headers: { 'content-type': f[0] } })
+      : new Response('x', { status: 404 });
+  };
+  const now = () => t;
+  const limiter = new RateLimiter({ minIntervalMs: 10_000, now, sleep: async ms => void (t += ms) });
+  const db = openDb(mkdtempSync(join(dir, 'd-')));
+  const shop = db
+    .prepare('SELECT * FROM shops WHERE id = ?')
+    .get(addShop(db, { market: 'de', name: 'X', domain: 'shop.example' }));
+  const crawler = createCrawler({ db, siteUrl: 'https://kb.example', fetchImpl, now, limiter });
+  const stats = {};
+  assert.equal(await crawler.discoverSeeds(shop, O, { stats }), 0);
+  assert.match(stats.maps[0].result, /^sitemap-decode/);
+  assert.equal(stats.maps[1].result, 'backoff-403');
+  assert.ok(db.prepare('SELECT until FROM host_backoff WHERE host = ?').get('shop.example'));
+  db.close();
+});
