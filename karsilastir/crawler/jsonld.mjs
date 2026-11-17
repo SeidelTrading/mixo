@@ -9,7 +9,7 @@ const GTIN_KEYS = ['gtin13', 'gtin', 'gtin14', 'gtin12', 'gtin8'];
 const OUT_RE = /outofstock|soldout|discontinued/i;
 
 const arr = v => (v === undefined || v === null ? [] : Array.isArray(v) ? v : [v]);
-const hasType = (n, t) => arr(n?.['@type']).some(x => String(x).replace(/^.*[/#]/, '') === t);
+const hasType = (n, t) => arr(n?.['@type']).some(x => String(x).replace(/^.*[/#:]/, '') === t);
 /** Bazı mağazalar JSON-LD metnine HTML varlıkları gömer ("S&#x130;YAH"): bunlar çözülür. */
 const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 const decodeEntities = s =>
@@ -20,11 +20,26 @@ const decodeEntities = s =>
   });
 const str = v => (typeof v === 'string' ? decodeEntities(v).trim() : typeof v === 'number' ? String(v) : '');
 
-function offersOf(node) {
+/**
+ * Aynı sayfadaki başka JSON-LD bloklarında tanımlı düğümlere `{ "@id": "..." }` ile verilen bağlar (voelkner.de:
+ * Product, Offer, Brand ayrı bloklarda). Dizin tüm bloklardan toplanır; yalnız-@id düğümleri gerçek düğüme çözülür.
+ */
+let ids = new Map();
+const deref = v => {
+  if (v && typeof v === 'object' && !Array.isArray(v) && typeof v['@id'] === 'string') {
+    const full = ids.get(v['@id']);
+    if (full && full !== v && Object.keys(v).length === 1) return full;
+  }
+  return v;
+};
+
+function offersOf(node, depth = 0) {
   const out = [];
-  for (const o of arr(node)) {
+  if (depth > 4) return out;
+  for (const o0 of arr(node)) {
+    const o = deref(o0);
     if (!o || typeof o !== 'object') continue;
-    if (arr(o.offers).length) out.push(...offersOf(o.offers));
+    if (arr(o.offers).length) out.push(...offersOf(o.offers, depth + 1));
     const spec = arr(o.priceSpecification)[0];
     const price = parsePrice(o.price ?? spec?.price ?? o.lowPrice);
     if (price === null) continue;
@@ -49,28 +64,46 @@ function gtinOf(n) {
   return '';
 }
 
-function fromProduct(n) {
-  const img = arr(n.image)[0];
+/** `parent`: ProductGroup (parfumdreams.de); varyantta eksik ad/marka/görsel/kategori gruptan tamamlanır. */
+function fromProduct(n, parent = null) {
+  const pick = k => (n[k] !== undefined && n[k] !== null && n[k] !== '' ? n[k] : parent?.[k]);
+  const img = arr(deref(pick('image')))[0];
+  const imgNode = deref(img);
+  const brand = deref(arr(pick('brand'))[0]);
   return {
-    name: str(n.name),
+    name: str(pick('name')),
     ean: gtinOf(n),
     mpn: str(n.mpn),
     sku: str(n.sku),
-    brand: str(typeof n.brand === 'object' ? n.brand?.name : n.brand),
-    image: str(typeof img === 'object' ? img?.url : img),
-    category: str(arr(n.category)[0]),
+    brand: str(typeof brand === 'object' ? brand?.name : brand),
+    image: str(typeof imgNode === 'object' ? imgNode?.url : imgNode),
+    category: str(arr(pick('category'))[0]),
     offers: offersOf(n.offers),
   };
 }
 
-function walk(node, found) {
-  if (Array.isArray(node)) return node.forEach(x => walk(x, found));
+function walk(node, found, parent = null) {
+  if (Array.isArray(node)) return node.forEach(x => walk(x, found, parent));
   if (!node || typeof node !== 'object') return;
-  if (hasType(node, 'Product')) found.push(fromProduct(node));
+  if (hasType(node, 'ProductGroup')) {
+    const variants = arr(node.hasVariant).map(deref);
+    // Varyantsız grup: teklif doğrudan grupta olabilir.
+    if (!variants.length) found.push(fromProduct(node));
+    for (const v of variants) walk(v, found, node);
+  } else if (hasType(node, 'Product')) found.push(fromProduct(node, parent));
   else {
     walk(node['@graph'], found);
     walk(node.mainEntity, found);
   }
+}
+
+/** Tüm bloklardaki (iç içe @graph dahil) @id'li düğümleri dizine alır. */
+function indexIds(node) {
+  if (Array.isArray(node)) return node.forEach(indexIds);
+  if (!node || typeof node !== 'object') return;
+  if (typeof node['@id'] === 'string' && Object.keys(node).length > 1 && !ids.has(node['@id']))
+    ids.set(node['@id'], node);
+  indexIds(node['@graph']);
 }
 
 const stripTags = s =>
@@ -123,14 +156,19 @@ function microdata(html) {
 
 export function extractProducts(html) {
   const found = [];
+  const blocks = [];
   const re = /<script\b[^>]*\btype\s*=\s*["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script>/gi;
   for (const m of String(html).matchAll(re)) {
     try {
-      walk(JSON.parse(m[1].trim()), found);
+      blocks.push(JSON.parse(m[1].trim()));
     } catch {
       // bozuk JSON-LD bloğu atlanır; diğer bloklar işlenmeye devam eder
     }
   }
+  ids = new Map();
+  for (const b of blocks) indexIds(b);
+  for (const b of blocks) walk(b, found);
+  ids = new Map();
   const withOffers = found.filter(p => p.offers.length);
   if (withOffers.length) return withOffers;
   return microdata(String(html)).filter(p => p.offers.length);

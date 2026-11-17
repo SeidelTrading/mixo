@@ -1,6 +1,6 @@
 import { MARKETS, MARKET_IDS } from '../lib/config.mjs';
 import { esc, jsonForScript } from '../lib/http.mjs';
-import { LEGAL_PAGES, formatMoney, tr, trn } from '../lib/i18n.mjs';
+import { LANGS, LEGAL_PAGES, formatMoney, tr, trn } from '../lib/i18n.mjs';
 
 const LOGO = `<svg class="logo" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true" focusable="false"><path class="tag-a" d="M3 8a3 3 0 0 1 3-3h9l9 9-8 8-10-10z"/><path class="tag-b" d="M14 13l7-7h5a3 3 0 0 1 3 3v6l-9 9z"/><circle cx="8" cy="9" r="1.8" class="hole"/><circle cx="25" cy="10" r="1.6" class="hole"/></svg>`;
 
@@ -22,11 +22,12 @@ export function layout(
     q = '',
     categories = [],
     cat = '',
+    lang = market,
   },
 ) {
   const base = ctx.config.siteUrl;
   const m = MARKETS[market];
-  const t = k => tr(market, k);
+  const t = k => tr(lang, k);
   const hreflang = alternates
     .map(a => `<link rel="alternate" hreflang="${MARKETS[a.market].lang}" href="${esc(base + a.path)}">`)
     .join('');
@@ -50,7 +51,7 @@ export function layout(
         .join('')}</ul></nav>`
     : '';
   return `<!doctype html>
-<html lang="${m.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="${lang === market ? m.lang : lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description || t('tagline'))}">
 ${robots ? `<meta name="robots" content="${robots}">` : ''}
@@ -218,7 +219,8 @@ export function botPage(ctx) {
 const nf = (n, locale = 'en') => new Intl.NumberFormat(locale).format(n);
 
 /** Kök ana sayfa: arama, istatistikler, pazarlar, kategori/marka, örnek ürünler. */
-export function marketChooser(ctx, { stats, topCats, brands, latest }) {
+export function marketChooser(ctx, { stats, topCats, brands, latest, lang = 'en' }) {
+  const t = k => tr(lang, k);
   const marketOpts = MARKET_IDS.map(
     id => `<option value="${id}">${esc(MARKETS[id].name)} (${id.toUpperCase()})</option>`,
   ).join('');
@@ -229,7 +231,7 @@ export function marketChooser(ctx, { stats, topCats, brands, latest }) {
       .slice(0, 4)
       .map(c => `<li><a class="chip" href="${esc(catHref(id, c))}">${esc(c)}</a></li>`)
       .join('');
-    return `<li class="mcard"><a class="mhead" href="/${id}/" hreflang="${MARKETS[id].lang}"><span class="mcode">${id.toUpperCase()}</span><span><strong>${esc(MARKETS[id].name)}</strong><small>${esc(MARKETS[id].currency)} · ${esc(nf(s.products))} products · ${esc(nf(s.shops))} shops</small></span></a>${cats ? `<ul class="mcats">${cats}</ul>` : ''}</li>`;
+    return `<li class="mcard"><a class="mhead" href="/${id}/" hreflang="${MARKETS[id].lang}"><span class="mcode">${id.toUpperCase()}</span><span><strong>${esc(MARKETS[id].name)}</strong><small>${esc(MARKETS[id].currency)} · ${esc(nf(s.products))} ${esc(t('productsWord'))} · ${esc(nf(s.shops))} ${esc(t('shopsWord'))}</small></span></a>${cats ? `<ul class="mcats">${cats}</ul>` : ''}</li>`;
   }).join('');
   const brandChips = brands
     .map(
@@ -238,7 +240,7 @@ export function marketChooser(ctx, { stats, topCats, brands, latest }) {
     )
     .join('');
   const latestCards = latest.length
-    ? `<section class="block"><h2>Latest matched products</h2><ul class="cards">${latest
+    ? `<section class="block"><h2>${esc(t('latestMatched'))}</h2><ul class="cards">${latest
         .map(p => {
           const m = p.market;
           return `<li class="card"><a href="/${m}/product/${esc(p.ean)}"><span class="thumb">${p.image ? `<img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy" width="160" height="160">` : '<span class="noimg" aria-hidden="true"></span>'}<span class="badge drop">${m.toUpperCase()}</span></span><span class="ctitle">${esc(p.title)}</span>${p.brand ? `<small class="cbrand">${esc(p.brand)}</small>` : ''}<span class="cprice"><strong>${esc(formatMoney(m, p.minTotal, p.currency))}</strong></span><span class="cmeta">${esc(trn(m, 'inShops', p.offerCount))}</span></a></li>`;
@@ -247,15 +249,16 @@ export function marketChooser(ctx, { stats, topCats, brands, latest }) {
     : '';
   const total = stats.total;
   return layout(ctx, 'de', {
-    title: 'Price comparison / Preisvergleich / Fiyat karşılaştırma',
-    description:
-      'Compare prices across shops in Türkiye, Germany and the Netherlands. Real offers, shipping included, price history.',
+    lang,
+    title: t('homeTitleTag'),
+    description: t('homeDesc'),
     canonicalPath: '/',
     alternates: MARKET_IDS.map(id => ({ market: id, path: `/${id}/` })),
-    body: `<section class="hero-band"><h1>Compare prices across shops in TR, DE and NL</h1><p>Find the cheapest offer for a product, shipping included. Preisvergleich · Fiyat karşılaştırma · Prijsvergelijking.</p>
-<form class="search hero-search home-search" action="/de/search" method="get" role="search" onsubmit="this.action='/'+this.elements.m.value+'/search'"><label class="sr" for="hq">Search products</label><input id="hq" type="search" name="q" placeholder="Search a product, brand or barcode" required><label class="sr" for="hm">Market</label><select id="hm" name="m">${marketOpts.replace('value="de"', 'value="de" selected')}</select><button type="submit">Search</button></form></section>
-<ul class="stats" aria-label="Coverage">${stat(total.products, 'products compared')}${stat(total.shops, 'shops tracked')}${stat(total.offers, 'live offers')}${stat(MARKET_IDS.length, 'countries')}</ul>
-<section class="block"><h2>Choose your market</h2><ul class="mcards">${cards}</ul></section>
-${brands.length ? `<section class="block"><h2>Popular brands</h2><ul class="chiprow">${brandChips}</ul></section>` : ''}${latestCards}`,
+    body: `<nav class="markets lang-switch" aria-label="${esc(t('languageNav'))}">${LANGS.map(l => `<a href="/?lang=${l}"${l === lang ? ' aria-current="true"' : ''} hreflang="${l}" lang="${l}">${l.toUpperCase()}</a>`).join('')}</nav>
+<section class="hero-band"><h1>${esc(t('homeHeading'))}</h1><p>${esc(t('homeLead'))}</p>
+<form class="search hero-search home-search" action="/de/search" method="get" role="search" onsubmit="this.action='/'+this.elements.m.value+'/search'"><label class="sr" for="hq">${esc(t('searchLabel'))}</label><input id="hq" type="search" name="q" placeholder="${esc(t('searchPlaceholder'))}" required><label class="sr" for="hm">${esc(t('marketLabel'))}</label><select id="hm" name="m">${marketOpts.replace('value="de"', 'value="de" selected')}</select><button type="submit">${esc(t('search'))}</button></form></section>
+<ul class="stats" aria-label="${esc(t('coverage'))}">${stat(total.products, t('statProducts'))}${stat(total.shops, t('statShops'))}${stat(total.offers, t('statOffers'))}${stat(MARKET_IDS.length, t('statCountries'))}</ul>
+<section class="block"><h2>${esc(t('chooseMarket'))}</h2><ul class="mcards">${cards}</ul></section>
+${brands.length ? `<section class="block"><h2>${esc(t('popularBrands'))}</h2><ul class="chiprow">${brandChips}</ul></section>` : ''}${latestCards}`,
   });
 }

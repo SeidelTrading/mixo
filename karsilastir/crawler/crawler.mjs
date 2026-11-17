@@ -516,6 +516,33 @@ export function createCrawler({
     return added;
   }
 
+  /**
+   * Hiç tohumu olmayan taranabilir mağazaların tohumlarını keşfeder (yeni eklenen mağaza/pazar elle admin işi beklemez).
+   * Beslemeyle çalışan mağazalar (feedUrl / network) atlanır. Bir mağaza için en erken 6 saatte bir denenir.
+   */
+  const discoverTried = new Map();
+  async function discoverMissing() {
+    const shops = db
+      .prepare(
+        `SELECT * FROM shops sh WHERE active = 1 AND blocked = 0 AND domain != '' AND feedUrl IS NULL AND network IS NULL
+           AND NOT EXISTS (SELECT 1 FROM seeds s WHERE s.shopId = sh.id)`,
+      )
+      .all();
+    let added = 0;
+    for (const shop of shops) {
+      if (now() - (discoverTried.get(shop.id) ?? -Infinity) < 6 * 3600 * 1000) continue;
+      discoverTried.set(shop.id, now());
+      try {
+        const n = await discoverSeeds(shop);
+        log(`discover ${shop.domain}: ${n} seeds`);
+        added += n;
+      } catch (e) {
+        log(`discover ${shop.domain}: ${String(e.message).slice(0, 80)}`);
+      }
+    }
+    return added;
+  }
+
   /** Zamanı gelen (son tarama > 24 saat) tohumları sırayla tarar. */
   /**
    * Mağazalar arasında sırayla (round-robin): her mağazanın en eski tohumu önce gelir, böylece ilk eklenen mağaza
@@ -546,5 +573,5 @@ export function createCrawler({
     return totals;
   }
 
-  return { userAgent, crawlSeed, discoverSeeds, runCycle, guardedGet };
+  return { userAgent, crawlSeed, discoverSeeds, discoverMissing, runCycle, guardedGet };
 }

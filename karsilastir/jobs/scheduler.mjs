@@ -19,9 +19,9 @@ export function startScheduler(ctx) {
     const crawl = () => {
       if (running) return;
       running = true;
-      ctx
-        .getCrawler()
-        .runCycle({ limit: 200 })
+      const c = ctx.getCrawler();
+      c.discoverMissing()
+        .then(() => c.runCycle({ limit: 200 }))
         .catch(e => console.error('crawler', e))
         .finally(() => (running = false));
     };

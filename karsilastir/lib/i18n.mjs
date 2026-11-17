@@ -68,6 +68,24 @@ const T = {
     categoryNav: 'Kategoriler',
     productImage: 'Ürün görseli',
     noStockOffers: 'Şu an stokta teklif yok.',
+    homeTitleTag: 'Fiyat karşılaştırma · Preisvergleich · Prijsvergelijking',
+    homeDesc:
+      'Türkiye, Almanya ve Hollanda mağazalarının fiyatlarını karşılaştırın. Gerçek teklifler, kargo dahil, fiyat geçmişi.',
+    homeHeading: 'TR, DE ve NL mağazalarında fiyatları karşılaştırın',
+    homeLead: 'Bir ürünün en ucuz teklifini kargo dahil bulun.',
+    searchLabel: 'Ürün ara',
+    marketLabel: 'Ülke',
+    coverage: 'Kapsam',
+    statProducts: 'ürün karşılaştırılıyor',
+    statShops: 'mağaza izleniyor',
+    statOffers: 'güncel teklif',
+    statCountries: 'ülke',
+    chooseMarket: 'Ülkenizi seçin',
+    popularBrands: 'Popüler markalar',
+    latestMatched: 'Son eşleşen ürünler',
+    productsWord: 'ürün',
+    shopsWord: 'mağaza',
+    languageNav: 'Dil',
   },
   de: {
     siteName: 'Preisvergleich',
@@ -135,6 +153,24 @@ const T = {
     categoryNav: 'Kategorien',
     productImage: 'Produktbild',
     noStockOffers: 'Derzeit kein lieferbares Angebot.',
+    homeTitleTag: 'Preisvergleich · Fiyat karşılaştırma · Prijsvergelijking',
+    homeDesc:
+      'Preise in Shops der Türkei, Deutschlands und der Niederlande vergleichen. Echte Angebote, inkl. Versand, Preisverlauf.',
+    homeHeading: 'Preise in Shops in TR, DE und NL vergleichen',
+    homeLead: 'Das günstigste Angebot für ein Produkt finden, Versand inklusive.',
+    searchLabel: 'Produkte suchen',
+    marketLabel: 'Land',
+    coverage: 'Abdeckung',
+    statProducts: 'Produkte verglichen',
+    statShops: 'Shops beobachtet',
+    statOffers: 'aktuelle Angebote',
+    statCountries: 'Länder',
+    chooseMarket: 'Land wählen',
+    popularBrands: 'Beliebte Marken',
+    latestMatched: 'Zuletzt zugeordnete Produkte',
+    productsWord: 'Produkte',
+    shopsWord: 'Shops',
+    languageNav: 'Sprache',
   },
   nl: {
     siteName: 'Prijsvergelijker',
@@ -202,8 +238,72 @@ const T = {
     categoryNav: 'Categorieën',
     productImage: 'Productafbeelding',
     noStockOffers: 'Momenteel geen aanbod op voorraad.',
+    homeTitleTag: 'Prijsvergelijking · Preisvergleich · Fiyat karşılaştırma',
+    homeDesc:
+      'Vergelijk prijzen van winkels in Turkije, Duitsland en Nederland. Echte aanbiedingen, incl. verzending, prijsverloop.',
+    homeHeading: 'Vergelijk prijzen bij winkels in TR, DE en NL',
+    homeLead: 'Vind het goedkoopste aanbod voor een product, verzending inbegrepen.',
+    searchLabel: 'Producten zoeken',
+    marketLabel: 'Land',
+    coverage: 'Dekking',
+    statProducts: 'producten vergeleken',
+    statShops: 'winkels gevolgd',
+    statOffers: 'actuele aanbiedingen',
+    statCountries: 'landen',
+    chooseMarket: 'Kies je land',
+    popularBrands: 'Populaire merken',
+    latestMatched: 'Laatst gekoppelde producten',
+    productsWord: 'producten',
+    shopsWord: 'winkels',
+    languageNav: 'Taal',
+  },
+  en: {
+    siteName: 'Price comparison',
+    tagline: 'Compare prices across many shops in one place.',
+    searchPlaceholder: 'Search a product, brand or barcode',
+    search: 'Search',
+    market: 'Country',
+    categoryNav: 'Categories',
+    footerNav: 'Footer',
+    imprint: 'Imprint',
+    privacy: 'Privacy',
+    kvkk: 'KVKK',
+    disclosure: 'Prices come from the shops and may change. Without guarantee.',
+    inShops: 'in {n} shops',
+    inShopsOne: 'in 1 shop',
+    homeTitleTag: 'Price comparison · Preisvergleich · Fiyat karşılaştırma · Prijsvergelijking',
+    homeDesc:
+      'Compare prices across shops in Türkiye, Germany and the Netherlands. Real offers, shipping included, price history.',
+    homeHeading: 'Compare prices across shops in TR, DE and NL',
+    homeLead: 'Find the cheapest offer for a product, shipping included.',
+    searchLabel: 'Search products',
+    marketLabel: 'Country',
+    coverage: 'Coverage',
+    statProducts: 'products compared',
+    statShops: 'shops tracked',
+    statOffers: 'live offers',
+    statCountries: 'countries',
+    chooseMarket: 'Choose your market',
+    popularBrands: 'Popular brands',
+    latestMatched: 'Latest matched products',
+    productsWord: 'products',
+    shopsWord: 'shops',
+    languageNav: 'Language',
   },
 };
+
+export const LANGS = ['en', 'tr', 'de', 'nl'];
+/** Başlıktaki (Accept-Language) tercih edilen dilleri sırayla dener; bilinen yoksa en. */
+export function pickLang(header = '') {
+  const prefs = String(header)
+    .split(',')
+    .map(p => {
+      const [tag, q] = p.trim().split(';q=');
+      return { lang: tag.slice(0, 2).toLowerCase(), q: q === undefined ? 1 : Number(q) || 0 };
+    })
+    .sort((a, b) => b.q - a.q);
+  return prefs.find(p => p.q > 0 && LANGS.includes(p.lang))?.lang ?? 'en';
+}
 
 export const tr = (market, key) => T[market]?.[key] ?? T.tr[key] ?? key;
 /** Sayı yer tutuculu metin: {n}. */

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { ROOT, MARKETS, MARKET_IDS, isMarket } from '../lib/config.mjs';
 import { normalizeEan } from '../lib/ean.mjs';
 import { esc, html, redirect, text } from '../lib/http.mjs';
-import { LEGAL_PAGES, tr, trn } from '../lib/i18n.mjs';
+import { LANGS, LEGAL_PAGES, pickLang, tr, trn } from '../lib/i18n.mjs';
 import { sortOffers } from '../lib/pricing.mjs';
 import {
   categoriesFor,
@@ -47,13 +47,17 @@ export function handlePublic(ctx, req, res, url) {
   if (url.pathname === '/') {
     const maxAge0 = config.offerMaxAgeDays;
     const topCats = Object.fromEntries(MARKET_IDS.map(m => [m, categoriesFor(db, m, now, maxAge0, 4)]));
+    const lang = LANGS.includes(url.searchParams.get('lang') || '')
+      ? url.searchParams.get('lang')
+      : pickLang(req.headers['accept-language']);
     const page = marketChooser(ctx, {
+      lang,
       stats: siteStats(db, now, maxAge0),
       topCats,
       brands: topBrands(db, now, maxAge0),
       latest: latestMatched(db, now, maxAge0),
     });
-    return (html(res, 200, page, cache), true);
+    return (html(res, 200, page, { ...cache, vary: 'Accept-Language' }), true);
   }
   if (url.pathname === '/bot') return (html(res, 200, botPage(ctx), cache), true);
   if (url.pathname === '/robots.txt')

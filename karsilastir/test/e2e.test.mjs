@@ -287,3 +287,20 @@ test('admin: parola gerekir, oturum çerezi HttpOnly+SameSite, eşleşmemiş tek
   await get('/admin/logout', { method: 'POST', headers: form });
   assert.equal((await get('/admin', { headers: auth })).status, 401);
 });
+
+test('kök ana sayfa metinleri dile bağlı: ?lang= ve Accept-Language', async () => {
+  const lang = async (qs, hdr = {}) => {
+    const r = await fetch(`${base}/${qs}`, { headers: hdr });
+    return { h: await r.text(), vary: r.headers.get('vary') };
+  };
+  const tr = await lang('?lang=tr');
+  assert.match(tr.h, /<html lang="tr"/);
+  assert.match(tr.h, /Ülkenizi seçin/);
+  assert.match((await lang('?lang=de')).h, /Land wählen/);
+  assert.match((await lang('?lang=nl')).h, /Kies je land/);
+  assert.match((await lang('?lang=en')).h, /Choose your market/);
+  const auto = await lang('', { 'accept-language': 'nl-NL,nl;q=0.9,en;q=0.5' });
+  assert.match(auto.h, /Kies je land/);
+  assert.match(auto.vary || '', /Accept-Language/i);
+  assert.match((await lang('', { 'accept-language': 'fr-FR' })).h, /Choose your market/);
+});

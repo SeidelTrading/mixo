@@ -399,3 +399,38 @@ test('marka+mpn eşleştirme: tek eşleşme teklif, belirsiz/markasız unmatched
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// ---- Gerçek mağaza sayfalarından (2026-11-17) alınmış JSON-LD kalıpları ----
+import { readFileSync } from 'node:fs';
+import { extractProducts as extractFx } from '../crawler/jsonld.mjs';
+const fx = n => extractFx(readFileSync(new URL(`./fixtures/${n}.html`, import.meta.url), 'utf8'));
+
+test('JSON-LD: Product/Offer/Brand ayrı bloklarda @id ile bağlı (voelkner.de)', () => {
+  const [p] = fx('voelkner');
+  assert.equal(p.ean, '2050004913187');
+  assert.equal(p.brand, 'TRU COMPONENTS');
+  assert.equal(p.offers[0].price, 0.02);
+  assert.equal(p.offers[0].currency, 'EUR');
+  assert.equal(p.offers[0].inStock, true);
+});
+
+test('JSON-LD: ProductGroup + hasVariant, her varyant kendi GTIN/fiyatıyla (parfumdreams.de)', () => {
+  const ps = fx('parfumdreams');
+  assert.ok(ps.length >= 2);
+  for (const p of ps) {
+    assert.match(p.ean, /^\d{13}$/);
+    assert.equal(p.brand, 'CLARINS');
+    assert.equal(p.offers[0].currency, 'EUR');
+    assert.ok(p.offers[0].price > 0);
+  }
+  assert.equal(new Set(ps.map(p => p.ean)).size, ps.length);
+});
+
+test("JSON-LD: TR mağaza sayfaları (dr.com.tr EAN'lı, flo.com.tr EAN'sız)", () => {
+  const [d] = fx('dr-com-tr');
+  assert.equal(d.ean, '8684990960036');
+  assert.equal(d.offers[0].currency, 'TRY');
+  const [f] = fx('flo');
+  assert.equal(f.ean, '');
+  assert.equal(f.offers[0].currency, 'TRY');
+});

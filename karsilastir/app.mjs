@@ -3,11 +3,16 @@ import { createCrawler } from './crawler/crawler.mjs';
 import { openDb } from './db.mjs';
 import { createAuth } from './lib/auth.mjs';
 import { startScheduler } from './jobs/scheduler.mjs';
+import { provisionStores } from './lib/stores.mjs';
 import { createHandler } from './routes/handler.mjs';
 
 /** Uygulamayı kurar (dinlemeden). start() dinler; stop() her şeyi kapatır. */
 export function createApp(config, { now = Date.now } = {}) {
   const db = openDb(config.dataDir);
+  if (config.crawlerEnabled) {
+    const r = provisionStores(db);
+    if (r.added.length || r.disabled.length) console.log(`stores: added ${r.added}; disabled ${r.disabled}`);
+  }
   const auth = createAuth({
     password: config.adminPassword,
     secureCookie: config.siteUrl.startsWith('https:'),
