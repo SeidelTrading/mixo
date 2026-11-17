@@ -806,6 +806,32 @@ try {
   );
   // Geri al: sonraki denetimler varsayılan kimlikle çalışsın.
   await call(AH.j, '/api/admin/tenants/origin', { shop: 'mixoutlet', market: 'shop' });
+  // Karşılaştırma sitesi feed'i: ayar yöneticide, platform dosyayı anahtarla çeker; anahtarsız/yanlış anahtar 404.
+  ok((await call(AH.j, '/api/admin/channel-feed')).s === 200, 'kanal feed ayarı okunur');
+  const cfNr = await call(AH.j, '/api/admin/channel-feed/build', { target: 'idealo-de' });
+  ok(cfNr.s === 409, 'ayarı eksik ülkenin feedi 409', cfNr.t.slice(0, 120));
+  const cfSet = await call(AH.j, '/api/admin/channel-feed/config', {
+    countries: { de: { deliveryMin: 1, deliveryMax: 3, shipping: { dhl: 4.9 }, payments: { paypal: 0 } } },
+  });
+  ok(cfSet.s === 200, 'kanal feed ayarı kaydedildi', cfSet.t.slice(0, 120));
+  const cfTok = await call(AH.j, '/api/admin/channel-feed/token', { target: 'idealo-de' });
+  ok(cfTok.s === 200 && typeof cfTok.j.token === 'string', 'feed anahtarı üretildi');
+  const cfGet = await call(null, '/api/feeds/idealo-de.csv?key=' + encodeURIComponent(cfTok.j.token));
+  ok(
+    cfGet.s === 200 && cfGet.t.includes('"deliveryCosts_dhl"') && cfGet.t.includes('"paymentCosts_paypal"'),
+    'idealo CSV anahtarla çekildi',
+    cfGet.t.slice(0, 160),
+  );
+  const cfBasic = await call(null, '/api/feeds/idealo-de.csv', undefined, {
+    headers: { authorization: 'Basic ' + Buffer.from('idealo:' + cfTok.j.token).toString('base64') },
+  });
+  ok(cfBasic.s === 200, 'Basic auth parolasıyla da çekilir');
+  ok(
+    (await call(null, '/api/feeds/idealo-de.csv?key=yanlis-anahtar-123456')).s === 404,
+    'yanlış anahtar 404',
+  );
+  ok((await call(null, '/api/feeds/idealo-de.xml?key=' + cfTok.j.token)).s === 404, 'yanlış uzantı 404');
+  ok((await call(null, '/api/feeds/idealo-de.csv')).s === 404, 'anahtarsız 404');
   // Yönetici uçlarında yöntem kısıtı yeni modüllerde de geçerli.
   ok((await call(AH.j, '/api/admin/pool', {}, { method: 'PUT' })).s === 405, 'yeni uçlarda PUT 405');
 } catch (e) {

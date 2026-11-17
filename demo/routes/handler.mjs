@@ -13,6 +13,7 @@ import { adminHealthRoutes } from './admin-health.mjs';
 import { adminPoolRoutes } from './admin-pool.mjs';
 import { adminTenantRoutes } from './admin-tenants.mjs';
 import { adminFeedRoutes } from './admin-feed.mjs';
+import { adminChannelFeedRoutes } from './admin-channel-feed.mjs';
 import { adminRulesRoutes } from './admin-rules.mjs';
 import { adminShippingRoutes } from './admin-shipping.mjs';
 import { adminRefundRoutes } from './admin-refunds.mjs';
@@ -34,6 +35,7 @@ const ADMIN = [
   adminPoolRoutes,
   adminTenantRoutes,
   adminFeedRoutes,
+  adminChannelFeedRoutes,
   adminRulesRoutes,
   adminShippingRoutes,
   adminRefundRoutes,
@@ -62,6 +64,8 @@ const ADMIN_ONLY = [
   // Satış yasağı kuralı silme ve fiyat stratejisi değiştirme/silme.
   { p: /^\/api\/admin\/rules\/(remove|strategy|strategy-remove)$/, why: 'kural ve fiyat stratejisi' },
   { p: /^\/api\/admin\/b2b\/deal-status$/, why: 'B2B anlaşma durumu' },
+  // Kanal feed ayarı (kur, kargo, ödeme ücreti feed fiyatını belirler) ve feed erişim anahtarı.
+  { p: /^\/api\/admin\/channel-feed\/(config|token)$/, why: 'kanal feed ayarı ve erişim anahtarı' },
 ];
 // Eşleşen ilk satırın gerekçesi (yönetici değilse) ya da null. Birim testi tabloyu bu işlevle denetler.
 export const adminOnlyReason = (p, body) =>

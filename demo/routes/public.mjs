@@ -6,6 +6,8 @@ import { ig, mk } from '../services/channels.mjs';
 import { cookie, limited, sigOk, sign } from '../lib/auth.mjs';
 import { confirmOrder, createOrder, orders } from '../services/orders.mjs';
 import { ingest, visitorOf } from '../services/analytics.mjs';
+import { FeedError } from '../services/feed.mjs';
+import { TARGETS, buildChannel, tokenOk } from '../services/channel-feed.mjs';
 
 // Bağlantıya tıklayan kişiye gösterilen basit sonuç sayfası (abmelden, veri silme).
 const esc = s => String(s).replace(/[<&>]/g, ch => ({ '<': '&lt;', '&': '&amp;', '>': '&gt;' })[ch]);
@@ -91,11 +93,42 @@ async function privacyRoutes({ req, res, url, p, ip }) {
   return false;
 }
 
+// Karşılaştırma sitesi feed'i: platform dosyayı anahtarla çeker (?key=… ya da Basic auth parolası).
+// Yanlış ya da eksik anahtar ile bilinmeyen hedef aynı 404'ü alır: hangi hedeflerin açık olduğu sızmaz.
+async function channelFeedRoute({ req, res, url, p, ip }) {
+  const m = /^\/api\/feeds\/([a-z]+-[a-z]{2})\.(csv|xml)$/.exec(p);
+  if (!m) return false;
+  if (req.method !== 'GET' && req.method !== 'HEAD')
+    return (send(res, 405, { error: 'GET bekleniyor' }, { allow: 'GET, HEAD' }), true);
+  if (limited('cf' + ip, 30, 60e3)) return (send(res, 429, { error: 'Zu viele Anfragen.' }), true);
+  const [, target, ext] = m;
+  let key = url.searchParams.get('key') || '';
+  const ba = /^Basic\s+(\S+)$/i.exec(req.headers.authorization || '');
+  if (!key && ba) key = Buffer.from(ba[1], 'base64').toString('utf8').split(':').slice(1).join(':');
+  if (!Object.hasOwn(TARGETS, target) || TARGETS[target].format !== ext || !tokenOk(target, key))
+    return (send(res, 404, { error: 'yok' }), true);
+  try {
+    const r = buildChannel(target);
+    res.writeHead(200, {
+      'content-type': r.contentType,
+      'cache-control': 'no-store',
+      'x-robots-tag': 'noindex',
+      'x-feed-count': String(r.count),
+    });
+    res.end(req.method === 'HEAD' ? undefined : r.body);
+  } catch (e) {
+    if (!(e instanceof FeedError)) throw e;
+    send(res, e.code === 'notready' ? 503 : 400, { error: e.message, code: e.code });
+  }
+  return true;
+}
+
 // Herkese açık uçlar: yapılandırma, vitrin, sepet izni, sipariş, olay toplama, sipariş doğrulama.
 // Eşleşmeyen istekte hiçbir şey yazmadan döner; yanıt yazıldıysa işleyici zinciri durur (bkz. handler.mjs).
 export async function publicRoutes(c) {
   const { req, res, url, p, ip, secure } = c;
   if (p === '/api/config' && req.method === 'GET') return send(res, 200, publicConfig());
+  if (await channelFeedRoute(c)) return;
   if (p === '/api/shop/home' && req.method === 'GET') return send(res, 200, shopHome());
   if (p === '/api/shop/product' && req.method === 'GET') {
     const x = P.get(url.searchParams.get('id') || '');

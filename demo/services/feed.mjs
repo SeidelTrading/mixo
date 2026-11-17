@@ -35,7 +35,7 @@ const cleanMarket = m => {
 const txt = v => (typeof v === 'string' ? v.trim() : typeof v === 'number' ? String(v) : '');
 
 // Alan önce havuz kaydının data'sından, yoksa kaynak kayıtlarından okunur.
-function field(pool, name) {
+export function field(pool, name) {
   const own = pool?.data?.[name];
   if (own !== undefined && own !== null && own !== '') return own;
   for (const s of pool?.sources ?? []) {
@@ -44,13 +44,13 @@ function field(pool, name) {
   }
   return undefined;
 }
-const legalOf = pool => {
+export const legalOf = pool => {
   const l = field(pool, 'legal');
   return l && typeof l === 'object' && !Array.isArray(l) ? l : {};
 };
 // Ürün kategorisi: kural motorunun kategori bazlı yasakları için gerekli ('category', yoksa 'cat').
-const categoryOf = pool => txt(field(pool, 'category')) || txt(field(pool, 'cat'));
-const priceOf = pool => {
+export const categoryOf = pool => txt(field(pool, 'category')) || txt(field(pool, 'cat'));
+export const priceOf = pool => {
   const n = Number(field(pool, 'price'));
   return Number.isFinite(n) && n > 0 ? n : null;
 };
@@ -235,19 +235,27 @@ export function escXml(v) {
   );
 }
 
-// buildFeed(market, { limit?, company? }): yalnız denetimden geçen VE satış yasağı olmayan ürünleri yayınlar.
-export function buildFeed(market, opts) {
+// Yayınlanabilir ürünler: pazar yeri denetiminden geçen VE satış yasağı olmayan havuz kayıtları.
+// Genel XML (buildFeed) ve kanal feed'leri (channel-feed.mjs) aynı kapıdan geçer; yasaklı ürün hiçbir feed'e girmez.
+export function* eligible(market, opts) {
   const mk = cleanMarket(market);
   const company = txt(opts?.company);
-  const items = [];
   for (const p of scan(clampLimit(opts?.limit))) {
     if (!checkProduct(p, mk).ok) continue;
-    // Yasaklı ürün XML'e girmemeli: denetim ve yükleme ile aynı kural motorundan geçilir.
     if (
       evaluate({ vendor: p.vendor, market: mk, poolId: p.id, company, category: categoryOf(p) }).allowed ===
       false
     )
       continue;
+    yield p;
+  }
+}
+
+// buildFeed(market, { limit?, company? }): yalnız denetimden geçen VE satış yasağı olmayan ürünleri yayınlar.
+export function buildFeed(market, opts) {
+  const mk = cleanMarket(market);
+  const items = [];
+  for (const p of eligible(mk, opts)) {
     const l = legalOf(p);
     const tags = [
       ['id', p.id],
