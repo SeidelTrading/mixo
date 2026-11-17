@@ -72,9 +72,15 @@ Bu turda düzeltilmeyecek, ayrı iş olarak planlanması gerekenler:
 
 - **Ortaklaştırma.** Hata sınıfı 13 serviste, uç kabuğu 11 dosyada tekrar ediyor. Mimari
   üyesi 7 ortak dosya öneriyor, yaklaşık 580 satır azalma.
-- **Belge büyümesi.** `staff` belgesi tavanda 4,65 MB, `feed` toplu yüklemesi en kötü
-  durumda 35,9 MB; ikisi de tek yazmada olay döngüsünü blokluyor. Bu modüller SQLite
-  tablosuna taşınmalı.
+- ~~**Belge büyümesi.**~~ **Kapandı (commit `cc94a80`).** Altı modülün büyüyen kayıtları
+  şema sürümü 3 ile ortak `recs` tablosuna taşındı; belgede yalnız ayar, sayaç ve özet kaldı.
+  Ölçüm: 10.000 personel kaydında yazma başına 10,7 ms → 0,22 ms (belge 813 KB → 39 B),
+  `requestRefund` 131 ms → 1,1 ms (belge 5.233 KB → yalnız sayaç), feed belgesi 574 KB → 308 B
+  (tek yazma 35,8 ms → 0,2 ms). Eski kurulumlar kayıpsız yükseliyor; sağlık ucu belge
+  boyutlarını ve satır sayılarını raporluyor, 2 MB üstü belgeye uyarı düşüyor.
+  Kalan: `insights` içindeki `arbitrage`, `categoryTrends` ve `summary` her çağrıda tüm
+  tabloyu belleğe alıyor — 200 bin satır tavanında yavaşlayabilir, sorgu tarafı henüz
+  satır katmanına uyarlanmadı.
 - **Değişiklik günlüğü.** Yeni modüllerin yazmaları `actions` üzerinden geçmiyor; geri
   alma ve denetim izi yok.
 - **`ARCHITECTURE.md` eskimiş.** Yeni modüller belgede yok, kapsam oranı (%68) güncel
