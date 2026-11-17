@@ -10,12 +10,92 @@ const decode = s =>
     return ENT[e.toLowerCase()];
   });
 
-function childText(block, tag) {
-  const esc = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const m = block.match(new RegExp(`<${esc}(?:\\s[^>]*)?>([\\s\\S]*?)</${esc}>`, 'i'));
-  if (!m) return undefined;
-  const cdata = m[1].match(/^\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*$/);
-  return (cdata ? cdata[1] : decode(m[1])).trim();
+const reEsc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** Etiket adı deseni: önekli ad ("g:gtin") aynen, öneksiz ad ("name") her ad alanı önekiyle ("ns2:name") eşleşir. */
+const tagPat = tag => (tag.includes(':') ? reEsc(tag) : `(?:[\\w.-]+:)?${reEsc(tag)}`);
+
+/** block içindeki ilk <tag> öğesinin ham iç metni ve açılış etiketi. */
+function element(block, tag) {
+  const t = tagPat(tag);
+  const m = block.match(new RegExp(`<(${t})(\\s[^>]*)?>([\\s\\S]*?)</\\1\\s*>`, 'i'));
+  return m ? { attrs: m[2] || '', inner: m[3] } : undefined;
+}
+
+const textOf = raw => {
+  const cdata = raw.match(/^\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*$/);
+  return (cdata ? cdata[1] : decode(raw)).trim();
+};
+
+/**
+ * Yol ile değer: "a/b" = a'nın içindeki ilk b; "a/b@attr" = öznitelik. Her adım ilk alt-öğeyi (derinlik fark etmez) bulur.
+ * İçinde başka etiket bulunan öğe metin olarak döndürülmez (undefined).
+ */
+export function xmlValue(block, path) {
+  const [p, attr] = String(path).split('@');
+  let cur = { attrs: '', inner: block };
+  for (const step of p.split('/').filter(Boolean)) {
+    cur = element(cur.inner, step);
+    if (!cur) return undefined;
+  }
+  if (attr) {
+    const m = cur.attrs.match(new RegExp(`(?:^|\\s)${reEsc(attr)}\\s*=\\s*("([^"]*)"|'([^']*)')`, 'i'));
+    return m ? decode(m[2] ?? m[3]).trim() : undefined;
+  }
+  if (/<(?!!\[CDATA\[)[a-z]/i.test(cur.inner)) return undefined;
+  return textOf(cur.inner);
+}
+
+const childText = (block, tag) => xmlValue(block, tag);
+
+/**
+ * Akışlı öğe ayırıcı: push(metin) tamamlanan <itemTag>…</itemTag> iç metinlerini döner.
+ * itemTag boşsa ilk 64 KB'tan anlaşılır (item, product, entry). maxItem: tek öğe üst sınırı.
+ */
+export function createXmlItemSplitter({ itemTag = '', maxItem = 4 * 1024 * 1024 } = {}) {
+  let buf = '';
+  let open;
+  let close;
+  const setTag = tag => {
+    open = new RegExp(`<(${tagPat(tag)})(?:\\s[^>]*)?>`, 'gi');
+    close = tag;
+  };
+  if (itemTag) setTag(itemTag);
+  const scan = final => {
+    if (!open) {
+      if (!final && buf.length < 64 * 1024) return [];
+      setTag(/<(?:[\w.-]+:)?item[\s>]/i.test(buf) ? 'item' : /<(?:[\w.-]+:)?product[\s>]/i.test(buf) ? 'product' : 'entry');
+    }
+    const items = [];
+    let pos = 0;
+    for (;;) {
+      open.lastIndex = pos;
+      const o = open.exec(buf);
+      if (!o) {
+        const lt = buf.lastIndexOf('<');
+        pos = lt >= pos ? lt : buf.length;
+        break;
+      }
+      const closeRe = new RegExp(`</${reEsc(o[1])}\\s*>`, 'gi');
+      closeRe.lastIndex = o.index + o[0].length;
+      const c = closeRe.exec(buf);
+      if (!c) {
+        pos = o.index;
+        if (buf.length - pos > maxItem) throw new Error('XML öğesi çok büyük');
+        break;
+      }
+      items.push(buf.slice(o.index + o[0].length, c.index));
+      pos = c.index + c[0].length;
+    }
+    buf = buf.slice(pos);
+    return items;
+  };
+  return {
+    push(text) {
+      buf += text;
+      return scan(false);
+    },
+    end: () => scan(true),
+  };
 }
 
 /**
@@ -24,11 +104,10 @@ function childText(block, tag) {
  */
 export function parseXmlFeed(xml, mapping = {}) {
   const m = { ...DEFAULT_MAPPING, ...mapping };
-  const itemTag =
-    mapping._itemTag || (/<item[\s>]/i.test(xml) ? 'item' : /<product[\s>]/i.test(xml) ? 'product' : 'entry');
-  const blocks = [...xml.matchAll(new RegExp(`<${itemTag}(?:\\s[^>]*)?>([\\s\\S]*?)</${itemTag}>`, 'gi'))];
+  const sp = createXmlItemSplitter({ itemTag: mapping._itemTag || '', maxItem: Infinity });
+  const blocks = [...sp.push(xml), ...sp.end()];
   return blocks.map(b => {
-    const g = f => childText(b[1], String(m[f]));
+    const g = f => childText(b, String(m[f]));
     const stock = g('inStock');
     return {
       ean: g('ean'),

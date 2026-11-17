@@ -7,12 +7,14 @@ import { totalPrice } from './pricing.mjs';
 
 /**
  * Tek bir teklif satırını (besleme ya da tarayıcı) veritabanına işler.
+ * row.deepLink (isteğe bağlı): affiliate yönlendirme bağlantısı; /go/<teklif> bunu, yoksa url'i kullanır.
  * Dönüş: 'offer' (EAN eşleşti), 'unmatched' (EAN yok/geçersiz, inceleme kuyruğu) ya da 'skipped' (geçersiz fiyat/URL/para birimi).
  */
 export function ingestOffer(db, shop, row, now = Date.now()) {
   const market = MARKETS[shop.market];
   const price = parsePrice(row.price);
-  const url = httpUrlOrNull(row.url);
+  const deepLink = httpUrlOrNull(row.deepLink);
+  const url = httpUrlOrNull(row.url) || deepLink;
   const currency = String(row.currency || market.currency).toUpperCase();
   if (price === null || !url || currency !== market.currency) return 'skipped';
   const shipping = parseShipping(row.shipping) ?? shop.shippingDefault ?? 0;
@@ -25,10 +27,10 @@ export function ingestOffer(db, shop, row, now = Date.now()) {
   if (!ean) {
     if (!title) return 'skipped';
     db.prepare(
-      `INSERT INTO unmatched (shopId, title, rawEan, price, currency, shipping, url, inStock, seenAt, brand, category, image)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO unmatched (shopId, title, rawEan, price, currency, shipping, url, inStock, seenAt, brand, category, image, deepLink)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(shopId, url) DO UPDATE SET title = excluded.title, rawEan = excluded.rawEan, price = excluded.price,
-         shipping = excluded.shipping, inStock = excluded.inStock, seenAt = excluded.seenAt`,
+         shipping = excluded.shipping, inStock = excluded.inStock, seenAt = excluded.seenAt, deepLink = excluded.deepLink`,
     ).run(
       shop.id,
       title,
@@ -42,6 +44,7 @@ export function ingestOffer(db, shop, row, now = Date.now()) {
       row.brand || null,
       row.category || null,
       httpUrlOrNull(row.image),
+      deepLink,
     );
     return 'unmatched';
   }
@@ -58,10 +61,11 @@ export function ingestOffer(db, shop, row, now = Date.now()) {
     ).run(row.brand || null, row.category || null, httpUrlOrNull(row.image), ean);
   }
   db.prepare(
-    `INSERT INTO offers (shopId, ean, price, currency, shipping, url, inStock, seenAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO offers (shopId, ean, price, currency, shipping, url, inStock, seenAt, deepLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(shopId, ean) DO UPDATE SET price = excluded.price, currency = excluded.currency,
-       shipping = excluded.shipping, url = excluded.url, inStock = excluded.inStock, seenAt = excluded.seenAt`,
-  ).run(shop.id, ean, price, currency, shipping, url, inStock, now);
+       shipping = excluded.shipping, url = excluded.url, inStock = excluded.inStock, seenAt = excluded.seenAt,
+       deepLink = excluded.deepLink`,
+  ).run(shop.id, ean, price, currency, shipping, url, inStock, now, deepLink);
   recordHistory(db, ean, shop.market, now);
   return 'offer';
 }

@@ -78,7 +78,7 @@ export function handlePublic(ctx, req, res, url) {
     const o = Number.isInteger(id)
       ? db
           .prepare(
-            'SELECT o.id, o.url FROM offers o JOIN shops s ON s.id = o.shopId WHERE o.id = ? AND s.active = 1 AND s.blocked = 0',
+            'SELECT o.id, coalesce(o.deepLink, o.url) AS url FROM offers o JOIN shops s ON s.id = o.shopId WHERE o.id = ? AND s.active = 1 AND s.blocked = 0',
           )
           .get(id)
       : null;
