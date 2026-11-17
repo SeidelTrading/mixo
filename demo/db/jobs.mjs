@@ -31,15 +31,22 @@ export function makeJobs({ q, tx }) {
         return { ...j, attempts: j.attempts + 1, payload: parse(j.payload, {}) };
       }),
     done: id => {
-      q("UPDATE jobs SET status='done', done_at=?, last_error=NULL WHERE id=?").run(Date.now(), id);
+      // Tamamlanan işin yükü silinir: onay belirteci gibi gizli değerler veritabanında ve yedeklerde kalmasın.
+      q("UPDATE jobs SET status='done', done_at=?, last_error=NULL, payload='{}' WHERE id=?").run(
+        Date.now(),
+        id,
+      );
     },
     // retryAt verilirse iş yeniden sıraya girer; verilmezse 'failed' olarak kalır
     fail: (id, err, retryAt) => {
-      q('UPDATE jobs SET status=?, run_at=COALESCE(?,run_at), last_error=?, done_at=? WHERE id=?').run(
+      q(
+        "UPDATE jobs SET status=?, run_at=COALESCE(?,run_at), last_error=?, done_at=?, payload=CASE WHEN ? IS NULL THEN '{}' ELSE payload END WHERE id=?",
+      ).run(
         retryAt ? 'queued' : 'failed',
         retryAt ?? null,
         String(err).slice(0, 300),
         retryAt ? null : Date.now(),
+        retryAt ?? null,
         id,
       );
     },

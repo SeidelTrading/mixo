@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { verifyFile } from './verify.mjs';
+import { exportEncrypted } from './export.mjs';
 
 // Yedek: VACUUM INTO ile tutarlı tek dosyalık kopya (sunucu çalışırken alınabilir).
 export function makeBackup({ db, dataDir }) {
@@ -34,7 +35,16 @@ export function makeBackup({ db, dataDir }) {
     }
     for (const old of listBackups().slice(Math.max(1, keep)))
       fs.rmSync(path.join(backupDir, old.name), { force: true });
-    return { name, size: fs.statSync(dest).size, counts: v.counts };
+    // Disk dışı şifreli kopya: BACKUP_EXPORT_DIR (bağlı bir dış disk/bulut klasörü) ve BACKUP_ENCRYPT_KEY birlikte verilirse yazılır.
+    const exportDir = process.env.BACKUP_EXPORT_DIR,
+      pass = process.env.BACKUP_ENCRYPT_KEY;
+    let exported = null;
+    if (exportDir && pass) exported = exportEncrypted(dest, exportDir, pass, keep);
+    else if (exportDir || pass)
+      console.warn(
+        'UYARI: dış yedek için BACKUP_EXPORT_DIR ve BACKUP_ENCRYPT_KEY birlikte tanımlanmalı; atlandı.',
+      );
+    return { name, size: fs.statSync(dest).size, counts: v.counts, exported };
   };
   return { backupDir, listBackups, backup };
 }
