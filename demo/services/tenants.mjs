@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { store } from '../lib/store.mjs';
 import { dict } from '../lib/safe.mjs';
+import { audit } from './audit.mjs';
 
 // Çok kiracılılık (K-07) ve entegrasyon anahtarları (K-09) iş kuralları (HTTP bilmez).
 // Durum iki belgede durur: 'tenants' (kiracılar) ve 'tenant_keys' (şifreli anahtarlar). Anahtarlar kiracı kaydından ayrı tutulur ki
@@ -209,6 +210,8 @@ export function setKey(tenantId, provider, apiKey) {
       active: true,
     };
     store.saveDoc('tenant_keys', keys);
+    // Anahtar DEĞERİ asla günlüğe yazılmaz; yalnız kimin hangi sağlayıcı için anahtar koyduğu.
+    audit('Kiracı', `Entegrasyon anahtarı tanımlandı: ${tenantId} / ${pv} (…${apiKey.slice(-4)})`);
     return { provider: pv, added: keys[tenantId][pv].added, last4: keys[tenantId][pv].last4, active: true };
   });
 }
@@ -244,6 +247,8 @@ export function revokeKey(tenantId, provider) {
     if (!rec) fail('notfound', 'Anahtar yok');
     keys[tenantId][pv] = { iv: '', tag: '', data: '', added: rec.added, last4: rec.last4, active: false };
     store.saveDoc('tenant_keys', keys);
+    // Anahtar DEĞERİ asla günlüğe yazılmaz; yalnız hangi kiracının hangi sağlayıcı anahtarının iptal edildiği.
+    audit('Kiracı', `Entegrasyon anahtarı iptal edildi: ${tenantId} / ${pv} (…${rec.last4})`);
     return { provider: pv, added: rec.added, last4: rec.last4, active: false };
   });
 }

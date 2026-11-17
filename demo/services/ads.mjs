@@ -1,6 +1,7 @@
 import { store } from '../lib/store.mjs';
 import { EMAIL_RE, lintText } from '../marketing/shared.mjs';
 import { dict } from '../lib/safe.mjs';
+import { audit } from './audit.mjs';
 
 // Reklam ve paylaşım ajanı (HTTP bilmez): K-10 Meta/Instagram paylaşımı, K-11 Google Ads kelime listesi, K-12 retargeting.
 // SİMÜLASYON: Meta ve Google Ads'e GERÇEK AĞ ÇAĞRISI YOKTUR. Paylaşım, kelime değişikliği ve e-posta metni yalnız
@@ -98,6 +99,8 @@ export function authorizeBrand(brand, { reference } = /** @type {any} */ ({})) {
       prev.name = name;
     } else d.authorizedBrands.push({ key, name, reference: ref, t: Date.now() });
     save(d);
+    // Marka yetkisi yasal etkilidir (yetkisiz paylaşım platform kural ihlali): kimin, hangi kanıtla verdiği kayda geçer.
+    audit('Reklam', `Marka yetkisi verildi: ${name} (kanıt: ${ref.slice(0, 80)})`);
     return { brand: name, reference: ref, authorizedBrands: d.authorizedBrands.map(b => b.name) };
   });
 }

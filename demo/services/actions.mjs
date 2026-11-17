@@ -4,6 +4,7 @@ import { changes, logChange, saveSettings, settings } from './settings.mjs';
 import { ORDER_STATUS, canMoveOrder, orders, saveOrder } from './orders.mjs';
 import { CONTENT_KEYS, baseOf, catDefaultLabel, effP } from './overrides.mjs';
 import { PROBLEM_IDS, isProblem } from './visibility.mjs';
+import { unmergeById } from './pool.mjs';
 
 // Mağazayı değiştiren her işlem buradan geçer; hepsi günlüğe yazılır ve geri alınabilir.
 export const actions = {
@@ -268,6 +269,18 @@ export const actions = {
       ids,
     });
   },
+  // Havuz birleştirmesinin geri alınması (services/pool.mjs). Panelin genel geri alma düğmesi buradan geçer;
+  // asıl iş pool.unmergeById'dedir, o da kaydı 'geri alındı' olarak işaretler. Başarısızsa null döner ve
+  // undo() kaydı geri alınmış saymaz.
+  pool_unmerge({ changeId }, by) {
+    try {
+      const r = unmergeById(changeId);
+      return logChange(by, `Havuz birleştirmesi geri alındı: ${r.restoredId} ayrıldı`, null);
+    } catch (e) {
+      console.error('havuz birleştirmesi geri alınamadı:', e?.message);
+      return null;
+    }
+  },
 };
 // Bir kaydın geri alınması hangi alanlara dokunur? Aynı alan sonradan yeniden değiştiyse eski kaydı geri almak o değişikliği sessizce ezerdi.
 const undoTargets = u =>
@@ -289,7 +302,10 @@ const undoTargets = u =>
                   ? ['hatırlatma kuralları']
                   : u.type === 'set_order_status'
                     ? ['sipariş:' + u.id]
-                    : [];
+                    : // Havuz birleştirmesi iki kanonik kaydı etkiler: korunan ve ayrılacak olan.
+                      u.type === 'pool_unmerge'
+                      ? ['havuz:' + (u.keepId || ''), 'havuz:' + (u.drop?.id || '')]
+                      : [];
 export function undoConflict(c) {
   const mine = new Set(undoTargets(c.undo));
   if (!mine.size) return null;

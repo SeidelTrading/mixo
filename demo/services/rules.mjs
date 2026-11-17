@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { store } from '../lib/store.mjs';
 import { norm } from './catalog.mjs';
+import { audit } from './audit.mjs';
 
 // Satış yasağı kuralları (HTTP bilmez): şirket × marka × pazar yeri × kategori bazında.
 // Boş alan "hepsi" demektir. Kural mevzuat kaynaklı olabildiği için gerekçe (reason) zorunludur.
@@ -55,10 +56,16 @@ export function listRules() {
   return load();
 }
 
+// Kuralın günlüğe yazılacak kısa özeti: boş alan "hepsi" demektir.
+const kuralOzeti = r =>
+  `${r.company || 'her şirket'} / ${r.vendor || 'her marka'} / ${r.market || 'her pazar yeri'}${r.category ? ' / ' + r.category : ''}`;
+
 export function addRule(input) {
   const rule = clean(input ?? {}, { id: crypto.randomUUID().slice(0, 8), created: Date.now() });
   return run(() => {
     save([...load(), rule]);
+    // Satış yasağı mevzuat kaynaklı olabilir: kimin hangi kuralı hangi gerekçeyle koyduğu kayda geçer.
+    audit('Kural motoru', `Satış yasağı eklendi: ${kuralOzeti(rule)} — ${rule.reason}`);
     return rule;
   });
 }
@@ -82,6 +89,8 @@ export function removeRule(id) {
     if (i < 0) fail('notfound', 'Kural yok');
     const [gone] = rules.splice(i, 1);
     save(rules);
+    // Yasağın KALDIRILMASI eklenmesinden daha kritiktir: bundan sonra o ürün satışa açılır.
+    audit('Kural motoru', `Satış yasağı KALDIRILDI: ${kuralOzeti(gone)} — ${gone.reason}`);
     return gone;
   });
 }

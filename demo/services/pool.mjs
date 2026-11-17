@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
-import { actorCtx, store } from '../lib/store.mjs';
+import { store } from '../lib/store.mjs';
+import { audit, newChangeId } from './audit.mjs';
 import { norm } from './catalog.mjs';
 
 // Ürün havuzu iş kuralları (HTTP bilmez). Her gerçek ürün havuzda bir kez durur; farklı kaynaklardan gelen kopyalar
@@ -196,15 +197,12 @@ export function merge(keepId, dropId) {
       srcs: srcs.map(s => ({ src: s.src, ref: s.ref })),
     };
     // Geri alma verisi değişiklik günlüğüne yazılır: birleştirme istemci veriyi saklamasa da geri alınabilir.
-    const changeId = crypto.randomUUID().slice(0, 8);
-    store.addChange({
-      id: changeId,
-      t: Date.now(),
-      by: 'havuz',
-      user: actorCtx.getStore()?.user || null,
-      summary: `Havuz birleştirme: "${drop.title}" → "${keep.title}"`,
-      undo,
-    });
+    // `undo.type` paneldeki genel geri alma düğmesinin aradığı addır ve karşılığı actions.pool_unmerge'dür;
+    // `kind` ise unmergeById'nin kaydı tanıması için durur (ikisi de gerekli, biri panel biri uç içindir).
+    const changeId = newChangeId();
+    undo.type = 'pool_unmerge'; // paneldeki genel geri alma düğmesi bu adı actions içinde arar
+    undo.changeId = changeId; // actions.pool_unmerge yalnız undo gövdesini alır, kaydın kimliğini oradan okur
+    audit('Havuz', `Havuz birleştirme: "${drop.title}" → "${keep.title}"`, undo, changeId);
     return { ...undo, changeId };
   });
 }

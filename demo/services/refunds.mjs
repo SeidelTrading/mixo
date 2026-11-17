@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { store } from '../lib/store.mjs';
 import { recordSet, moveDocRows } from './records.mjs';
 import { orders } from './orders.mjs';
+import { audit } from './audit.mjs';
 
 // İade akışı (K-13 storno faturası, K-14 iade etiketi takibi ve otomatik para iadesi). HTTP bilmez.
 // DİKKAT: Mollie/PayPal çağrısı SİMÜLASYONDUR; gerçek ödeme çağrısı yapılmaz. settle() yalnız kayıt üretir ({ id, provider, amount, simulated: true }).
@@ -305,6 +306,12 @@ export function settle(refundId, { approvedBy, provider } = {}) {
       simulated: true,
     });
     r.paymentId = pay.id;
+    // Para çıkışı: denetim izinin en kritik satırı. Geri alınamaz, bu yüzden undo verilmez —
+    // kayıt yalnız kimin onayladığını ve ne kadarın hangi sağlayıcı üzerinden iade edildiğini söyler.
+    audit(
+      'İade',
+      `İade ödendi: ${r.id} (sipariş ${r.orderId}), ${r.invoice.gross} €, ${prov}${by ? `, onaylayan: ${by}` : ''}`,
+    );
     putR(r);
     return { refund: clone(r), payment: clone(pay), duplicate: false };
   });
