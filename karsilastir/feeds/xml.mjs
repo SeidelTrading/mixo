@@ -14,11 +14,11 @@ const reEsc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** Etiket adı deseni: önekli ad ("g:gtin") aynen, öneksiz ad ("name") her ad alanı önekiyle ("ns2:name") eşleşir. */
 const tagPat = tag => (tag.includes(':') ? reEsc(tag) : `(?:[\\w.-]+:)?${reEsc(tag)}`);
 
-/** block içindeki ilk <tag> öğesinin ham iç metni ve açılış etiketi. */
+/** block içindeki ilk <tag> öğesinin ham iç metni ve açılış etiketi (kendiliğinden kapanan <tag a="1"/> dahil). */
 function element(block, tag) {
   const t = tagPat(tag);
-  const m = block.match(new RegExp(`<(${t})(\\s[^>]*)?>([\\s\\S]*?)</\\1\\s*>`, 'i'));
-  return m ? { attrs: m[2] || '', inner: m[3] } : undefined;
+  const m = block.match(new RegExp(`<(${t})(\\s[^>]*?)?(?:/>|>([\\s\\S]*?)</\\1\\s*>)`, 'i'));
+  return m ? { attrs: m[2] || '', inner: m[3] ?? '' } : undefined;
 }
 
 const textOf = raw => {
@@ -54,16 +54,20 @@ const childText = (block, tag) => xmlValue(block, tag);
 export function createXmlItemSplitter({ itemTag = '', maxItem = 4 * 1024 * 1024 } = {}) {
   let buf = '';
   let open;
-  let close;
   const setTag = tag => {
     open = new RegExp(`<(${tagPat(tag)})(?:\\s[^>]*)?>`, 'gi');
-    close = tag;
   };
   if (itemTag) setTag(itemTag);
   const scan = final => {
     if (!open) {
       if (!final && buf.length < 64 * 1024) return [];
-      setTag(/<(?:[\w.-]+:)?item[\s>]/i.test(buf) ? 'item' : /<(?:[\w.-]+:)?product[\s>]/i.test(buf) ? 'product' : 'entry');
+      setTag(
+        /<(?:[\w.-]+:)?item[\s>]/i.test(buf)
+          ? 'item'
+          : /<(?:[\w.-]+:)?product[\s>]/i.test(buf)
+            ? 'product'
+            : 'entry',
+      );
     }
     const items = [];
     let pos = 0;

@@ -59,7 +59,13 @@ CREATE TABLE IF NOT EXISTS network_feeds (
  * shops.network + networkMerchantId: ağ beslemesinden otomatik açılan mağazanın kimliği (ağ, ağdaki mağaza no, pazar).
  */
 export function migrate(db) {
-  const cols = t => new Set(db.prepare(`PRAGMA table_info(${t})`).all().map(c => c.name));
+  const cols = t =>
+    new Set(
+      db
+        .prepare(`PRAGMA table_info(${t})`)
+        .all()
+        .map(c => c.name),
+    );
   const add = (t, c, def) => {
     if (!cols(t).has(c)) db.exec(`ALTER TABLE ${t} ADD COLUMN ${c} ${def}`);
   };
