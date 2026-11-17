@@ -103,6 +103,10 @@ test('pazar öneki: /tr /de /nl çalışır, bilinmeyen önek 404, kök seçici 
   }
   assert.equal((await get('/xx/')).status, 404);
   assert.equal((await get('/')).status, 200);
+  const root = await (await get('/')).text();
+  assert.match(root, /class="stats"/);
+  assert.match(root, /class="mcards"/);
+  assert.match(root, /name="q"/);
   assert.match(await (await get('/tr/')).text(), /Ara/);
   // yeni arayüz: başlıkta arama kutusu (etiketli), kategori çubuğu, düşen fiyatlar, alt bilgi
   const home = await (await get('/de/')).text();

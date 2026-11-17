@@ -215,15 +215,47 @@ export function botPage(ctx) {
   });
 }
 
-export function marketChooser(ctx) {
-  const links = MARKET_IDS.map(
-    id =>
-      `<li><a href="/${id}/" hreflang="${MARKETS[id].lang}">${esc(MARKETS[id].name)} (${id.toUpperCase()}, ${MARKETS[id].currency})</a></li>`,
+const nf = (n, locale = 'en') => new Intl.NumberFormat(locale).format(n);
+
+/** Kök ana sayfa: arama, istatistikler, pazarlar, kategori/marka, örnek ürünler. */
+export function marketChooser(ctx, { stats, topCats, brands, latest }) {
+  const marketOpts = MARKET_IDS.map(
+    id => `<option value="${id}">${esc(MARKETS[id].name)} (${id.toUpperCase()})</option>`,
   ).join('');
+  const stat = (n, label) => `<li><strong>${esc(nf(n))}</strong><span>${esc(label)}</span></li>`;
+  const cards = MARKET_IDS.map(id => {
+    const s = stats.byMarket[id] || { products: 0, shops: 0, offers: 0 };
+    const cats = (topCats[id] || [])
+      .slice(0, 4)
+      .map(c => `<li><a class="chip" href="${esc(catHref(id, c))}">${esc(c)}</a></li>`)
+      .join('');
+    return `<li class="mcard"><a class="mhead" href="/${id}/" hreflang="${MARKETS[id].lang}"><span class="mcode">${id.toUpperCase()}</span><span><strong>${esc(MARKETS[id].name)}</strong><small>${esc(MARKETS[id].currency)} · ${esc(nf(s.products))} products · ${esc(nf(s.shops))} shops</small></span></a>${cats ? `<ul class="mcats">${cats}</ul>` : ''}</li>`;
+  }).join('');
+  const brandChips = brands
+    .map(
+      b =>
+        `<li><a class="chip" href="/${b.market}/search?q=${encodeURIComponent(b.name)}">${esc(b.name)}</a></li>`,
+    )
+    .join('');
+  const latestCards = latest.length
+    ? `<section class="block"><h2>Latest matched products</h2><ul class="cards">${latest
+        .map(p => {
+          const m = p.market;
+          return `<li class="card"><a href="/${m}/product/${esc(p.ean)}"><span class="thumb">${p.image ? `<img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy" width="160" height="160">` : '<span class="noimg" aria-hidden="true"></span>'}<span class="badge drop">${m.toUpperCase()}</span></span><span class="ctitle">${esc(p.title)}</span>${p.brand ? `<small class="cbrand">${esc(p.brand)}</small>` : ''}<span class="cprice"><strong>${esc(formatMoney(m, p.minTotal, p.currency))}</strong></span><span class="cmeta">${esc(trn(m, 'inShops', p.offerCount))}</span></a></li>`;
+        })
+        .join('')}</ul></section>`
+    : '';
+  const total = stats.total;
   return layout(ctx, 'de', {
     title: 'Price comparison / Preisvergleich / Fiyat karşılaştırma',
+    description:
+      'Compare prices across shops in Türkiye, Germany and the Netherlands. Real offers, shipping included, price history.',
     canonicalPath: '/',
     alternates: MARKET_IDS.map(id => ({ market: id, path: `/${id}/` })),
-    body: `<h1>Price comparison</h1><ul class="chooser">${links}</ul>`,
+    body: `<section class="hero-band"><h1>Compare prices across shops in TR, DE and NL</h1><p>Find the cheapest offer for a product, shipping included. Preisvergleich · Fiyat karşılaştırma · Prijsvergelijking.</p>
+<form class="search hero-search home-search" action="/de/search" method="get" role="search" onsubmit="this.action='/'+this.elements.m.value+'/search'"><label class="sr" for="hq">Search products</label><input id="hq" type="search" name="q" placeholder="Search a product, brand or barcode" required><label class="sr" for="hm">Market</label><select id="hm" name="m">${marketOpts.replace('value="de"', 'value="de" selected')}</select><button type="submit">Search</button></form></section>
+<ul class="stats" aria-label="Coverage">${stat(total.products, 'products compared')}${stat(total.shops, 'shops tracked')}${stat(total.offers, 'live offers')}${stat(MARKET_IDS.length, 'countries')}</ul>
+<section class="block"><h2>Choose your market</h2><ul class="mcards">${cards}</ul></section>
+${brands.length ? `<section class="block"><h2>Popular brands</h2><ul class="chiprow">${brandChips}</ul></section>` : ''}${latestCards}`,
   });
 }

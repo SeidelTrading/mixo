@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ROOT, MARKETS, isMarket } from '../lib/config.mjs';
+import { ROOT, MARKETS, MARKET_IDS, isMarket } from '../lib/config.mjs';
 import { normalizeEan } from '../lib/ean.mjs';
 import { esc, html, redirect, text } from '../lib/http.mjs';
 import { LEGAL_PAGES, tr, trn } from '../lib/i18n.mjs';
@@ -9,11 +9,14 @@ import {
   categoriesFor,
   getProduct,
   historyFor,
+  latestMatched,
   logClick,
   marketsWithOffers,
   offersFor,
   priceDrops,
   searchProducts,
+  siteStats,
+  topBrands,
   sitemapEans,
 } from '../db/repo.mjs';
 import { botPage, homeBody, layout, legalPage, marketChooser, productPage, searchBody } from './views.mjs';
@@ -41,7 +44,17 @@ export function handlePublic(ctx, req, res, url) {
   const seg = url.pathname.split('/').filter(Boolean);
   const cache = { 'cache-control': 'public, max-age=300' };
 
-  if (url.pathname === '/') return (html(res, 200, marketChooser(ctx), cache), true);
+  if (url.pathname === '/') {
+    const maxAge0 = config.offerMaxAgeDays;
+    const topCats = Object.fromEntries(MARKET_IDS.map(m => [m, categoriesFor(db, m, now, maxAge0, 4)]));
+    const page = marketChooser(ctx, {
+      stats: siteStats(db, now, maxAge0),
+      topCats,
+      brands: topBrands(db, now, maxAge0),
+      latest: latestMatched(db, now, maxAge0),
+    });
+    return (html(res, 200, page, cache), true);
+  }
   if (url.pathname === '/bot') return (html(res, 200, botPage(ctx), cache), true);
   if (url.pathname === '/robots.txt')
     return (

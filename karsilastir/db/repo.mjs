@@ -154,3 +154,50 @@ export function logClick(db, offerId, now) {
 }
 
 export const countOf = (db, table) => db.prepare(`SELECT count(*) AS n FROM ${table}`).get().n;
+
+/** Ana sayfa istatistikleri: pazar başına geçerli ürün/mağaza/teklif sayısı + toplam. */
+export function siteStats(db, now, maxAgeDays) {
+  const rows = db
+    .prepare(
+      `SELECT s.market, count(DISTINCT o.ean) AS products, count(DISTINCT s.id) AS shops, count(*) AS offers
+       FROM offers o JOIN shops s ON s.id = o.shopId
+       WHERE s.active = 1 AND s.blocked = 0 AND o.seenAt >= ? GROUP BY s.market`,
+    )
+    .all(now - maxAgeDays * DAY);
+  const total = db
+    .prepare(
+      `SELECT count(DISTINCT o.ean) AS products, count(DISTINCT s.id) AS shops, count(*) AS offers
+       FROM offers o JOIN shops s ON s.id = o.shopId
+       WHERE s.active = 1 AND s.blocked = 0 AND o.seenAt >= ?`,
+    )
+    .get(now - maxAgeDays * DAY);
+  return { byMarket: Object.fromEntries(rows.map(r => [r.market, r])), total };
+}
+
+/** Tüm pazarlarda en çok teklifi olan markalar. */
+export function topBrands(db, now, maxAgeDays, limit = 16) {
+  return db
+    .prepare(
+      `SELECT p.brand AS name, s.market AS market, count(DISTINCT p.ean) AS n
+       FROM products p JOIN offers o ON o.ean = p.ean JOIN shops s ON s.id = o.shopId
+       WHERE p.brand IS NOT NULL AND p.brand <> '' AND s.active = 1 AND s.blocked = 0 AND o.seenAt >= ?
+       GROUP BY p.brand, s.market ORDER BY n DESC, p.brand`,
+    )
+    .all(now - maxAgeDays * DAY)
+    .filter((r, i, a) => a.findIndex(x => x.name === r.name) === i)
+    .slice(0, limit);
+}
+
+/** En son eklenen, en az iki mağazada eşleşen (yoksa herhangi) ürünler; bir pazar ile birlikte. */
+export function latestMatched(db, now, maxAgeDays, limit = 8) {
+  return db
+    .prepare(
+      `SELECT p.ean, p.title, p.brand, p.image, p.createdAt, s.market AS market,
+              count(*) AS offerCount, min(o.price + o.shipping) AS minTotal, o.currency AS currency
+       FROM products p JOIN offers o ON o.ean = p.ean JOIN shops s ON s.id = o.shopId
+       WHERE s.active = 1 AND s.blocked = 0 AND o.seenAt >= ? AND o.inStock = 1
+       GROUP BY p.ean, s.market
+       ORDER BY (count(*) >= 2) DESC, (p.image IS NOT NULL) DESC, p.createdAt DESC, p.ean LIMIT ?`,
+    )
+    .all(now - maxAgeDays * DAY, limit);
+}
