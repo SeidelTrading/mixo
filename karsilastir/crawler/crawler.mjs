@@ -183,6 +183,8 @@ export function createCrawler({
             shop,
             {
               ean: p.ean,
+              mpn: p.mpn,
+              sku: p.sku,
               title: p.name,
               brand: p.brand,
               image: p.image,

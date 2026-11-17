@@ -3,7 +3,7 @@ import { parsePrice } from '../lib/price.mjs';
 /**
  * Sayfadan YALNIZCA schema.org Product/Offer verisini çıkarır: JSON-LD (öncelikli) ve microdata.
  * Başka hiçbir kaynaktan (CSS seçici, metin, dahili API) fiyat okunmaz.
- * Dönüş: [{ name, ean, brand, image, category, offers: [{ price, currency, inStock, url, shipping }] }]
+ * Dönüş: [{ name, ean, mpn, sku, brand, image, category, offers: [{ price, currency, inStock, url, shipping }] }]
  */
 const GTIN_KEYS = ['gtin13', 'gtin', 'gtin14', 'gtin12', 'gtin8'];
 const OUT_RE = /outofstock|soldout|discontinued/i;
@@ -40,12 +40,22 @@ function offersOf(node) {
   return out;
 }
 
+/** GTIN önce Product düğümünden, yoksa (bazı mağazalar böyle yazar) ilk Offer düğümünden okunur. */
+function gtinOf(n) {
+  for (const node of [n, ...arr(n.offers).filter(o => o && typeof o === 'object')]) {
+    const k = GTIN_KEYS.find(key => str(node[key]));
+    if (k) return str(node[k]);
+  }
+  return '';
+}
+
 function fromProduct(n) {
-  const gtinKey = GTIN_KEYS.find(k => str(n[k]));
   const img = arr(n.image)[0];
   return {
     name: str(n.name),
-    ean: gtinKey ? str(n[gtinKey]) : '',
+    ean: gtinOf(n),
+    mpn: str(n.mpn),
+    sku: str(n.sku),
     brand: str(typeof n.brand === 'object' ? n.brand?.name : n.brand),
     image: str(typeof img === 'object' ? img?.url : img),
     category: str(arr(n.category)[0]),
@@ -90,6 +100,8 @@ function microdata(html) {
     return {
       name: prop(p, 'name'),
       ean: gtinKey ? prop(p, gtinKey) : '',
+      mpn: prop(p, 'mpn'),
+      sku: prop(p, 'sku'),
       brand: prop(p, 'brand'),
       image: prop(p, 'image'),
       category: '',

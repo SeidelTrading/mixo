@@ -4,7 +4,7 @@ import { parseInStock } from './csv.mjs';
  * Affiliate ağı besleme ön ayarları (preset).
  * columns: alan -> sütun adı (CSV, büyük/küçük harf duyarsız) ya da XML yolu (xmlValue: "a/b", "a@attr");
  * dizi verilirse ilk BOŞ OLMAYAN değer alınır.
- * Alanlar: ean, title, brand, price, shipping, currency, url (mağaza ürün adresi), deepLink (affiliate yönlendirme),
+ * Alanlar: ean, mpn (üretici parça no; EAN'sız tarayıcı tekliflerinin eşleşmesi için), title, brand, price, shipping, currency, url (mağaza ürün adresi), deepLink (affiliate yönlendirme),
  * image, category, inStock, merchantId, merchantName, country.
  *
  * Belgelenmemiş / doğrulanmamış sütunlar UNVERIFIED diye işaretlidir; gerçek dosya gelince admin
@@ -13,6 +13,7 @@ import { parseInStock } from './csv.mjs';
 
 export const NETWORK_FIELDS = [
   'ean',
+  'mpn',
   'title',
   'brand',
   'price',
@@ -46,6 +47,7 @@ export const NETWORKS = {
     blankOutOfStock: true,
     columns: {
       ean: ['ean', 'product_gtin'], // product_GTIN: UNVERIFIED
+      mpn: 'mpn', // UNVERIFIED
       title: 'product_name',
       brand: 'brand_name',
       price: ['search_price', 'store_price'], // UNVERIFIED
@@ -99,6 +101,7 @@ export const NETWORKS = {
     blankOutOfStock: false,
     columns: {
       ean: ['identifiers/ean', 'ean'],
+      mpn: ['identifiers/mpn', 'mpn'], // UNVERIFIED
       title: 'name',
       brand: 'brand',
       price: ['price/value', 'price'],

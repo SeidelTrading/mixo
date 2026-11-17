@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const SCHEMA = `
 CREATE TABLE IF NOT EXISTS products (
@@ -57,6 +57,9 @@ CREATE TABLE IF NOT EXISTS network_feeds (
  * Sürüm 1 -> 2: CREATE TABLE IF NOT EXISTS mevcut tablolara sütun eklemez; eksik sütunlar burada eklenir.
  * offers.deepLink / unmatched.deepLink: affiliate yönlendirme bağlantısı (/go bunu kullanır).
  * shops.network + networkMerchantId: ağ beslemesinden otomatik açılan mağazanın kimliği (ağ, ağdaki mağaza no, pazar).
+ * Sürüm 2 -> 3: üretici parça numarası (schema.org mpn). products.mpn ham değer, products.mpnKey normalize
+ * "marka|mpn" anahtarı (lib/ingest.mjs mpnKey); EAN'sız teklif yalnızca bu anahtar TEK ürüne denk gelirse eşleşir.
+ * unmatched.mpn / unmatched.sku: ham tanımlayıcılar (sku yalnızca kayıt için, eşleştirmede kullanılmaz).
  */
 export function migrate(db) {
   const cols = t =>
@@ -73,6 +76,11 @@ export function migrate(db) {
   add('unmatched', 'deepLink', 'TEXT');
   add('shops', 'network', 'TEXT');
   add('shops', 'networkMerchantId', 'TEXT');
+  add('products', 'mpn', 'TEXT');
+  add('products', 'mpnKey', 'TEXT');
+  add('unmatched', 'mpn', 'TEXT');
+  add('unmatched', 'sku', 'TEXT');
+  db.exec('CREATE INDEX IF NOT EXISTS products_mpnKey ON products(mpnKey) WHERE mpnKey IS NOT NULL');
   db.exec(
     'CREATE UNIQUE INDEX IF NOT EXISTS shops_network ON shops(network, networkMerchantId, market) WHERE network IS NOT NULL',
   );

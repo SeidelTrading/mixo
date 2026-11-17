@@ -1,14 +1,35 @@
-import { dayOf } from '../db.mjs';
+import { dayOf, fold } from '../db.mjs';
 import { MARKETS } from './config.mjs';
 import { normalizeEan } from './ean.mjs';
 import { httpUrlOrNull } from './http.mjs';
 import { parsePrice, parseShipping } from './price.mjs';
 import { totalPrice } from './pricing.mjs';
 
+/** Kimlik normalizasyonu: büyük/küçük harf (aksan/Türkçe katlama dahil), boşluk ve tire farkı yok sayılır. */
+const normId = v => fold(String(v ?? '').normalize('NFKC')).replace(/[\s\-\u2010-\u2015]+/g, '');
+
+/**
+ * Marka + üretici parça numarası (mpn) eşleştirme anahtarı; ikisinden biri yoksa ya da mpn 3 karakterden kısaysa null.
+ * Bulanık eşleştirme YOK: anahtar birebir aynı olmalı.
+ */
+export function mpnKey(brand, mpn) {
+  const b = normId(brand);
+  const m = normId(mpn);
+  return b && m.length >= 3 ? `${b}|${m}` : null;
+}
+
+/** EAN'sız teklif için: anahtar TEK bir ürüne denk geliyorsa onun EAN'ı, yoksa/belirsizse null. */
+function eanByMpn(db, key) {
+  if (!key) return null;
+  const rows = db.prepare('SELECT ean FROM products WHERE mpnKey = ? LIMIT 2').all(key);
+  return rows.length === 1 ? rows[0].ean : null;
+}
+
 /**
  * Tek bir teklif satırını (besleme ya da tarayıcı) veritabanına işler.
  * row.deepLink (isteğe bağlı): affiliate yönlendirme bağlantısı; /go/<teklif> bunu, yoksa url'i kullanır.
- * Dönüş: 'offer' (EAN eşleşti), 'unmatched' (EAN yok/geçersiz, inceleme kuyruğu) ya da 'skipped' (geçersiz fiyat/URL/para birimi).
+ * row.mpn / row.sku (isteğe bağlı): EAN yoksa marka+mpn tam olarak tek bir mevcut ürüne denk gelirse teklif ona bağlanır.
+ * Dönüş: 'offer' (EAN ya da marka+mpn eşleşti), 'unmatched' (EAN yok/geçersiz, inceleme kuyruğu) ya da 'skipped' (geçersiz fiyat/URL/para birimi).
  */
 export function ingestOffer(db, shop, row, now = Date.now()) {
   const market = MARKETS[shop.market];
@@ -22,15 +43,18 @@ export function ingestOffer(db, shop, row, now = Date.now()) {
   const title = String(row.title || '')
     .trim()
     .slice(0, 300);
-  const ean = normalizeEan(row.ean);
+  const mpn = row.mpn ? String(row.mpn).trim().slice(0, 64) : null;
+  const key = mpnKey(row.brand, mpn);
+  const ean = normalizeEan(row.ean) || eanByMpn(db, key);
 
   if (!ean) {
     if (!title) return 'skipped';
     db.prepare(
-      `INSERT INTO unmatched (shopId, title, rawEan, price, currency, shipping, url, inStock, seenAt, brand, category, image, deepLink)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO unmatched (shopId, title, rawEan, price, currency, shipping, url, inStock, seenAt, brand, category, image, deepLink, mpn, sku)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(shopId, url) DO UPDATE SET title = excluded.title, rawEan = excluded.rawEan, price = excluded.price,
-         shipping = excluded.shipping, inStock = excluded.inStock, seenAt = excluded.seenAt, deepLink = excluded.deepLink`,
+         shipping = excluded.shipping, inStock = excluded.inStock, seenAt = excluded.seenAt, deepLink = excluded.deepLink,
+         brand = excluded.brand, mpn = excluded.mpn, sku = excluded.sku`,
     ).run(
       shop.id,
       title,
@@ -45,6 +69,8 @@ export function ingestOffer(db, shop, row, now = Date.now()) {
       row.category || null,
       httpUrlOrNull(row.image),
       deepLink,
+      mpn,
+      row.sku ? String(row.sku).trim().slice(0, 64) : null,
     );
     return 'unmatched';
   }
@@ -53,12 +79,22 @@ export function ingestOffer(db, shop, row, now = Date.now()) {
   if (!exists) {
     if (!title) return 'skipped';
     db.prepare(
-      'INSERT INTO products (ean, title, brand, category, image, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
-    ).run(ean, title, row.brand || null, row.category || null, httpUrlOrNull(row.image), now);
+      'INSERT INTO products (ean, title, brand, category, image, createdAt, mpn, mpnKey) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run(
+      ean,
+      title,
+      row.brand || null,
+      row.category || null,
+      httpUrlOrNull(row.image),
+      now,
+      key ? mpn : null,
+      key,
+    );
   } else {
     db.prepare(
-      'UPDATE products SET brand = coalesce(brand, ?), category = coalesce(category, ?), image = coalesce(image, ?) WHERE ean = ?',
-    ).run(row.brand || null, row.category || null, httpUrlOrNull(row.image), ean);
+      `UPDATE products SET brand = coalesce(brand, ?), category = coalesce(category, ?), image = coalesce(image, ?),
+         mpn = coalesce(mpn, ?), mpnKey = coalesce(mpnKey, ?) WHERE ean = ?`,
+    ).run(row.brand || null, row.category || null, httpUrlOrNull(row.image), key ? mpn : null, key, ean);
   }
   db.prepare(
     `INSERT INTO offers (shopId, ean, price, currency, shipping, url, inStock, seenAt, deepLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
