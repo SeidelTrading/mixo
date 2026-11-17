@@ -518,7 +518,7 @@ export function createCrawler({
 
   /**
    * Hiç tohumu olmayan taranabilir mağazaların tohumlarını keşfeder (yeni eklenen mağaza/pazar elle admin işi beklemez).
-   * Beslemeyle çalışan mağazalar (feedUrl / network) atlanır. Bir mağaza için en erken 6 saatte bir denenir.
+   * Beslemeyle çalışan mağazalar (feedUrl / network) atlanır. Bir mağaza için en erken saatte bir denenir.
    */
   const discoverTried = new Map();
   async function discoverMissing() {
@@ -530,7 +530,7 @@ export function createCrawler({
       .all();
     let added = 0;
     for (const shop of shops) {
-      if (now() - (discoverTried.get(shop.id) ?? -Infinity) < 6 * 3600 * 1000) continue;
+      if (now() - (discoverTried.get(shop.id) ?? -Infinity) < 3600 * 1000) continue;
       discoverTried.set(shop.id, now());
       try {
         const n = await discoverSeeds(shop);
