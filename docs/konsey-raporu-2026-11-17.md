@@ -81,8 +81,13 @@ Bu turda düzeltilmeyecek, ayrı iş olarak planlanması gerekenler:
   Kalan: `insights` içindeki `arbitrage`, `categoryTrends` ve `summary` her çağrıda tüm
   tabloyu belleğe alıyor — 200 bin satır tavanında yavaşlayabilir, sorgu tarafı henüz
   satır katmanına uyarlanmadı.
-- **Değişiklik günlüğü.** Yeni modüllerin yazmaları `actions` üzerinden geçmiyor; geri
-  alma ve denetim izi yok.
+- ~~**Değişiklik günlüğü.**~~ **Kapandı (commit `324c894`).** `services/audit.mjs` eklendi;
+  yasal ve parasal etkili yazmalar (satış yasağı ekleme/kaldırma, marka yetkisi, entegrasyon
+  anahtarı, iade ödemesi, havuz birleştirmesi) aynı değişiklik günlüğüne düşüyor. İki gerçek hata
+  da düzeldi: `pool.merge` kullanıcıyı yanlış alandan (`user`, doğrusu `username`) okuyordu ve
+  kaydı paneldeki geri alma düğmesi tanımıyordu — artık `actions.pool_unmerge` ile uçtan uca
+  çalışıyor. Anahtar değeri günlüğe yazılmıyor (yalnız son dört hane), testle denetleniyor.
+  Kapsam bilerek dar: hacimli ve etkisiz yazmalar günlüğe girmiyor ki günlük okunabilir kalsın.
 - **`ARCHITECTURE.md` eskimiş.** Yeni modüller belgede yok, kapsam oranı (%68) güncel
   değil — ölçülen birleşik kapsam %78,66.
 - **Bağlanmamış işlevler.** `shipping.setConfig`, `support.setMinCount` hiçbir uca bağlı
