@@ -88,3 +88,36 @@ Bu turda düzeltilmeyecek, ayrı iş olarak planlanması gerekenler:
   ve bunun aynı makinedeki diğer üyelerin sunucularını da kapatmış olabileceğini kendi
   raporuna yazdı. Kontrol edildi: diğer üyeler etkilenmedi, çalışmalarını tamamladılar.
 - Konseyin deneme betikleri oturumun geçici klasöründe duruyor; projeye yazılmadı.
+
+## Düzeltme turu sonucu (17.11.2026, commit `0617647`)
+
+Konsey raporlarından sonra dört düzeltme paketi paralel çalıştı. Dosya sahipliği çakışmayacak
+biçimde bölündü, her paket kendi testini yazdı ve başkan hepsini birlikte doğruladı.
+
+| Sıra | Konu | Durum | Nasıl doğrulandı |
+|---|---|---|---|
+| 1 | Kiracı yalıtımı | Kısmen kapandı | `services/scope.mjs` eklendi; `tenants` uçları süzülüyor. Kiracı alanı taşımayan 10 modülün okumaları kiracıya bağlı kullanıcıya kapatıldı (`assertShared`) — gerçek süzme için kayıtlara `tenantId` gerekiyor |
+| 2 | Rol kapısı | Kapandı | `handler.mjs` içinde tek `ADMIN_ONLY` tablosu; `unit-scope.mjs` tabloyu ve anahtar ucunu sınıyor |
+| 3 | Dört göz kuralı | Kapandı | `settle`, `approvedBy === requestedBy` ise reddediyor; onaylayan yalnız oturumdan |
+| 4 | Havuz yanlış birleştirme | Kapandı | Konseyin `p11.mjs` betiği: önce tek kayıt ve 149 €'luk ürün görünmez, sonra iki ayrı kayıt ve ikisi de XML'de |
+| 5 | Satış yasaklarının atlanması | Kapandı | `p8-rules.mjs`: önce `uploaded:[…]`, sonra `blocked` ve mevzuat gerekçesi. `buildFeed` de kuraldan geçiyor; fail-open dinamik import statik import oldu |
+| 6 | Ciro aritmetiği | Kapandı | `p6.mjs`: önce `total: Infinity` ve `'12,50' → 0 €`, sonra `10` ve `12.5`. Negatif tutar da bozuk sayılıyor |
+| 7 | Çerez onayı | Kapandı | Onay beyanı olmayan gönderim saklanmıyor, izleme çerezi yazılmıyor, damgasız eski olaylar hiçbir tüketiciye ulaşmıyor |
+| 8 | Silme ve erişim hakkı | Kapandı | `/api/privacy/request`, `/export`, `/erase` imzalı bağlantıyla; silme kanıtı kalıyor, ham e-posta karmaya çevriliyor |
+| 9 | Prototip kirlenmesi | Kapandı | `lib/safe.mjs`: uçta `isSafeKey` kapısı, serviste `dict()` zemini |
+| 10 | İşlem bütünlüğü | Kapandı | Dokuz modülde yazmalar `store.tx` içinde. Kanıt: `tx` geçici kaldırılınca iki süreç 300 yerine 231 kayıt bırakıyor |
+| 11 | Sipariş kaydında kiracı/mağaza/pazar yeri | Açık | Bu turda kapatılmadı; sipariş sözleşmesi değişikliği gerektiriyor |
+
+Başkanın ayrıca kapattığı üç kalem: `scope` `lib/` altından `services/` altına taşındı (bağımlılık
+yönü ihlali), genel amaçlı `dict()` `services/rules.mjs`'ten `lib/safe.mjs`'e alındı, ve vitrindeki
+"Meine Daten löschen" düğmesinin yanına sunucudaki veri için gerçek istek düğmesi kondu — eski düğme
+yalnız tarayıcıyı temizliyordu ve kullanıcıya bunu söylemiyordu.
+
+**Doğrulama:** lint, biçim ve tip denetimi temiz; birim testleri 98'den 129'a çıktı, uçtan uca 154,
+tarayıcı 16 — hepsi geçiyor.
+
+**Bir eskimiş test düzeltildi:** `test/e2e.mjs` onay beyanı olmadan olay gönderip 4 kayıt bekliyordu.
+Davranış artık doğru olarak saklamıyor; test gönderime `consent: true` ekleyecek biçimde güncellendi
+ve yanına "onaysız gönderim 200 döner ama saklanmaz" denetimi eklendi.
+
+**Açık kalanlar:** yukarıdaki 11. sıra ve "Sonraki tur için bırakılanlar" bölümünün tamamı.
