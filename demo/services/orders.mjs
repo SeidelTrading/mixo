@@ -104,10 +104,16 @@ export function createOrder(body) {
     oid = 'MX-' + String(Date.now()).slice(-6) + crypto.randomBytes(1).toString('hex').toUpperCase();
   } while (orders.some(x => x.id === oid)); // kimlik çakışırsa yeniden üret (eski sipariş ezilmesin)
   const st0 = ORDER_VERIFY ? 'unverified' : 'new',
+    org = settings.origin || {},
     o = {
       id: oid,
       t: Date.now(),
       status: st0,
+      // Satışın kaynağı: hangi kiracı, hangi mağaza, hangi kanal. YALNIZ sunucu ayarından gelir (settings.origin);
+      // body'den okunmaz, yoksa herkese açık kasa ucundan başka kiracının adına sipariş yazılabilirdi.
+      tenantId: typeof org.tenantId === 'string' && org.tenantId ? org.tenantId : null,
+      shop: typeof org.shop === 'string' && org.shop ? org.shop : 'mixoutlet',
+      market: typeof org.market === 'string' && org.market ? org.market : 'shop',
       items,
       subtotal,
       shipping,
@@ -131,6 +137,9 @@ export function createOrder(body) {
   hooks.orderPlaced?.(cu.email);
   // Pazarlama izni doğrulama açıkken yalnız e-posta onayından sonra (confirmOrder) kaydedilir; sahte siparişle başkası adına izin açılamasın.
   if (o.marketing && !ORDER_VERIFY) hooks.optIn?.(cu.email, cu.name, 'checkout');
+  // Doğrulama kapalıyken sipariş zaten geçerli: hedef sayaçları ve kargo seçimi şimdi çalışır.
+  // Açıkken bu çağrı confirmOrder'dadır — doğrulanmamış sipariş hedefi düşürmemeli.
+  if (!ORDER_VERIFY) hooks.orderCompleted?.(o);
   return { order: o };
 }
 export const orderRow = o => ({
@@ -157,6 +166,7 @@ export function confirmOrder(id, token) {
   (o.history ||= []).push({ t: Date.now(), status: 'new', by: 'müşteri (e-posta onayı)' });
   saveOrder(o);
   if (o.marketing) hooks.optIn?.(o.customer.email, o.customer.name, 'checkout');
+  hooks.orderCompleted?.(o); // sipariş ancak burada geçerli oldu (bkz. createOrder)
   homeCache.t = 0;
   return 'ok';
 }

@@ -13,15 +13,28 @@ export const settings = Object.assign(
     content: {},
     categories: {},
     marketing: {},
+    // Bu vitrinin kimliği: siparişin hangi kiracının, hangi mağazasının, hangi kanalın satışı olduğu.
+    // Sunucu tarafında durur ve isteyene göre DEĞİŞMEZ: herkese açık kasa ucu kiracı seçemesin.
+    origin: { tenantId: null, shop: 'mixoutlet', market: 'shop' },
   },
   (x => (isObj(x) ? x : {}))(store.doc('settings', {})),
 );
 for (const k of ['hidden', 'cleared', 'approved', 'overrides', 'content', 'categories', 'marketing'])
   if (!isObj(settings[k])) settings[k] = {};
 if (!Array.isArray(settings.featured)) settings.featured = [];
+if (!isObj(settings.origin)) settings.origin = { tenantId: null, shop: 'mixoutlet', market: 'shop' };
 export const changes = store.allChanges();
 export const saveSettings = () => store.saveDoc('settings', settings);
-export const hooks = { igRefresh: null, orderPlaced: null, optIn: null, runJobs: null }; // Instagram modülü: mağaza değişince taslak/gönderi bayraklarını yeniler
+// orderCompleted: sipariş gerçekten geçerli olduğunda (doğrulama kapalıysa oluşturulunca, açıksa e-posta onayından
+// sonra) çalışır. Pano hedef sayaçları ve kargo seçimi buna bağlıdır. Doğrudan import edilemez: dashboard ve
+// shipping zaten orders'ı okuyor, ters yönde import döngü yaratırdı (bkz. ARCHITECTURE.md).
+export const hooks = {
+  igRefresh: null,
+  orderPlaced: null,
+  orderCompleted: null,
+  optIn: null,
+  runJobs: null,
+}; // Instagram modülü: mağaza değişince taslak/gönderi bayraklarını yeniler
 export function logChange(by, summary, undo) {
   const user = actorCtx.getStore()?.username,
     c = {

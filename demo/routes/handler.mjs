@@ -3,6 +3,7 @@ import { SUNUM_PROTECT } from '../lib/config.mjs';
 import { ScopeError } from '../services/scope.mjs';
 import { authOf, clientIp, endSession } from '../lib/auth.mjs';
 import { SEC_HEADERS, readBody, send, serveStatic } from '../lib/http.mjs';
+import '../services/order-flow.mjs'; // yan etki: sipariş kancasını iş modüllerine bağlar (hedef sayaçları, kargo seçimi)
 import { publicRoutes } from './public.mjs';
 import { adminAuthRoutes } from './admin-auth.mjs';
 import { adminMeRoutes } from './admin-me.mjs';
@@ -51,7 +52,10 @@ const ADMIN = [
 const ADMIN_ONLY = [
   { p: /^\/api\/admin\/(users|backups?|jobs)$/, why: 'kullanıcı, yedek ve iş uçları' },
   // Kiracı kasası ve paket yönetimi: anahtar koyma/iptal, kiracı oluşturma, paket değiştirme, kullanıcı atama.
-  { p: /^\/api\/admin\/tenants\/(create|update|key|user)$/, why: 'kiracı yönetimi ve API anahtarı kasası' },
+  {
+    p: /^\/api\/admin\/tenants\/(create|update|key|user|origin)$/,
+    why: 'kiracı yönetimi ve API anahtarı kasası',
+  },
   // Eşik üstü iade onayı: onay isteği (approve:true) yalnız yöneticiden gelebilir (dört göz kuralı servis katmanında).
   { p: /^\/api\/admin\/refunds\/settle$/, when: b => b?.approve === true, why: 'iade onayı' },
   { p: /^\/api\/admin\/ads\/brand$/, why: 'marka yetkisi verme' },

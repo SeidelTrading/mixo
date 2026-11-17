@@ -784,6 +784,21 @@ try {
   // Rıza kaydı: onaysız adres hiçbir gönderim listesine girmez (K-30).
   const e2au = await call(AH.j, '/api/admin/ads/audience?kind=cart');
   ok(e2au.s === 200, 'retargeting listesi döndü', e2au.t.slice(0, 120));
+  // Sipariş kaydı artık kaynak alanlarını taşıyor: pano kırılımı 'bilinmiyor' altında toplanmıyor.
+  const e2rev = await call(AH.j, '/api/admin/dashboard/revenue?groupBy=shop');
+  ok(
+    e2rev.s === 200 && e2rev.j.rows.some(r => r.key === 'mixoutlet'),
+    'pano mağaza kırılımı gerçek mağazayı gösteriyor',
+    e2rev.t.slice(0, 160),
+  );
+  const e2ori = await call(AH.j, '/api/admin/tenants/origin', { shop: 'depo-1', market: 'kaufland' });
+  ok(
+    e2ori.s === 200 && e2ori.j.origin.shop === 'depo-1',
+    'vitrin kimliği değiştirildi',
+    e2ori.t.slice(0, 120),
+  );
+  // Geri al: sonraki denetimler varsayılan kimlikle çalışsın.
+  await call(AH.j, '/api/admin/tenants/origin', { shop: 'mixoutlet', market: 'shop' });
   // Yönetici uçlarında yöntem kısıtı yeni modüllerde de geçerli.
   ok((await call(AH.j, '/api/admin/pool', {}, { method: 'PUT' })).s === 405, 'yeni uçlarda PUT 405');
 } catch (e) {

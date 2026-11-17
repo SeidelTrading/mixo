@@ -16,6 +16,7 @@ services/             iş mantığı (HTTP bilmez)
   analytics           olay toplama ve analiz
   assistant*          Claude asistanı: araç tanımı (assistant-tools), işleyici tablosu (tool-handlers), onay kapısı (assistant-gate), sohbet döngüsü (assistant)
   channels            Instagram ve pazarlama modüllerinin bağlanması (instagram.mjs, marketing.mjs)
+  order-flow          sipariş kancası: geçerli siparişte hedef sayacını düşürür ve kargo firmasını seçer (orders ↔ dashboard/shipping döngüsünü önler)
   pool                ürün havuzu: kanonik kart, çoklu EAN (pazar yerine özel), kaynak kaydı, birleştir/geri al (db/pool.mjs tabloları)
   tenants · scope     kiracı, mağaza, paket limiti, kullanıcı bağı, AES-256-GCM entegrasyon anahtarı · kapsam kapısı (scopeFor, assertScope, assertShared)
   feed · rules        pazar yeri feed denetimi, XML üretimi, toplu yükleme · satış yasağı kuralları (şirket × marka × pazar × kategori); feed yüklemesi ve XML üretimi evaluate()'ten geçer
@@ -68,6 +69,6 @@ Tek süreç ve tek disk (yatay ölçek yok); siparişler (≤5000) ve olaylar (�
 
 Kiracı yalıtımı yalnız `tenants` kayıtlarında gerçek: diğer modüllerin kayıtlarında `tenantId` alanı yok, bu yüzden o uçların okumaları kiracıya bağlı kullanıcıya kapatıldı (`assertShared`). Çok kiracılı kullanıma açmadan önce kayıtlara `tenantId` eklenmelidir.
 
-Yeni iş modülleri `orders.mjs` akışına bağlı değil: kargo seçimi, iade, kural ve fiyat stratejisi yalnız uç üzerinden çalışıyor; sipariş kaydı kiracı, mağaza ve pazar yeri alanı taşımadığı için pano kırılımları `bilinmiyor` altında toplanıyor.
+Sipariş kaydı kaynak alanlarını taşır (`tenantId`, `shop`, `market`); değerler `settings.origin`'den gelir, istekten DEĞİL. Geçerli olan sipariş `hooks.orderCompleted` ile iş modüllerine bağlanır (`services/order-flow.mjs`): günlük hedef sayaçları düşer, kargo firması seçilip siparişe yazılır. Bu kancadan önce kaydedilmiş siparişlerde alanlar yoktur ve pano kırılımında `bilinmiyor` altında toplanırlar. İade, kural ve fiyat stratejisi hâlâ yalnız uç üzerinden çalışıyor.
 
 Yeni modüllerin yazmaları `actions` değişiklik günlüğünden geçmiyor (istisna: `pool.merge`); geri alma ve denetim izi yok. Mobil uygulama (`mobile/`) bu yapının dışında ve testsiz. Birleşik kapsam (`npm run test:coverage`, birim + uçtan uca): satır ≈ %79 (yeni servisler %93, yeni uç dosyaları %59).

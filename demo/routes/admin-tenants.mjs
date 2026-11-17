@@ -1,4 +1,5 @@
 import { send } from '../lib/http.mjs';
+import { logChange, saveSettings, settings } from '../services/settings.mjs';
 import { assertScope, filterScope } from '../services/scope.mjs';
 import {
   TenantError,
@@ -21,7 +22,12 @@ import {
 // Eşleşmeyen istekte hiçbir şey yazmadan döner; yanıt yazıldıysa işleyici zinciri durur (bkz. handler.mjs).
 const STATUS = { invalid: 400, notfound: 404, conflict: 409, limit: 409 };
 const ID_RE = /^[\w-]{1,40}$/;
-const WRITES = new Set(['create', 'update', 'shop', 'user', 'key']);
+const WRITES = new Set(['create', 'update', 'shop', 'user', 'key', 'origin']);
+const MARKET_RE = /^[a-z0-9._-]{1,40}$/i;
+const str = v =>
+  String(v ?? '')
+    .trim()
+    .slice(0, 80);
 
 const bad = (res, msg) => send(res, 400, { error: msg });
 const needStr = (v, name) => (typeof v === 'string' && v.trim() ? null : `${name} gerekli`);
@@ -38,6 +44,24 @@ export async function adminTenantRoutes(c) {
     if (WRITES.has(sub)) {
       if (req.method !== 'POST') return send(res, 405, { error: 'POST bekleniyor' }, { allow: 'POST' });
       const b = body && typeof body === 'object' ? body : {};
+      // Bu vitrinin kimliği: bundan sonraki siparişlerin hangi kiracıya, mağazaya ve kanala yazılacağı.
+      // Geçmiş siparişleri DEĞİŞTİRMEZ (satışın nerede olduğu sonradan yeniden yazılamaz).
+      if (sub === 'origin') {
+        const o = settings.origin || {};
+        const tenantId = b.tenantId === null || b.tenantId === '' ? null : str(b.tenantId);
+        const shop = b.shop === undefined ? o.shop : str(b.shop);
+        const market = b.market === undefined ? o.market : str(b.market);
+        if (!shop || !market) return bad(res, 'shop ve market boş olamaz');
+        if (!MARKET_RE.test(market)) return bad(res, 'market biçimi geçersiz');
+        if (tenantId) assertScope(me, tenantId);
+        settings.origin = { tenantId, shop, market };
+        saveSettings();
+        logChange('Panel', `Vitrin kimliği: ${shop} / ${market}${tenantId ? ' / ' + tenantId : ''}`, {
+          kind: 'settings.origin',
+          before: o,
+        });
+        return send(res, 200, { ok: true, origin: settings.origin });
+      }
       if (sub === 'create') {
         const err = needStr(b.name, 'name') || needStr(b.plan, 'plan');
         if (err) return bad(res, err);
