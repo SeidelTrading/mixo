@@ -1,7 +1,8 @@
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
-import { DB_NAME, TABLES } from './util.mjs';
+import { DB_NAME, POOL_TABLES, TABLES } from './util.mjs';
+import { decryptFile } from './export.mjs';
 
 // Bir veritabanı dosyasını (yedek) doğrular: SQLite bütünlük denetimi + tablo sayıları. Dosyayı değiştirmez.
 export function verifyFile(file) {
@@ -19,7 +20,7 @@ export function verifyFile(file) {
           .all()
           .map(r => r.name),
       ),
-      missing = TABLES.filter(t => !have.has(t));
+      missing = TABLES.filter(t => !have.has(t) && !POOL_TABLES.includes(t));
     const counts = Object.fromEntries(
       TABLES.filter(t => have.has(t)).map(t => [t, db.prepare(`SELECT COUNT(*) c FROM ${t}`).get().c]),
     );
@@ -37,7 +38,18 @@ export function verifyFile(file) {
   }
 }
 // Geri yükleme: yedek doğrulanır, mevcut veritabanı .onceki-<zaman> adıyla kenara alınır, yedek yerine kopyalanır.
-export function restoreFile(src, dataDir) {
+export function restoreFile(src, dataDir, pass = process.env.BACKUP_ENCRYPT_KEY) {
+  if (src.endsWith('.enc')) {
+    if (!pass) throw new Error('şifreli yedek için BACKUP_ENCRYPT_KEY gerekir');
+    const tmp = path.join(dataDir, '.geri-yukleme-' + Date.now() + '.db');
+    fs.mkdirSync(dataDir, { recursive: true });
+    decryptFile(src, tmp, pass);
+    try {
+      return restoreFile(tmp, dataDir, pass);
+    } finally {
+      fs.rmSync(tmp, { force: true });
+    }
+  }
   const v = verifyFile(src);
   if (!v.ok) throw new Error('Yedek geçersiz: ' + v.integrity);
   const dest = path.join(dataDir, DB_NAME),

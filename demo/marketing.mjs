@@ -28,13 +28,14 @@ export function initMarketing(ctx) {
   } = ctx;
   const SITE = (process.env.SITE_URL || 'https://web-production-a959d0b7.up.railway.app').replace(/\/$/, '');
   const db = Object.assign(
-    { optins: {}, carts: {}, sim: [] },
+    { optins: {}, carts: {}, sim: [], consent: [] },
     (x => (x && typeof x === 'object' && !Array.isArray(x) ? x : {}))(doc('marketing', {})),
   );
   const save = () => saveDoc('marketing', db);
   const MAX_OPTINS = 20000,
+    MAX_CONSENT_LOG = 50000,
     CONSENT_TEXT = 'v1-2026-11';
-  // izin kaydı tavanı · onay metni sürümü
+  // izin kaydı tavanı · rıza günlüğü tavanı · onay metni sürümü
   const eur = n =>
     Number(n).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
   const uid = () => crypto.randomUUID().slice(0, 8);
@@ -61,6 +62,7 @@ export function initMarketing(ctx) {
     db,
     save,
     MAX_OPTINS,
+    MAX_CONSENT_LOG,
     CONSENT_TEXT,
     eur,
     uid,
@@ -71,8 +73,9 @@ export function initMarketing(ctx) {
   Object.assign(c, makeSuggest(c));
   Object.assign(c, makeIgBridge(c));
   Object.assign(c, makeRules(c));
-  Object.assign(c, makeReminders(c));
+  // makeConsent, makeReminders'tan ÖNCE kurulur: hatırlatma alıcıları consentOk'u kullanır.
   Object.assign(c, makeConsent(c));
+  Object.assign(c, makeReminders(c));
   Object.assign(c, makeAdmin(c));
   const {
     admin,
@@ -86,6 +89,11 @@ export function initMarketing(ctx) {
     saveCart,
     orderPlaced,
     simMail,
+    consentOk,
+    confirmOptIn,
+    resendConfirm,
+    consentRecord,
+    consentLog,
   } = c;
   return {
     admin,
@@ -99,6 +107,11 @@ export function initMarketing(ctx) {
     saveCart,
     orderPlaced,
     simMail,
+    consentOk,
+    confirmOptIn,
+    resendConfirm,
+    consentRecord,
+    consentLog,
     rules: () => settings.marketing.rules,
   };
 }

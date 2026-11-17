@@ -28,7 +28,7 @@ export async function publicRoutes(c) {
         .trim()
         .toLowerCase(),
       own = sigOk(cookie(req, 'mxc') || '', 'c:' + em);
-    const r = mk.saveCart(b, own);
+    const r = mk.saveCart(b, own, ip);
     if (r.err) return send(res, 400, { error: r.err });
     return send(
       res,
@@ -73,6 +73,30 @@ export async function publicRoutes(c) {
     const b = await readBody(req, 60e3),
       v = visitorOf(req, ip);
     return send(res, 200, { ok: ingest(b, req, v?.vid) }, v?.setCookie ? { 'set-cookie': v.setCookie } : {});
+  }
+  // Çift onay (double opt-in): doğrulama bağlantısı. Bu tıklanmadan adres hiçbir gönderime alınmaz.
+  if (p === '/api/consent/confirm' && req.method === 'GET') {
+    const st = limited('cc' + ip, 30, 60e3)
+      ? 'limit'
+      : mk.confirmOptIn(url.searchParams.get('e') || '', url.searchParams.get('token') || '', ip);
+    const M = {
+      ok: ['E-Mail bestätigt', 'Danke! Ab jetzt dürfen wir Ihnen Erinnerungen senden.'],
+      already: ['Bereits bestätigt', 'Diese E-Mail-Adresse wurde bereits bestätigt.'],
+      expired: [
+        'Link abgelaufen',
+        'Dieser Bestätigungslink ist abgelaufen. Bitte melden Sie sich erneut an.',
+      ],
+      bad: ['Link ungültig', 'Dieser Bestätigungslink ist ungültig.'],
+      limit: ['Zu viele Versuche', 'Bitte versuchen Sie es in einer Minute erneut.'],
+    }[st];
+    res.writeHead(st === 'ok' || st === 'already' ? 200 : st === 'limit' ? 429 : 400, {
+      'content-type': 'text/html; charset=utf-8',
+      'cache-control': 'no-store',
+      'x-robots-tag': 'noindex',
+    });
+    return res.end(
+      `<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${M[0]}</title><body style="font-family:system-ui,sans-serif;max-width:32rem;margin:15vh auto;padding:0 1rem;text-align:center"><h1 style="font-size:1.4rem">${M[0]}</h1><p>${M[1]}</p><p><a href="/">Zurück zum Shop</a></p></body></html>`,
+    );
   }
   if (p === '/api/orders/confirm' && req.method === 'GET') {
     const st = limited('oc' + ip, 30, 60e3)

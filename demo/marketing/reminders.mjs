@@ -3,6 +3,8 @@ import { DAY } from './shared.mjs';
 // Hatırlatma alıcıları, e-posta metni, önizleme ve simülasyon (gerçek gönderim yok).
 export function makeReminders(c) {
   const { getOrders, db, P, effP, shopOk, catOk, catLabel, SITE, eur, settings, uid, save, logChange } = c;
+  // Dikkat: aşağıdaki sepet döngüsü `c` adını gölgeliyor; izin denetimi bu yüzden burada sabitlenir.
+  const hasConsent = email => c.consentOk(email);
   const mask = e => e.replace(/^(.).*(@.*)$/, '$1***$2');
   function recipients(rule, now = Date.now()) {
     const orders = getOrders().filter(o => o.status !== 'cancelled' && o.status !== 'unverified'),
@@ -23,7 +25,7 @@ export function makeReminders(c) {
     let noConsent = 0;
     if (rule.type === 'cart') {
       for (const [email, c] of Object.entries(db.carts)) {
-        if (!db.optins[email]) {
+        if (!hasConsent(email)) {
           noConsent++;
           continue;
         }
@@ -50,7 +52,7 @@ export function makeReminders(c) {
           last.set(o.customer.email, { o, its });
       }
       for (const [email, { o, its }] of last) {
-        if (!db.optins[email]) {
+        if (!hasConsent(email)) {
           noConsent++;
           continue;
         }

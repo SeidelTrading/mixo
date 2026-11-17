@@ -1,5 +1,17 @@
 export const DB_NAME = 'mixo.db';
-export const TABLES = ['kv', 'orders', 'events', 'changes', 'sessions', 'users', 'logins', 'jobs'];
+// Sürüm 2 ile gelen tablolar: sürüm 1 yedeklerinde bulunmaz, bu yüzden doğrulamada eksikliği hata sayılmaz.
+export const POOL_TABLES = ['pool', 'pool_ean', 'pool_src'];
+export const TABLES = [
+  'kv',
+  'orders',
+  'events',
+  'changes',
+  'sessions',
+  'users',
+  'logins',
+  'jobs',
+  ...POOL_TABLES,
+];
 
 export const parse = (s, fallback) => {
   try {

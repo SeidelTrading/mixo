@@ -7,10 +7,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DB_NAME, TABLES } from './db/util.mjs';
-import { SCHEMA } from './db/schema.mjs';
+import { SCHEMA, SCHEMA_V2 } from './db/schema.mjs';
 import { restoreFile, verifyFile } from './db/verify.mjs';
 import { makeDocuments } from './db/documents.mjs';
 import { makeRecords } from './db/records.mjs';
+import { makePool } from './db/pool.mjs';
 import { makeAccounts } from './db/accounts.mjs';
 import { makeJobs } from './db/jobs.mjs';
 import { makeBackup } from './db/backup.mjs';
@@ -36,12 +37,15 @@ export function openStore(dataDir, { log = console.log } = {}) {
       throw e;
     }
   };
-  if (Number(db.prepare('PRAGMA user_version').get().user_version) < 1)
-    tx(() => db.exec(SCHEMA + 'PRAGMA user_version=1;'));
+  // Şema geçişleri sırayla uygulanır; v1 veritabanı v2'ye yükseltilirken yalnız yeni tablolar eklenir.
+  const version = () => Number(db.prepare('PRAGMA user_version').get().user_version);
+  if (version() < 1) tx(() => db.exec(SCHEMA + 'PRAGMA user_version=1;'));
+  if (version() < 2) tx(() => db.exec(SCHEMA_V2 + 'PRAGMA user_version=2;'));
   const cache = new Map(),
     q = sql => cache.get(sql) || cache.set(sql, db.prepare(sql)).get(sql);
   const { doc, saveDoc } = makeDocuments({ q, log });
   const records = makeRecords({ q, tx });
+  const pool = makePool({ q });
   const { users, sessions, logins } = makeAccounts({ q });
   const { jobs } = makeJobs({ q, tx });
   const { backupDir, listBackups, backup } = makeBackup({ db, dataDir });
@@ -65,6 +69,7 @@ export function openStore(dataDir, { log = console.log } = {}) {
     sessions,
     logins,
     jobs,
+    pool,
     backup,
     listBackups,
     backupDir,

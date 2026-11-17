@@ -25,6 +25,8 @@ const { TOOL_HANDLERS } = await import('../services/tool-handlers.mjs');
 const { pending } = await import('../services/assistant-gate.mjs');
 const { settings } = await import('../services/settings.mjs');
 const { BULK_LIMIT } = await import('../lib/config.mjs');
+const pool = await import('../services/pool.mjs');
+const { mk } = await import('../services/channels.mjs');
 
 test.after(() => {
   try {
@@ -196,4 +198,232 @@ test('asistan araçları: geçersiz girdiler hata ya da boş sonuç döner', asy
   assert.ok((await TOOL_HANDLERS.set_announcement({}, conv)).error);
   assert.equal((await TOOL_HANDLERS.hide_products({ ids: ['yok'] }, conv)).status, 'nothing');
   assert.equal((await TOOL_HANDLERS.approve_products({ ids: [] }, conv)).status, 'nothing');
+});
+
+/* ───────── ürün havuzu ───────── */
+test('havuz: aynı ürün iki kaynaktan gelince tek kanonik kayda bağlanır', () => {
+  const a = pool.ingest({
+    src: 'wawi',
+    ref: 'W-1',
+    title: 'Bosch Bohrmaschine GSB 13 RE',
+    vendor: 'Bosch',
+    mpn: 'GSB 13 RE',
+  });
+  const b = pool.ingest({
+    src: 'amazon',
+    ref: 'B0XYZ',
+    title: 'BOSCH GSB-13-RE Schlagbohrmaschine',
+    vendor: 'bosch',
+    mpn: 'gsb13re',
+  });
+  assert.equal(a.created, true);
+  assert.equal(b.created, false);
+  assert.equal(b.id, a.id);
+  assert.deepEqual(
+    pool
+      .getPool(a.id)
+      .sources.map(s => s.src)
+      .sort(),
+    ['amazon', 'wawi'],
+  );
+  // vendor + başlık (mpn yok) eşleşmesi
+  const c = pool.ingest({
+    src: 'idealo',
+    ref: 'I-9',
+    title: 'bosch  Bohrmaschine GSB 13 RE',
+    vendor: 'BOSCH',
+  });
+  assert.equal(c.id, a.id);
+});
+
+test('havuz: aynı (src, ref) tekrarı kopya üretmez, günceller', () => {
+  const before = pool.poolCounts();
+  const a = pool.ingest({ src: 'wawi', ref: 'T-2', title: 'Tekrar Ürünü', vendor: 'Acme', price: 10 });
+  const b = pool.ingest({ src: 'wawi', ref: 'T-2', title: 'Tekrar Ürünü', vendor: 'Acme', price: 12 });
+  assert.equal(b.id, a.id);
+  assert.equal(b.created, false);
+  const after = pool.poolCounts();
+  assert.equal(after.pools, before.pools + 1);
+  assert.equal(after.srcs, before.srcs + 1);
+  assert.equal(pool.getPool(a.id).sources[0].data.price, 12);
+});
+
+test('havuz: EAN eşleşmesi başlık ve üretici farklı olsa da çalışır', () => {
+  const a = pool.ingest({
+    src: 'wawi',
+    ref: 'E-1',
+    title: 'Kaffeemaschine Alpha',
+    vendor: 'Delta',
+    eans: ['4006381333931'],
+  });
+  const b = pool.ingest({
+    src: 'amazon',
+    ref: 'E-A1',
+    title: 'Tamamen başka bir başlık',
+    vendor: 'Başka',
+    eans: ['4006381333931', '5901234123457'],
+  });
+  assert.equal(b.id, a.id);
+  assert.deepEqual(
+    pool
+      .getPool(a.id)
+      .eans.map(e => e.ean)
+      .sort(),
+    ['4006381333931', '5901234123457'],
+  );
+  assert.throws(() => pool.ingest({ src: 'x', ref: '1', title: 't', eans: ['123'] }), { code: 'invalid' });
+});
+
+test('havuz: eanFor pazar yerine özel EAN > "*" EAN > null', () => {
+  const { id } = pool.ingest({ src: 'wawi', ref: 'M-1', title: 'Pazar Ürünü', vendor: 'Mk' });
+  assert.equal(pool.eanFor(id, 'amazon'), null);
+  pool.addEan(id, '4012345678901');
+  assert.equal(pool.eanFor(id, 'amazon'), '4012345678901');
+  pool.addEan(id, '4012345678918', 'amazon');
+  assert.equal(pool.eanFor(id, 'amazon'), '4012345678918');
+  assert.equal(pool.eanFor(id, 'idealo'), '4012345678901');
+  assert.equal(pool.eanFor(id), '4012345678901');
+  pool.removeEan(id, '4012345678918', 'amazon');
+  assert.equal(pool.eanFor(id, 'amazon'), '4012345678901');
+});
+
+test('havuz: EAN çakışması ve 8 EAN sınırı hata verir, üzerine yazılmaz', () => {
+  const a = pool.ingest({
+    src: 'wawi',
+    ref: 'C-1',
+    title: 'Çakışma A',
+    vendor: 'Ca',
+    eans: ['4000000000017'],
+  });
+  const b = pool.ingest({ src: 'wawi', ref: 'C-2', title: 'Çakışma B', vendor: 'Cb' });
+  assert.notEqual(a.id, b.id);
+  assert.throws(() => pool.addEan(b.id, '4000000000017'), { code: 'conflict' });
+  assert.throws(() => pool.addEan(b.id, '4000000000017', 'amazon'), { code: 'conflict' });
+  assert.equal(pool.getPool(a.id).eans.length, 1);
+  assert.equal(pool.getPool(b.id).eans.length, 0);
+  // iki ayrı ürüne işaret eden EAN'lar çakışmadır; başarısız ingest hiçbir şey bırakmaz
+  pool.addEan(b.id, '4000000000024');
+  const n = pool.poolCounts();
+  assert.throws(
+    () => pool.ingest({ src: 'amazon', ref: 'C-4', title: 'Yeni', eans: ['4000000000017', '4000000000024'] }),
+    { code: 'conflict' },
+  );
+  assert.deepEqual(pool.poolCounts(), n);
+  const eight = Array.from(
+    { length: 9 },
+    (_, i) => '40000000001' + String(10 + i).padStart(2, '0') + '0',
+  ).map(e => e.slice(0, 13));
+  const before = pool.poolCounts();
+  assert.throws(() => pool.ingest({ src: 'wawi', ref: 'C-5', title: 'Dokuz EAN', eans: eight }), {
+    code: 'limit',
+  });
+  assert.deepEqual(pool.poolCounts(), before, 'sınır hatasında işlem geri alınır');
+});
+
+test('havuz: merge + unmerge sayıları başlangıca döndürür', () => {
+  const a = pool.ingest({
+    src: 'wawi',
+    ref: 'G-1',
+    title: 'Birleşen A',
+    vendor: 'Ga',
+    eans: ['4100000000010'],
+  });
+  const b = pool.ingest({
+    src: 'amazon',
+    ref: 'G-2',
+    title: 'Birleşen B',
+    vendor: 'Gb',
+    eans: ['4100000000027'],
+  });
+  assert.notEqual(a.id, b.id);
+  const before = pool.poolCounts();
+  const undo = pool.merge(a.id, b.id);
+  assert.equal(pool.poolCounts().pools, before.pools - 1);
+  assert.equal(pool.getPool(b.id), null);
+  assert.equal(pool.getPool(a.id).eans.length, 2);
+  assert.equal(pool.getPool(a.id).sources.length, 2);
+  pool.unmerge(undo);
+  assert.deepEqual(pool.poolCounts(), before);
+  assert.deepEqual(
+    pool.getPool(a.id).eans.map(e => e.ean),
+    ['4100000000010'],
+  );
+  assert.deepEqual(
+    pool.getPool(b.id).sources.map(s => s.ref),
+    ['G-2'],
+  );
+  assert.equal(pool.getPool(b.id).title, 'Birleşen B');
+  assert.throws(() => pool.unmerge(undo), { code: 'conflict' }, 'ikinci geri alma reddedilir');
+});
+
+/* ───────── rıza kaydı: çift onay (K-30) ───────── */
+test('rıza: yeni kayıt onaysız başlar ve alıcı listesine girmez', () => {
+  assert.equal(mk.optIn('riza1@example.com', 'Riza Bir', 'cart'), true);
+  assert.equal(mk.consentOk('riza1@example.com'), false, 'onaylanmadan alıcı olamaz');
+});
+
+test('rıza: doğrulama bağlantısı onaylar, ikinci tıklama already döner', () => {
+  const email = 'riza2@example.com';
+  mk.optIn(email, 'Riza Iki', 'cart');
+  const token = auth.sign(`oi:${email}:${mk.consentRecord(email).t}`);
+  assert.equal(mk.confirmOptIn(email, 'yanlis-token'), 'bad', 'bozuk imza reddedilir');
+  assert.equal(mk.consentOk(email), false);
+  assert.equal(mk.confirmOptIn(email, token), 'ok');
+  assert.equal(mk.consentOk(email), true);
+  assert.equal(mk.confirmOptIn(email, token), 'already');
+});
+
+test('rıza: bilinmeyen adres ve süresi dolmuş bağlantı reddedilir', () => {
+  assert.equal(mk.confirmOptIn('yok@example.com', 'x'), 'bad');
+  const email = 'riza3@example.com';
+  mk.optIn(email, '', 'cart');
+  const rec = mk.consentRecord(email);
+  rec.t -= 8 * 864e5; // bağlantı ömrü 7 gün
+  assert.equal(mk.confirmOptIn(email, auth.sign(`oi:${email}:${rec.t}`)), 'expired');
+  assert.equal(mk.consentOk(email), false);
+});
+
+test('rıza: günlük izin, onay ve geri çekmeyi kanıtla saklar', () => {
+  const email = 'riza4@example.com';
+  mk.optIn(email, 'Riza Dort', 'cart', '203.0.113.9');
+  mk.confirmOptIn(email, auth.sign(`oi:${email}:${mk.consentRecord(email).t}`), '203.0.113.9');
+  const kayit = mk.consentLog().filter(x => x.email === email);
+  assert.deepEqual(
+    kayit.map(x => x.action),
+    ['optin', 'confirm'],
+  );
+  assert.ok(kayit.every(x => x.text && x.t > 0));
+});
+
+test('rıza: onaysız sepet hatırlatma alıcısı olmaz, onaydan sonra olur', () => {
+  const email = 'riza5@example.com';
+  const id = [...P.keys()][0];
+  const r = mk.saveCart({ email, name: 'Riza Bes', optin: true, items: [{ id, qty: 1 }] }, true);
+  assert.equal(r.ok, true, 'sepet kaydedildi');
+  const cartRule = settings.marketing.rules.find(x => x.type === 'cart');
+  const sayac = () => {
+    const x = mk.preview(cartRule.id)[0];
+    return { alici: x.due.length + x.scheduled.length, izinsiz: x.noConsent };
+  };
+  const once = sayac();
+  assert.equal(once.alici, 0, 'onaysız adres alıcı değil');
+  assert.ok(once.izinsiz >= 1, 'izinsiz olarak sayılır');
+  assert.equal(mk.confirmOptIn(email, auth.sign(`oi:${email}:${mk.consentRecord(email).t}`)), 'ok');
+  assert.equal(sayac().alici, 1, 'onaydan sonra alıcı olur');
+});
+
+test('havuz: birleştirme değişiklik günlüğüne yazılır ve kimliğiyle geri alınır', () => {
+  const a = pool.ingest({ src: 'wawi', ref: 'L-1', title: 'Günlük A', vendor: 'Acme' });
+  const b = pool.ingest({ src: 'gls', ref: 'L-2', title: 'Günlük B', vendor: 'Beta' });
+  const before = pool.poolCounts();
+  const r = pool.merge(a.id, b.id);
+  assert.ok(r.changeId, 'birleştirme bir değişiklik kimliği döndürür');
+  const ch = store.allChanges().find(x => x.id === r.changeId);
+  assert.equal(ch?.undo?.kind, 'pool-merge', 'geri alma verisi günlükte duruyor');
+  assert.equal(ch.undone, false);
+  pool.unmergeById(r.changeId); // istemci undo nesnesini saklamadan geri alır
+  assert.deepEqual(pool.poolCounts(), before);
+  assert.equal(store.allChanges().find(x => x.id === r.changeId).undone, true);
+  assert.throws(() => pool.unmergeById(r.changeId), { code: 'conflict' });
+  assert.throws(() => pool.unmergeById('yok-boyle'), { code: 'notfound' });
 });

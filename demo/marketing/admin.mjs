@@ -26,7 +26,12 @@ export function makeAdmin(c) {
       return ok({
         active: settings.marketing.active || null,
         rules: settings.marketing.rules.map(r => ({ ...r, catLabels: r.cats.map(catLabel) })),
-        consent: { optins: Object.keys(db.optins).length, carts: Object.keys(db.carts).length },
+        consent: {
+          optins: Object.keys(db.optins).length,
+          confirmed: Object.values(db.optins).filter(o => o?.confirmed).length,
+          carts: Object.keys(db.carts).length,
+          log: (db.consent || []).length,
+        },
         cats: CATS.map(c => ({
           k: c.k,
           label: c.label,

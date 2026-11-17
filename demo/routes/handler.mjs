@@ -8,13 +8,21 @@ import { adminMeRoutes } from './admin-me.mjs';
 import { adminSystemRoutes } from './admin-system.mjs';
 import { adminDataRoutes } from './admin-data.mjs';
 import { adminHealthRoutes } from './admin-health.mjs';
+import { adminPoolRoutes } from './admin-pool.mjs';
 import { adminStoreRoutes } from './admin-store.mjs';
 import { adminAssistantRoutes } from './admin-assistant.mjs';
 
 // Uç işleyicileri: her biri bağlamı (c) alır, eşleşirse yanıtı yazar. Yanıt yazıldıysa (headersSent) zincir durur.
 // Sıra önemlidir: herkese açık uçlar → oturum → yetki kapıları → okuma uçları → yazma uçları (yalnız POST) → asistan.
 const PUBLIC = [publicRoutes, adminAuthRoutes, adminMeRoutes];
-const ADMIN = [adminSystemRoutes, adminDataRoutes, adminHealthRoutes, adminStoreRoutes, adminAssistantRoutes];
+const ADMIN = [
+  adminSystemRoutes,
+  adminDataRoutes,
+  adminHealthRoutes,
+  adminPoolRoutes,
+  adminStoreRoutes,
+  adminAssistantRoutes,
+];
 
 async function run(handlers, c) {
   for (const h of handlers) {
