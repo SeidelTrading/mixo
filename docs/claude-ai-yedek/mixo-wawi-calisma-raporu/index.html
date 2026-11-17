@@ -1,0 +1,275 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mixo & Wawi Çalışma Raporu</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Düzen: tek sütun, teknik rapor. Üstte durum şeridi, altında bölümler; sayılar tablo hizalı. */
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --fg: #16191f;
+    --muted: #5d6673;
+    --line: #dfe3e9;
+    --accent: #2f4b8f;
+    --accent-soft: #e8edf8;
+    --ok: #1f6b45;
+    --ok-soft: #e3f1ea;
+    --warn: #8a5a12;
+    --warn-soft: #f7edda;
+    --crit: #98302c;
+    --crit-soft: #fae9e8;
+    --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #0f1216;
+      --surface: #171b21;
+      --fg: #e6e9ee;
+      --muted: #99a2b0;
+      --line: #2a303a;
+      --accent: #8aa6e6;
+      --accent-soft: #1c2435;
+      --ok: #6cc094;
+      --ok-soft: #152a21;
+      --warn: #d9a85a;
+      --warn-soft: #2b2415;
+      --crit: #e08e8a;
+      --crit-soft: #2e1b1a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #0f1216;
+    --surface: #171b21;
+    --fg: #e6e9ee;
+    --muted: #99a2b0;
+    --line: #2a303a;
+    --accent: #8aa6e6;
+    --accent-soft: #1c2435;
+    --ok: #6cc094;
+    --ok-soft: #152a21;
+    --warn: #d9a85a;
+    --warn-soft: #2b2415;
+    --crit: #e08e8a;
+    --crit-soft: #2e1b1a;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 40px 72px;
+  }
+  .wrap { max-width: 56rem; margin: 0 auto; display: flex; flex-direction: column; gap: 44px; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+  h1 { font-size: clamp(1.9rem, 5vw, 2.6rem); line-height: 1.15; margin: 0 0 12px; text-wrap: balance; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.25rem, 2.6vw, 1.5rem); margin: 0 0 4px; text-wrap: balance; letter-spacing: -0.01em; }
+  h3 { font-size: 1rem; margin: 0 0 6px; }
+  p { margin: 0 0 12px; max-width: 65ch; }
+  p:last-child { margin-bottom: 0; }
+  .lede { color: var(--muted); font-size: 1.08rem; max-width: 62ch; }
+  .note { color: var(--muted); font-size: 0.92rem; }
+  code, .mono { font-family: var(--mono); font-size: 0.9em; }
+  code { background: var(--accent-soft); color: var(--accent); padding: 1px 5px; border-radius: 4px; }
+
+  section { display: flex; flex-direction: column; gap: 16px; }
+  .sechead { border-top: 2px solid var(--fg); padding-top: 12px; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+  .stat b { display: block; font-size: 1.7rem; font-family: var(--mono); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .stat span { display: block; color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+
+  .tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th { font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .chip { display: inline-block; font-size: 0.74rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+  .c-ok { background: var(--ok-soft); color: var(--ok); }
+  .c-warn { background: var(--warn-soft); color: var(--warn); }
+  .c-crit { background: var(--crit-soft); color: var(--crit); }
+  .c-acc { background: var(--accent-soft); color: var(--accent); }
+
+  ol.commits { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.commits li { display: grid; grid-template-columns: 6.5rem 1fr; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+  ol.commits li:last-child { border-bottom: 0; }
+  ol.commits .sha { font-family: var(--mono); font-size: 0.85rem; color: var(--accent); }
+  ol.commits .what { min-width: 0; }
+  ol.commits .what em { display: block; font-style: normal; color: var(--muted); font-size: 0.88rem; margin-top: 2px; }
+  @media (max-width: 460px) { ol.commits li { grid-template-columns: 1fr; gap: 2px; } }
+
+  ul.plain { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 8px; }
+  ul.plain li { max-width: 62ch; }
+
+  .callout { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; padding: 14px 16px; }
+  .callout.warn { border-left-color: var(--warn); }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Çalışma raporu · 17.11.2026</p>
+    <h1>Mixo &amp; Wawi: ses notundan çalışan sisteme</h1>
+    <p class="lede">16.11.2026 tarihli ses notlarındaki 35 madde 30 geliştirme kartına çevrildi, kodlandı, beş alanlı bir inceleme konseyiyle denetlendi ve bulgular kapatıldı. Bu sayfa ne yapıldığını, nelerin bulunduğunu ve nelerin açık kaldığını anlatır.</p>
+  </header>
+
+  <section>
+    <div class="stats">
+      <div class="stat"><b>30</b><span>geliştirme kartı</span></div>
+      <div class="stat"><b>29</b><span>kodlanan kart</span></div>
+      <div class="stat"><b>92</b><span>konsey bulgusu</span></div>
+      <div class="stat"><b>12</b><span>commit (2 depo)</span></div>
+      <div class="stat"><b>364</b><span>geçen test</span></div>
+    </div>
+    <p class="note">Testler: 181 birim, 167 uçtan uca, 16 tarayıcı. Başlangıçta 17 birim ve 125 uçtan uca test vardı.</p>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>Ne yapıldı</h2></div>
+    <p>Kartlar <code>Mixo/demo</code> içinde on bir yeni iş modülü olarak kodlandı: ürün havuzu ve çoklu EAN, kiracı ve API anahtarı kasası, pazar yeri feed denetimi ve toplu yükleme, satış yasağı kuralları ve fiyat stratejisi, bölge bazlı kargo seçimi, iade ve storno faturası, müşteri hizmetleri, canlı pano, reklam, pazar analizi, B2B eşleştirme ve personel ölçümü.</p>
+    <p>Ardından her modülün durumu belgeden satır tablosuna taşındı, sipariş kaydı kiracı/mağaza/pazar yeri alanlarını almaya başladı ve yasal ya da parasal etkili yazmalar denetim izine bağlandı.</p>
+
+    <ol class="commits">
+      <li><span class="sha">b01a27f</span><span class="what">Şifreli dış yedek, tamamlanan iş yükünün silinmesi<em>önceden ağaçta duran çalışma</em></span></li>
+      <li><span class="sha">78e3907</span><span class="what">Ürün havuzu, çoklu EAN, çift onaylı rıza kaydı<em>K-01, K-02, K-30</em></span></li>
+      <li><span class="sha">23ee530</span><span class="what">Kalan kartlar: kiracı, feed, kural, lojistik, iade, destek, pano, reklam, analiz, B2B<em>10 modül, paralel geliştirildi</em></span></li>
+      <li><span class="sha">0617647</span><span class="what">Konsey bulguları: kiracı yalıtımı, rol kapısı, sessiz izin, çerez onayı<em>kritik ve yüksek bulguların tamamı</em></span></li>
+      <li><span class="sha">e049e11</span><span class="what">Sipariş kaydına kiracı/mağaza/pazar yeri; sipariş akışı iş modüllerine bağlandı<em>hedef sayaçları ve kargo seçimi artık satışla çalışıyor</em></span></li>
+      <li><span class="sha">cc94a80</span><span class="what">Büyüyen iş kayıtları satır tablosuna taşındı<em>şema sürümü 3</em></span></li>
+      <li><span class="sha">324c894</span><span class="what">Denetim izi: yasal ve parasal yazmalar değişiklik günlüğüne<em>iki gerçek hata düzeltildi</em></span></li>
+      <li><span class="sha">4c8ad1d</span><span class="what">Wawi: kart bölünmesi kararı ve 23 kartın kural şartnamesi<em>WaviERP deposu, 618 satır belge</em></span></li>
+    </ol>
+    <p class="note">Listede dört belge commit'i (<span class="mono">b640b4c</span>, <span class="mono">39308b9</span>, <span class="mono">74876fe</span>, <span class="mono">b055966</span>) gösterilmedi; hepsi konsey raporunun güncellenmesidir.</p>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>İnceleme konseyi</h2></div>
+    <p>Kartlar kodlandıktan sonra beş bağımsız üye sistemi baştan denetledi. Hiçbiri kod değiştirmedi; bulguların çoğu ya canlı sunucuya gerçek istek atılarak ya da modüller süreç içine alınıp çalıştırılarak kanıtlandı.</p>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Üye</th><th>Bulgu</th><th>Kritik</th><th>Yüksek</th></tr></thead>
+        <tbody>
+          <tr><td>Güvenlik</td><td class="num">14</td><td class="num">2</td><td class="num">3</td></tr>
+          <tr><td>İş kuralları doğruluğu</td><td class="num">16</td><td class="num">3</td><td class="num">5</td></tr>
+          <tr><td>Hukuki uyum</td><td class="num">14</td><td class="num">—</td><td class="num">3</td></tr>
+          <tr><td>Uçtan uca işlevsellik</td><td class="num">28</td><td class="num">—</td><td class="num">—</td></tr>
+          <tr><td>Mimari ve bakım</td><td class="num">20</td><td class="num">—</td><td class="num">4</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <h3>Konseyin asıl bulduğu şey</h3>
+      <p>Tek tek hatalar değil, hepsinin aynı kökten gelmesiydi: <strong>modüller paralel ve birbirinden habersiz yazılmıştı.</strong> Üç belirtisi vardı — yazılmış ama çağrı yerine bağlanmamış kapılar, üç ayrı yerde “izin ver” tarafında duran varsayılan, ve modüllerin beklediği alanları taşımayan sipariş kaydı.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>Bulunan gerçek hatalar</h2></div>
+    <p>Hepsi düzeltildi ve testle kapatıldı. “Sonuç” sütunu, hata düzeltilmeseydi ne olacağını söyler.</p>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Önem</th><th>Hata</th><th>Sonuç</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip c-crit">Kritik</span></td><td>Kiracı yalıtımı yazılmış ama hiçbir uçtan çağrılmıyordu</td><td>Bir kiracının editörü diğer kiracının verisini ve anahtar özetlerini görüyordu</td></tr>
+          <tr><td><span class="chip c-crit">Kritik</span></td><td>Rol kapısı yeni uçlara uyarlanmamıştı</td><td>Editör rolü API anahtarı koyup iptal edebiliyor, marka yetkisi verebiliyordu</td></tr>
+          <tr><td><span class="chip c-crit">Kritik</span></td><td>Havuz, aynı başlıklı farklı MPN'li iki ürünü birleştiriyordu</td><td>İkinci ürünün MPN, fiyat ve görseli kayboluyor, hiçbir pazar yerinde yayınlanmıyordu</td></tr>
+          <tr><td><span class="chip c-crit">Kritik</span></td><td>Toplu yükleme ve XML üretimi kural motorunu atlıyordu</td><td>Mevzuat kaynaklı satış yasakları sessizce devre dışı kalıyordu</td></tr>
+          <tr><td><span class="chip c-crit">Kritik</span></td><td>Tek bozuk tutar tüm ciro toplamını zehirliyordu</td><td>Ciro <code>null</code> dönüyor, <code>'12,50'</code> sessizce 0 € sayılıyordu</td></tr>
+          <tr><td><span class="chip c-warn">Yüksek</span></td><td>Dört göz kuralı yoktu</td><td>500 €'luk iadeyi talep eden kişi kendi onaylayıp ödetebiliyordu</td></tr>
+          <tr><td><span class="chip c-warn">Yüksek</span></td><td>Rıza kaydındaki <code>confirmed</code> alanı hiçbir yerde okunmuyordu</td><td>E-postası doğrulanmamış adresler hatırlatma alıcısı oluyordu</td></tr>
+          <tr><td><span class="chip c-warn">Yüksek</span></td><td>Çerez onayı vitrinde tutuluyor, sunucuya hiç yazılmıyordu</td><td>Davranış modeli hiçbir olayı onaylı sayamıyordu; onaysız istekte izleme çerezi veriliyordu</td></tr>
+          <tr><td><span class="chip c-warn">Yüksek</span></td><td>Altı modülde eşzamanlı yazmada kayıp güncelleme</td><td>İki süreç yazarken 600 kayıt yerine 400 kalıyordu (ölçüldü)</td></tr>
+          <tr><td><span class="chip c-warn">Yüksek</span></td><td>Onaylayan kullanıcı yanlış alandan okunuyordu (<code>me.username</code>)</td><td>Eşik üstü iade hiç onaylanamıyordu</td></tr>
+          <tr><td><span class="chip c-warn">Yüksek</span></td><td><code>__proto__</code> anahtarıyla prototip kirlenmesi</td><td>Süreç boyunca kalıcı bozulma; “var mı” denetimleri sahte pozitif veriyordu</td></tr>
+          <tr><td><span class="chip c-warn">Yüksek</span></td><td>Kural motoru “yüklenemezse devam et” ile yükleniyordu</td><td>Motor yoksa sistem sessizce izin veriyordu</td></tr>
+          <tr><td><span class="chip c-acc">Orta</span></td><td>Sepet döngüsündeki <code>c</code> modül bağlamını gölgeliyordu</td><td>İzin denetimi çalışma anında çöküyordu</td></tr>
+          <tr><td><span class="chip c-acc">Orta</span></td><td>Havuz birleştirmesi kullanıcısız günlüğe düşüyordu</td><td>“Kim yaptı” sorusu cevapsızdı; panel geri alma düğmesi kaydı tanımıyordu</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>Ölçülen kazanç</h2></div>
+    <p>Büyüyen iş kayıtları tek bir JSON belgesinde duruyordu ve her yazma tüm belgeyi yeniden yazıyordu. Tek süreçli bir uygulamada bu doğrudan olay döngüsü gecikmesi demek: yazma sürerken başka hiçbir isteğe bakılamıyor.</p>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Ölçüm</th><th>Önce</th><th>Sonra</th></tr></thead>
+        <tbody>
+          <tr><td>Personel kaydı, yazma başına (10.000 kayıt)</td><td class="num">10,7 ms</td><td class="num">0,22 ms</td></tr>
+          <tr><td><code>requestRefund</code> (5.000 iade)</td><td class="num">131 ms</td><td class="num">1,1 ms</td></tr>
+          <tr><td><code>storno</code></td><td class="num">130 ms</td><td class="num">0,5 ms</td></tr>
+          <tr><td><code>getRefund</code></td><td class="num">26 ms</td><td class="num">0,01 ms</td></tr>
+          <tr><td>Feed belgesi, tek yazma</td><td class="num">35,8 ms</td><td class="num">0,2 ms</td></tr>
+          <tr><td>Feed belge boyutu</td><td class="num">574 KB</td><td class="num">308 B</td></tr>
+          <tr><td>Personel belge boyutu</td><td class="num">813 KB</td><td class="num">39 B</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Eski kurulumların verisi kayıpsız yükseliyor: sürüm 2 veritabanı ve eski biçim belgelerle uçtan uca denendi.</p>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>Kartlar hangi sisteme ait</h2></div>
+    <p>Kartların bir kısmı Mixoutlet vitrinine, bir kısmı Wawi ERP'sine aitti. Bu ayrım baştan sorulmadı ve 30 kartın hepsi Mixo'ya kodlandı; ayrım sonradan yapıldı.</p>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Sistem</th><th>Kart</th><th>Ölçüt</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Wawi (ERP)</strong> <span class="chip c-acc">23</span></td><td>K-01–K-09, K-13–K-23, K-25, K-27, K-28</td><td>Çok kanallı toplam, tek gelen kutusu, tek fatura serisi</td></tr>
+          <tr><td><strong>Mixo (vitrin)</strong> <span class="chip c-acc">5</span></td><td>K-10, K-11, K-12, K-29, K-30</td><td>Ziyaretçi, çerez onayı ve reklam tıklaması vitrinde</td></tr>
+          <tr><td><strong>Ayrı proje</strong> <span class="chip c-acc">2</span></td><td>K-26 B2B platformu, K-24 görüntülü destek avatarı</td><td>Kendi başına ürün</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">
+      <h3>Wawi'ye kod taşınmadı, taşınmayacak</h3>
+      <p>WaviERP'nin onaylı kararları bağlayıcı: <code>0002</code> sistemin sıfırdan yazılacağını ve eski kodun taşınmayacağını, <code>0003</code> yığının TypeScript + PostgreSQL + React olduğunu söylüyor. Mixo'daki uygulama düz JavaScript ve SQLite; kopyalamak bu iki kararı da çiğnerdi.</p>
+      <p>Bunun yerine <code>0002</code>'nin kendi tarif ettiği yol izlendi: iş kuralları okunup yeniden yazılacak. Wawi'de 23 kartın kural şartnamesi, konsey raporundan çıkan tuzaklar ve SQLite→Postgres uyarlama notları belge olarak yazıldı.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>Açık kalanlar</h2></div>
+    <ul class="plain">
+      <li><strong>Kiracı yalıtımı tam değil.</strong> Sipariş kaydı artık <code>tenantId</code> taşıyor, ama havuz, iade, destek ve B2B kayıtları taşımıyor; o uçların okumaları şimdilik kiracıya bağlı kullanıcıya kapalı tutuluyor.</li>
+      <li><strong>Ortaklaştırma.</strong> Hata sınıfı 13 serviste, uç kabuğu 11 dosyada tekrar ediyor; yaklaşık 580 satır azalma mümkün.</li>
+      <li><strong>Analiz sorguları.</strong> Yazma tarafı düzeldi ama <code>arbitrage</code>, <code>categoryTrends</code> ve <code>summary</code> hâlâ her çağrıda tüm tabloyu belleğe alıyor.</li>
+      <li><strong>K-24 kodlanmadı.</strong> Çok dilli görüntülü destek avatarı; canlı görüntü, konuşma tanıma ve sentezi gerektiren ayrı bir ürün.</li>
+      <li><strong>Wawi'de kod yazımı başlamadı.</strong> Bu tur yalnız karar kaydı ve şartname.</li>
+      <li><strong>Dış servisler simülasyon.</strong> Meta, Google Ads, Mollie/PayPal, pazar yeri ve kargo API'leri; kiracı anahtar kasası hazır, eksik olan sağlayıcı istemcileri.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>Kayda değer iki not</h2></div>
+    <p><strong>Kartlar baştan bölünmeliydi.</strong> Sunumun adı “Wawi &amp; Mixoutlet”ti; hangi kartın hangi sisteme ait olduğu sorulmadan hepsi tek depoya kodlandı. Kod çöpe gitmiyor — çalışan ve testli bir referans uygulama, üstelik Wawi şartnamesinin kaynağı — ama doğru sıra önce ayrımı sormaktı.</p>
+    <p><strong>Aynı depoda eşzamanlı oturumlar var.</strong> Çalışma sırasında Mixo deposuna “DOCK Fiyat Karşılaştırma” oturumu bir kanal-feed özelliği yazıyordu; WaviERP'ye de başka bir oturum bir takip aracı ekledi. Alınan bir <code>tsc</code> hatası bu oturumun kodundan değil, yabancı bir yarım dosyadandı. Bu yüzden commit'ler toplu değil, dosya dosya yapıldı; başka oturumların bitmemiş işi commit edilmedi.</p>
+  </section>
+
+  <footer>
+    Depolar: <span class="mono">~/Desktop/Urunler/Mixo</span> (11 commit, <span class="mono">main</span>) ve <span class="mono">~/Desktop/Urunler/WaviERP</span> (1 commit, <span class="mono">main</span>). İkisi de push edilmedi. Ayrıntılı bulgular: <span class="mono">Mixo/docs/konsey-raporu-2026-11-17.md</span> ve <span class="mono">docs/konsey-2026-11-17/</span>.
+  </footer>
+
+</div>
+
+</body></html>
