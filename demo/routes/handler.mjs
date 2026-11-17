@@ -9,6 +9,16 @@ import { adminSystemRoutes } from './admin-system.mjs';
 import { adminDataRoutes } from './admin-data.mjs';
 import { adminHealthRoutes } from './admin-health.mjs';
 import { adminPoolRoutes } from './admin-pool.mjs';
+import { adminTenantRoutes } from './admin-tenants.mjs';
+import { adminFeedRoutes } from './admin-feed.mjs';
+import { adminRulesRoutes } from './admin-rules.mjs';
+import { adminShippingRoutes } from './admin-shipping.mjs';
+import { adminRefundRoutes } from './admin-refunds.mjs';
+import { adminSupportRoutes } from './admin-support.mjs';
+import { adminDashboardRoutes } from './admin-dashboard.mjs';
+import { adminAdsRoutes } from './admin-ads.mjs';
+import { adminInsightsRoutes } from './admin-insights.mjs';
+import { adminB2bRoutes } from './admin-b2b.mjs';
 import { adminStoreRoutes } from './admin-store.mjs';
 import { adminAssistantRoutes } from './admin-assistant.mjs';
 
@@ -20,6 +30,16 @@ const ADMIN = [
   adminDataRoutes,
   adminHealthRoutes,
   adminPoolRoutes,
+  adminTenantRoutes,
+  adminFeedRoutes,
+  adminRulesRoutes,
+  adminShippingRoutes,
+  adminRefundRoutes,
+  adminSupportRoutes,
+  adminDashboardRoutes,
+  adminAdsRoutes,
+  adminInsightsRoutes,
+  adminB2bRoutes,
   adminStoreRoutes,
   adminAssistantRoutes,
 ];

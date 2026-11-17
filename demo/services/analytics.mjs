@@ -63,6 +63,9 @@ export function ingest(body, req, vid) {
   for (const x of body.events.slice(0, 60)) {
     if (!x || !EVENT_TYPES.has(x.e)) continue;
     const ev = { t: Date.now(), vid, s: Number(x.s) || 1, e: x.e, d: dev };
+    // Çerez onayı damgası: vitrin yalnız onay varken gönderir (app/tracking.js). İşaret taşımayan olay
+    // davranış modeline alınmaz (services/insights.mjs). Varsayılan "onay yok" tarafındadır.
+    if (body.consent === true) ev.consent = true;
     if (typeof x.id === 'string' && P.has(x.id)) ev.id = x.id;
     if (typeof x.c === 'string' && CATS.some(c => c.k === x.c)) ev.c = x.c;
     if (Number.isInteger(x.si) && x.si >= 0) ev.si = x.si;

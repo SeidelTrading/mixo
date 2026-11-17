@@ -729,6 +729,53 @@ try {
   );
   ok(hl.j.memory.rssMb > 0 && hl.j.dbMb >= 0, 'bellek ve veritabanı boyutu raporlanır');
   ok((await call(null, '/api/admin/health')).s === 401, 'oturumsuz sağlık ucu 401');
+
+  console.log(
+    '20) Yeni iş modülü uçları (havuz, kiracı, feed, kural, lojistik, iade, destek, pano, reklam, analiz, B2B)',
+  );
+  for (const u of [
+    'pool',
+    'tenants',
+    'feed?market=idealo',
+    'rules',
+    'shipping',
+    'refunds',
+    'support',
+    'dashboard',
+    'ads',
+    'insights',
+    'b2b',
+  ]) {
+    const r = await call(AH.j, '/api/admin/' + u);
+    ok(r.s === 200, u + ' ucu oturumla 200', r.t.slice(0, 120));
+    ok((await call(null, '/api/admin/' + u)).s === 401, u + ' ucu oturumsuz 401');
+  }
+  // Havuz: iki kaynaktan gelen aynı ürün tek kayda bağlanır (K-01), EAN ile eşleşir (K-02).
+  const ing = async (src, ref, title, eans) =>
+    await call(AH.j, '/api/admin/pool/ingest', { src, ref, title, vendor: 'E2E', eans });
+  const hp1 = await ing('wawi', 'E-1', 'E2E Toner', ['4111111111111']);
+  const hp2 = await ing('amazon', 'E-2', 'Baska Baslik', ['4111111111111']);
+  ok(hp1.j?.id && hp1.j.id === hp2.j?.id, 'aynı EAN iki kaynaktan tek havuz kaydına bağlanır');
+  const e2po = await call(AH.j, '/api/admin/pool/' + hp1.j.id);
+  ok(e2po.s === 200 && e2po.j.sources.length === 2, 'havuz kaydı iki kaynağı taşır');
+  // Kural motoru: yasak kuralı eklenince toplu yükleme o markayı hariç tutar (K-05).
+  const e2rl = await call(AH.j, '/api/admin/rules/add', {
+    vendor: 'E2E',
+    market: 'idealo',
+    reason: 'E2E denemesi: bu marka Idealo’da satılmaz',
+  });
+  ok(e2rl.s === 200 || e2rl.s === 201, 'satış yasağı kuralı eklendi', e2rl.t.slice(0, 120));
+  const e2ev = await call(AH.j, '/api/admin/rules/preview', { market: 'idealo', vendors: ['E2E'] });
+  ok(
+    e2ev.s === 200 && JSON.stringify(e2ev.j).includes('false'),
+    'kural önizlemesi markayı yasaklı gösterir',
+    e2ev.t.slice(0, 160),
+  );
+  // Rıza kaydı: onaysız adres hiçbir gönderim listesine girmez (K-30).
+  const e2au = await call(AH.j, '/api/admin/ads/audience?kind=cart');
+  ok(e2au.s === 200, 'retargeting listesi döndü', e2au.t.slice(0, 120));
+  // Yönetici uçlarında yöntem kısıtı yeni modüllerde de geçerli.
+  ok((await call(AH.j, '/api/admin/pool', {}, { method: 'PUT' })).s === 405, 'yeni uçlarda PUT 405');
 } catch (e) {
   failN++;
   console.error('DENEME ÇÖKTÜ:', e, '\n--- sunucu günlüğü ---\n' + logs.slice(-1500));

@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node server.mjs",
     "test": "npm run test:unit && npm run test:e2e",
-    "test:unit": "node --no-warnings --test test/unit.mjs",
+    "test:unit": "node --no-warnings --test test/unit.mjs test/unit-*.mjs",
     "test:e2e": "node test/e2e.mjs \"$PWD\"",
     "test:coverage": "c8 --reporter=text-summary --reporter=lcov --include=\"*.mjs\" --include=\"lib/**\" --include=\"services/**\" --include=\"routes/**\" --include=\"jobs/**\" --include=\"db/**\" --include=\"instagram/**\" --include=\"marketing/**\" --exclude=\"test/**\" --exclude=\"node_modules/**\" npm test",
     "lint": "eslint .",

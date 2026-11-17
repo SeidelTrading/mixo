@@ -1,0 +1,232 @@
+import { store } from '../lib/store.mjs';
+import { eanFor, getPool, isEan, listPools } from './pool.mjs';
+
+// Feed kalite denetimi (K-03) ve toplu yükleme (K-04). HTTP bilmez; gerçek ağ çağrısı yapmaz (yükleme simülasyondur).
+export class FeedError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.code = code;
+  }
+}
+const fail = (code, msg) => {
+  throw new FeedError(code, msg);
+};
+
+const BASE = ['title', 'description', 'image', 'price', 'ean'];
+// Pazar yeri → zorunlu alanlar. Idealo ve Günstiger ayrıca yasal bilgi ister.
+export const MARKETS = Object.freeze({
+  idealo: Object.freeze([...BASE, 'legal']),
+  billiga: Object.freeze([...BASE]),
+  guenstiger: Object.freeze([...BASE, 'legal']),
+  pricerunner: Object.freeze([...BASE]),
+});
+export const LEGAL_FIELDS = Object.freeze(['representative', 'address', 'taxId']);
+const MAX_SCAN = 5000;
+// Kural motoru başka bir modülde yazılıyor; değişken yol, dosya yokken tip denetimini bozmaz.
+const RULES_PATH = './rules.mjs';
+
+const cleanMarket = m => {
+  const k = typeof m === 'string' ? m.trim().toLowerCase() : '';
+  if (!Object.hasOwn(MARKETS, k)) fail('invalid', `Geçersiz pazar yeri (${Object.keys(MARKETS).join(', ')})`);
+  return k;
+};
+const txt = v => (typeof v === 'string' ? v.trim() : typeof v === 'number' ? String(v) : '');
+
+// Alan önce havuz kaydının data'sından, yoksa kaynak kayıtlarından okunur.
+function field(pool, name) {
+  const own = pool?.data?.[name];
+  if (own !== undefined && own !== null && own !== '') return own;
+  for (const s of pool?.sources ?? []) {
+    const v = s?.data?.[name];
+    if (v !== undefined && v !== null && v !== '') return v;
+  }
+  return undefined;
+}
+const legalOf = pool => {
+  const l = field(pool, 'legal');
+  return l && typeof l === 'object' && !Array.isArray(l) ? l : {};
+};
+const priceOf = pool => {
+  const n = Number(field(pool, 'price'));
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
+
+// Havuz ürününü pazar yeri kurallarına göre denetler.
+export function checkProduct(pool, market) {
+  const mk = cleanMarket(market);
+  const missing = [],
+    warnings = [];
+  const p = pool && typeof pool === 'object' ? pool : {};
+  for (const f of MARKETS[mk]) {
+    if (f === 'title') {
+      if (!txt(p.title)) missing.push(f);
+    } else if (f === 'description') {
+      const d = txt(field(p, 'description'));
+      if (!d) missing.push(f);
+      else if (d.length < 20) warnings.push('Açıklama çok kısa');
+    } else if (f === 'image') {
+      const i = txt(field(p, 'image'));
+      if (!i) missing.push(f);
+      else if (!/^https?:\/\//i.test(i)) warnings.push('Görsel adresi http(s) değil');
+    } else if (f === 'price') {
+      if (priceOf(p) === null) missing.push(f);
+    } else if (f === 'ean') {
+      const ean = p.id ? eanFor(p.id, mk) : fromList(p, mk);
+      if (!ean) missing.push(f);
+      else if (!isEan(ean)) warnings.push(`EAN biçimi geçersiz: ${ean}`);
+    } else if (f === 'legal') {
+      const l = legalOf(p);
+      if (!LEGAL_FIELDS.some(k => txt(l[k]))) missing.push(f);
+    }
+  }
+  // Havuzda bulunan ama bu pazar yeri için biçimi bozuk EAN'lar (ör. elle yazılmış kayıt)
+  for (const e of p.eans ?? [])
+    if (e && (e.market === mk || e.market === '*') && !isEan(String(e.ean)))
+      warnings.push(`EAN biçimi geçersiz: ${String(e.ean).slice(0, 20)}`);
+  return { ok: missing.length === 0 && warnings.every(w => !w.startsWith('EAN biçimi')), missing, warnings };
+}
+// Havuz kimliği yoksa (elle verilmiş nesne) EAN listesinden bulur.
+function fromList(p, mk) {
+  const rows = p.eans ?? [];
+  return rows.find(r => r.market === mk)?.ean ?? rows.find(r => r.market === '*')?.ean ?? null;
+}
+
+const clampLimit = n => Math.min(MAX_SCAN, Math.max(1, Math.floor(Number(n)) || MAX_SCAN));
+// Havuzu sayfa sayfa tarar; her ürün getPool ile tam şekline getirilir.
+function* scan(limit) {
+  let off = 0,
+    n = 0;
+  for (;;) {
+    const { items } = listPools({ limit: 200, offset: off });
+    if (!items.length) return;
+    for (const it of items) {
+      if (n++ >= limit) return;
+      const full = getPool(it.id);
+      if (full) yield full;
+    }
+    off += items.length;
+  }
+}
+
+function readDoc() {
+  const d = store.doc('feed', {});
+  return d && typeof d === 'object' ? d : {};
+}
+
+export function auditFeed(market, opts) {
+  const mk = cleanMarket(market);
+  let checked = 0,
+    okCount = 0;
+  const problems = [];
+  for (const p of scan(clampLimit(opts?.limit))) {
+    checked++;
+    const r = checkProduct(p, mk);
+    if (r.ok && !r.warnings.length) okCount++;
+    else if (r.ok)
+      (okCount++, problems.push({ poolId: p.id, title: p.title, missing: [], warnings: r.warnings }));
+    else problems.push({ poolId: p.id, title: p.title, missing: r.missing, warnings: r.warnings });
+  }
+  const report = { market: mk, checked, okCount, problems, t: Date.now() };
+  const d = readDoc();
+  store.saveDoc('feed', { ...d, audits: { ...(d.audits ?? {}), [mk]: report } });
+  return report;
+}
+
+export function lastAudit(market) {
+  const mk = cleanMarket(market);
+  return readDoc().audits?.[mk] ?? null;
+}
+
+// XML kaçışı: & < > " ' ve XML 1.0'da geçersiz denetim karakterleri atılır.
+export function escXml(v) {
+  return (
+    String(v ?? '')
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;')
+  );
+}
+
+export function buildFeed(market, opts) {
+  const mk = cleanMarket(market);
+  const items = [];
+  for (const p of scan(clampLimit(opts?.limit))) {
+    if (!checkProduct(p, mk).ok) continue;
+    const l = legalOf(p);
+    const tags = [
+      ['id', p.id],
+      ['title', p.title],
+      ['brand', p.vendor],
+      ['mpn', p.mpn],
+      ['description', txt(field(p, 'description'))],
+      ['image_link', txt(field(p, 'image'))],
+      ['price', priceOf(p)],
+      ['ean', eanFor(p.id, mk)],
+    ];
+    if (MARKETS[mk].includes('legal'))
+      for (const k of LEGAL_FIELDS) if (txt(l[k])) tags.push(['legal_' + k, txt(l[k])]);
+    const body = tags
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([k, v]) => `    <${k}>${escXml(v)}</${k}>`)
+      .join('\n');
+    items.push(`  <item>\n${body}\n  </item>`);
+  }
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<feed market="${mk}">\n${items.join('\n')}${items.length ? '\n' : ''}</feed>\n`;
+}
+
+const list = v => (Array.isArray(v) ? v : fail('invalid', 'Dizi bekleniyor'));
+const idList = (v, name) => {
+  const a = list(v)
+    .map(x => (typeof x === 'string' ? x.trim() : ''))
+    .filter(Boolean);
+  if (!a.length) fail('invalid', `${name} boş olamaz`);
+  if (a.length > 100) fail('invalid', `${name} en fazla 100 öğe`);
+  return a;
+};
+
+// K-04: markaya göre toplu yükleme (simülasyon). Eksik alan / kural motoru yasağı olan ürün yüklenmez.
+export async function bulkUpload(input) {
+  const { brands, shops, market } = input ?? {};
+  const mk = cleanMarket(market);
+  const bs = idList(brands, 'brands'),
+    ss = idList(shops, 'shops');
+  const want = new Set(bs.map(b => b.toLowerCase()));
+  const rules = await import(RULES_PATH).catch(() => null);
+  const uploaded = [],
+    blocked = [];
+  for (const p of scan(MAX_SCAN)) {
+    if (
+      !want.has(
+        String(p.vendor ?? '')
+          .trim()
+          .toLowerCase(),
+      )
+    )
+      continue;
+    const r = checkProduct(p, mk);
+    const l = legalOf(p);
+    const noLegal = LEGAL_FIELDS.filter(k => !txt(l[k]));
+    if (!r.ok) {
+      blocked.push({ poolId: p.id, reason: `Eksik alan: ${r.missing.join(', ') || r.warnings.join('; ')}` });
+      continue;
+    }
+    if (noLegal.length) {
+      blocked.push({ poolId: p.id, reason: `Eksik yasal alan: ${noLegal.join(', ')}` });
+      continue;
+    }
+    for (const shopId of ss) {
+      const verdict = rules?.evaluate?.({ vendor: p.vendor, market: mk, poolId: p.id, shopId });
+      if (verdict && verdict.allowed === false)
+        blocked.push({ poolId: p.id, shopId, reason: verdict.reason || 'Satış yasağı kuralı' });
+      else uploaded.push({ poolId: p.id, shopId, title: p.title });
+    }
+  }
+  const out = { uploaded, blocked, t: Date.now() };
+  const d = readDoc();
+  store.saveDoc('feed', { ...d, bulk: { ...out, market: mk, brands: bs, shops: ss } });
+  return out;
+}

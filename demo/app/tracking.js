@@ -13,7 +13,9 @@
       S.vid = crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
       store.set('mx-vid', S.vid);
     }
-    const body = JSON.stringify({ vid: S.vid, events: outbox.splice(0, 60) });
+    // consent:true — bu gönderim yalnız onay varken yapılır (üstteki kapı). Sunucu olayları bu işaretle damgalar;
+    // onay işareti taşımayan olay davranış modeline (services/insights.mjs) alınmaz.
+    const body = JSON.stringify({ vid: S.vid, consent: true, events: outbox.splice(0, 60) });
     try {
       if (!navigator.sendBeacon?.('/api/events', new Blob([body], { type: 'text/plain' })))
         fetch('/api/events', {
