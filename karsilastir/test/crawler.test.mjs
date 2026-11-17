@@ -162,3 +162,13 @@ test('özel/yerel adres varsayılan olarak reddedilir (SSRF)', async () => {
   assert.equal(r.reason, 'private-host');
   assert.equal(hits.length, 0);
 });
+
+test('JSON-LD: metne gömülü HTML varlıkları çözülür', async () => {
+  const { extractProducts } = await import('../crawler/jsonld.mjs');
+  const html = `<script type="application/ld+json">${JSON.stringify({
+    '@type': 'Product',
+    name: 'CASIO S&#x130;YAH &amp; Beyaz',
+    offers: { '@type': 'Offer', price: '10', priceCurrency: 'TRY' },
+  })}</script>`;
+  assert.equal(extractProducts(html)[0].name, 'CASIO SİYAH & Beyaz');
+});

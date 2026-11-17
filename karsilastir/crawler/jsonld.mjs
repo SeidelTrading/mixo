@@ -10,7 +10,15 @@ const OUT_RE = /outofstock|soldout|discontinued/i;
 
 const arr = v => (v === undefined || v === null ? [] : Array.isArray(v) ? v : [v]);
 const hasType = (n, t) => arr(n?.['@type']).some(x => String(x).replace(/^.*[/#]/, '') === t);
-const str = v => (typeof v === 'string' ? v.trim() : typeof v === 'number' ? String(v) : '');
+/** Bazı mağazalar JSON-LD metnine HTML varlıkları gömer ("S&#x130;YAH"): bunlar çözülür. */
+const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+const decodeEntities = s =>
+  s.replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi, (m, e) => {
+    if (e[0] !== '#') return ENT[e.toLowerCase()];
+    const cp = e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+    return cp > 0 && cp < 0x110000 ? String.fromCodePoint(cp) : m;
+  });
+const str = v => (typeof v === 'string' ? decodeEntities(v).trim() : typeof v === 'number' ? String(v) : '');
 
 function offersOf(node) {
   const out = [];
