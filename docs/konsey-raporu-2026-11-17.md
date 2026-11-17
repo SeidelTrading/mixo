@@ -106,7 +106,7 @@ biçimde bölündü, her paket kendi testini yazdı ve başkan hepsini birlikte 
 | 8 | Silme ve erişim hakkı | Kapandı | `/api/privacy/request`, `/export`, `/erase` imzalı bağlantıyla; silme kanıtı kalıyor, ham e-posta karmaya çevriliyor |
 | 9 | Prototip kirlenmesi | Kapandı | `lib/safe.mjs`: uçta `isSafeKey` kapısı, serviste `dict()` zemini |
 | 10 | İşlem bütünlüğü | Kapandı | Dokuz modülde yazmalar `store.tx` içinde. Kanıt: `tx` geçici kaldırılınca iki süreç 300 yerine 231 kayıt bırakıyor |
-| 11 | Sipariş kaydında kiracı/mağaza/pazar yeri | Açık | Bu turda kapatılmadı; sipariş sözleşmesi değişikliği gerektiriyor |
+| 11 | Sipariş kaydında kiracı/mağaza/pazar yeri | Kapandı (commit `e049e11`) | Sipariş `tenantId`/`shop`/`market` taşıyor (yalnız `settings.origin`'den, istekten değil); `services/order-flow.mjs` kancası hedef sayacını düşürüyor ve kargo firmasını seçiyor |
 
 Başkanın ayrıca kapattığı üç kalem: `scope` `lib/` altından `services/` altına taşındı (bağımlılık
 yönü ihlali), genel amaçlı `dict()` `services/rules.mjs`'ten `lib/safe.mjs`'e alındı, ve vitrindeki
@@ -120,4 +120,6 @@ tarayıcı 16 — hepsi geçiyor.
 Davranış artık doğru olarak saklamıyor; test gönderime `consent: true` ekleyecek biçimde güncellendi
 ve yanına "onaysız gönderim 200 döner ama saklanmaz" denetimi eklendi.
 
-**Açık kalanlar:** yukarıdaki 11. sıra ve "Sonraki tur için bırakılanlar" bölümünün tamamı.
+**Açık kalanlar:** "Sonraki tur için bırakılanlar" bölümünün tamamı. Düzeltme turunun on bir kaleminin
+hepsi kapandı; 1. sıra (kiracı yalıtımı) kayıtlara `tenantId` eklenene kadar kısmen kapalı sayılır —
+sipariş kaydı artık taşıyor, diğer modüllerin kayıtları henüz taşımıyor.
