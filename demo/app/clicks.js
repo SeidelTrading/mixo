@@ -4,7 +4,7 @@
   /* ───────── olaylar ───────── */
   document.addEventListener('click', e => {
     const t = e.target.closest(
-      '[data-add],[data-wish],[data-open],[data-cat],[data-fcat],[data-fsub],[data-more],[data-price],[data-pill],[data-reset],[data-clearf],[data-ballload],[data-fopen],[data-fclose],[data-sq],[data-scat],[data-sbrand],[data-q],[data-rm],[data-close],[data-checkout],[data-rail],[data-consent],[data-insights],[data-wipe],[data-logout],[data-fy]',
+      '[data-add],[data-wish],[data-open],[data-cat],[data-fcat],[data-fsub],[data-more],[data-price],[data-pill],[data-reset],[data-clearf],[data-ballload],[data-fopen],[data-fclose],[data-sq],[data-scat],[data-sbrand],[data-q],[data-rm],[data-close],[data-checkout],[data-rail],[data-consent],[data-insights],[data-wipe],[data-privacy],[data-logout],[data-fy]',
     );
     if (!t) {
       if (e.target.id === 'modal') closeAll();

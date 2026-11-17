@@ -1,5 +1,6 @@
 import { store } from '../lib/store.mjs';
 import { EMAIL_RE, lintText } from '../marketing/shared.mjs';
+import { dict } from '../lib/safe.mjs';
 
 // Reklam ve paylaşım ajanı (HTTP bilmez): K-10 Meta/Instagram paylaşımı, K-11 Google Ads kelime listesi, K-12 retargeting.
 // SİMÜLASYON: Meta ve Google Ads'e GERÇEK AĞ ÇAĞRISI YOKTUR. Paylaşım, kelime değişikliği ve e-posta metni yalnız
@@ -37,10 +38,13 @@ function load() {
     appDiscountPercent: o.appDiscountPercent ?? DEFAULT_APP_DISCOUNT,
     authorizedBrands: Array.isArray(o.authorizedBrands) ? o.authorizedBrands : [],
     posts: Array.isArray(o.posts) ? o.posts : [],
-    campaigns: o.campaigns && typeof o.campaigns === 'object' ? o.campaigns : {},
+    // kampanya adı kullanıcıdan gelir: prototipsiz harita (`__proto__` / `constructor` sıradan ad olur)
+    campaigns: dict(o.campaigns),
   };
 }
 const save = d => store.saveDoc('ads', d);
+// Oku-değiştir-yaz dizisi tek işlemde (kayıp güncelleme olmasın). store.tx iç içe açılamaz: fn içinde başka tx açılmaz.
+const run = fn => store.tx(fn);
 
 /* ───────── K-10: paylaşım sıklığı ve marka kapısı ───────── */
 
@@ -86,14 +90,16 @@ export function authorizeBrand(brand, { reference } = /** @type {any} */ ({})) {
   if (!key) fail('invalid', 'Marka gerekli');
   const ref = str(reference, 300);
   if (!ref) fail('invalid', 'Yetki kanıtı (reference) gerekli');
-  const d = load();
-  const prev = d.authorizedBrands.find(b => b.key === key);
-  if (prev) {
-    prev.reference = ref;
-    prev.name = name;
-  } else d.authorizedBrands.push({ key, name, reference: ref, t: Date.now() });
-  save(d);
-  return { brand: name, reference: ref, authorizedBrands: d.authorizedBrands.map(b => b.name) };
+  return run(() => {
+    const d = load();
+    const prev = d.authorizedBrands.find(b => b.key === key);
+    if (prev) {
+      prev.reference = ref;
+      prev.name = name;
+    } else d.authorizedBrands.push({ key, name, reference: ref, t: Date.now() });
+    save(d);
+    return { brand: name, reference: ref, authorizedBrands: d.authorizedBrands.map(b => b.name) };
+  });
 }
 
 // Paylaşımı kaydeder (simülasyon: Meta'ya gönderilmez). Sıra: girdi → marka kapısı → tavan.
@@ -107,15 +113,18 @@ export function recordPost({ channel, text, brand, now = Date.now() } = /** @typ
       'conflict',
       `"${str(brand, 80)}" için marka yetkisi kaydı yok; paylaşım platform kurallarını ihlal eder`,
     );
-  const gate = canPost({ channel: ch, now });
-  if (!gate.ok) fail('limit', gate.reason);
-  const d = load();
-  const post = { t: now, channel: ch, text: body, brand: str(brand, 80) };
-  d.posts.push(post);
-  if (d.posts.length > MAX_POSTS) d.posts.splice(0, d.posts.length - MAX_POSTS);
-  save(d);
-  // Uyarı verir, engellemez (Almanya UWG kalıpları).
-  return { ok: true, post, warnings: lintText(body), simulated: true };
+  // Tavan denetimi ile yazma aynı işlemde: iki eşzamanlı paylaşım tavanı birlikte aşamaz.
+  return run(() => {
+    const gate = canPost({ channel: ch, now });
+    if (!gate.ok) fail('limit', gate.reason);
+    const d = load();
+    const post = { t: now, channel: ch, text: body, brand: str(brand, 80) };
+    d.posts.push(post);
+    if (d.posts.length > MAX_POSTS) d.posts.splice(0, d.posts.length - MAX_POSTS);
+    save(d);
+    // Uyarı verir, engellemez (Almanya UWG kalıpları).
+    return { ok: true, post, warnings: lintText(body), simulated: true };
+  });
 }
 
 /* ───────── K-11: Google Ads anahtar / negatif kelime (simülasyon) ───────── */
@@ -141,26 +150,30 @@ export function keywords({ campaign } = /** @type {any} */ ({})) {
 export function addKeyword(campaign, word, { negative = false } = /** @type {any} */ ({})) {
   const name = cleanCampaign(campaign),
     w = cleanWord(word);
-  const d = load();
-  const k = (d.campaigns[name] ??= { positive: [], negative: [] });
-  const [mine, other] = negative ? [k.negative, k.positive] : [k.positive, k.negative];
-  // Aynı kelime iki listede birden olamaz: pozitif ile negatif birbirini boşa çıkarır.
-  if (other.includes(w)) fail('conflict', `"${w}" zaten ${negative ? 'pozitif' : 'negatif'} listede`);
-  const added = !mine.includes(w);
-  if (added) mine.push(w);
-  save(d);
-  return { campaign: name, word: w, negative: !!negative, added, simulated: true };
+  return run(() => {
+    const d = load();
+    const k = (d.campaigns[name] ??= { positive: [], negative: [] });
+    const [mine, other] = negative ? [k.negative, k.positive] : [k.positive, k.negative];
+    // Aynı kelime iki listede birden olamaz: pozitif ile negatif birbirini boşa çıkarır.
+    if (other.includes(w)) fail('conflict', `"${w}" zaten ${negative ? 'pozitif' : 'negatif'} listede`);
+    const added = !mine.includes(w);
+    if (added) mine.push(w);
+    save(d);
+    return { campaign: name, word: w, negative: !!negative, added, simulated: true };
+  });
 }
 
 export function removeKeyword(campaign, word, { negative = false } = /** @type {any} */ ({})) {
   const name = cleanCampaign(campaign),
     w = cleanWord(word);
-  const d = load();
-  const list = d.campaigns[name]?.[negative ? 'negative' : 'positive'];
-  if (!list || !list.includes(w)) fail('notfound', `"${w}" listede yok`);
-  list.splice(list.indexOf(w), 1);
-  save(d);
-  return { campaign: name, word: w, negative: !!negative, removed: true, simulated: true };
+  return run(() => {
+    const d = load();
+    const list = d.campaigns[name]?.[negative ? 'negative' : 'positive'];
+    if (!list || !list.includes(w)) fail('notfound', `"${w}" listede yok`);
+    list.splice(list.indexOf(w), 1);
+    save(d);
+    return { campaign: name, word: w, negative: !!negative, removed: true, simulated: true };
+  });
 }
 
 const L = '(?<![\\p{L}\\d])';
@@ -255,7 +268,9 @@ export async function appPromo({ email } = /** @type {any} */ ({})) {
   return {
     to,
     subject: 'Unsere App: Rabatt auf Ihren ersten Einkauf',
-    body: `Hallo,\n\nladen Sie unsere Mobile-App herunter: Beim ersten Einkauf in der App erhalten Sie ${pct} % Rabatt.\n\nSie erhalten diese E-Mail, weil Sie Ihre Adresse bestätigt haben. Sie können sich jederzeit abmelden.`,
+    // Pazarlama e-postasında abonelikten çıkma bağlantısı zorunludur (UWG/GDPR): yer tutucu değil,
+    // adresin kendisine bağlı imzalı ve çalışan bağlantı (bkz. marketing/consent.mjs unsubscribeUrl).
+    body: `Hallo,\n\nladen Sie unsere Mobile-App herunter: Beim ersten Einkauf in der App erhalten Sie ${pct} % Rabatt.\n\nSie erhalten diese E-Mail, weil Sie Ihre Adresse bestätigt haben.\nAbmelden: ${mk.unsubscribeUrl(to)}`,
     simulated: true,
   };
 }

@@ -1,5 +1,6 @@
 import { store } from '../lib/store.mjs';
 import { events } from './analytics.mjs';
+import { dict } from '../lib/safe.mjs';
 
 // Pazar ve davranış içgörüleri (HTTP bilmez, ağ çağrısı yok).
 // VERİ KAYNAĞI SINIRI: Bu modülde scraping, bot koruması aşma, dönen proxy, captcha çözme ya da rakip sitelere
@@ -30,8 +31,14 @@ export const RATES = {
   tzOffsetH: 3, // saat bazlı analizde Türkiye saati
 };
 
-const load = () => store.doc('insights', { market: {}, context: [] });
+// market: EAN → pazar → kayıt. EAN kullanıcıdan gelir (compare ile sorgulanır): prototipsiz harita.
+const load = () => {
+  const d = store.doc('insights', { market: {}, context: [] });
+  return { ...d, market: dict(d?.market), context: Array.isArray(d?.context) ? d.context : [] };
+};
 const save = d => store.saveDoc('insights', d);
+// Oku-değiştir-yaz dizisi tek işlemde (kayıp güncelleme olmasın). store.tx iç içe açılamaz: fn içinde başka tx açılmaz.
+const run = fn => store.tx(fn);
 const r2 = n => Math.round(n * 100) / 100;
 const eur = (price, cur) => price * (RATES.fx[cur] ?? fail('invalid', `Desteklenmeyen para birimi: ${cur}`));
 
@@ -60,10 +67,12 @@ export function importMarketData({ market, source, rows } = {}) {
     const cat = typeof x.cat === 'string' ? x.cat.trim().toLowerCase().slice(0, 40) : '';
     return { ean, title: String(x.title ?? '').slice(0, 200), price, currency, sales30d: s, cat };
   });
-  const d = load(),
-    t = Date.now();
-  for (const r of clean) (d.market[r.ean] ??= {})[mk] = { ...r, source, t };
-  save(d);
+  run(() => {
+    const d = load(),
+      t = Date.now();
+    for (const r of clean) (d.market[r.ean] ??= {})[mk] = { ...r, source, t };
+    save(d);
+  });
   return { ok: true, market: mk, source, imported: clean.length };
 }
 
@@ -80,9 +89,11 @@ export function importContext({ rows } = {}) {
     if (!Number.isFinite(value)) fail('invalid', `Satır ${i + 1}: geçersiz value`);
     return { type: x.type, key: String(x.key ?? '').slice(0, 60) || '*', value };
   });
-  const d = load();
-  d.context = [...d.context, ...clean].slice(-ROW_MAX);
-  save(d);
+  run(() => {
+    const d = load();
+    d.context = [...d.context, ...clean].slice(-ROW_MAX);
+    save(d);
+  });
   return { ok: true, imported: clean.length };
 }
 

@@ -1,4 +1,5 @@
 import { send } from '../lib/http.mjs';
+import { assertShared } from '../services/scope.mjs';
 import {
   PriceError,
   listStrategies,
@@ -18,8 +19,11 @@ const POSTS = new Set(['add', 'update', 'remove', 'preview', 'price', 'strategy'
 const bad = (res, msg) => send(res, 400, { error: msg });
 const needStr = (v, name) => (typeof v === 'string' && v.trim() ? null : `${name} gerekli`);
 
+// KAPSAM NOTU: kural ve fiyat stratejisi kayıtlarında kiracı alanı YOK (kurallar tüm kurulum için ortaktır).
+// Listeleme uçları bu yüzden kiracıya bağlı kullanıcıya (yönetici dışı) kapalıdır; silme/strateji uçları
+// ayrıca handler.mjs'teki ADMIN_ONLY tablosuyla yöneticiye kısıtlıdır.
 export async function adminRulesRoutes(c) {
-  const { req, res, p, body } = c;
+  const { req, res, p, body, me } = c;
   const m = /^\/api\/admin\/rules(?:\/([^/]+))?$/.exec(p);
   if (!m) return;
   const sub = m[1];
@@ -48,6 +52,7 @@ export async function adminRulesRoutes(c) {
     }
     if (req.method !== 'GET' && req.method !== 'HEAD')
       return send(res, 405, { error: 'GET bekleniyor' }, { allow: 'GET, HEAD' });
+    if (!sub || sub === 'strategy') assertShared(me, 'Kural ve fiyat stratejisi');
     if (!sub) return send(res, 200, { rules: listRules() });
     if (sub === 'strategy') return send(res, 200, { strategies: listStrategies() });
     return send(res, 404, { error: 'Uç yok' });

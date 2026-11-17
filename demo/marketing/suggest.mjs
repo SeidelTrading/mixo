@@ -1,5 +1,6 @@
 import { DAY, MIN_EVENTS, MAX_ITEMS } from './shared.mjs';
 import { aggregate, makeSuggestHelpers } from './suggest-helpers.mjs';
+import { consented } from '../services/analytics.mjs';
 
 // Veriden kampanya önerisi ve uygulama.
 export function makeSuggest(c) {
@@ -8,7 +9,8 @@ export function makeSuggest(c) {
   function suggestions(daysIn = 7) {
     const days = Math.min(90, Math.max(1, Number(daysIn) || 7)),
       from = Date.now() - days * DAY,
-      ev = getEvents().filter(x => x.t >= from);
+      // Çerez onayı kapısı (services/analytics.mjs): damgasız ve eski olaylar öneriye girmez.
+      ev = getEvents().filter(x => x.t >= from && consented(x));
     const views = ev.filter(x => x.e === 'view'),
       vis = new Set(ev.map(x => x.vid));
     const { pv, pa, cats, brands, sq } = aggregate(ev, norm);

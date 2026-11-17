@@ -94,6 +94,13 @@ export function initMarketing(ctx) {
     resendConfirm,
     consentRecord,
     consentLog,
+    unsubscribe,
+    unsubscribeUrl,
+    requestSubjectLinks,
+    subjectOk,
+    exportSubject,
+    eraseSubject,
+    emailKey,
   } = c;
   return {
     admin,
@@ -112,6 +119,13 @@ export function initMarketing(ctx) {
     resendConfirm,
     consentRecord,
     consentLog,
+    unsubscribe,
+    unsubscribeUrl,
+    requestSubjectLinks,
+    subjectOk,
+    exportSubject,
+    eraseSubject,
+    emailKey,
     rules: () => settings.marketing.rules,
   };
 }

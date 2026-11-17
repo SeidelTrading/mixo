@@ -84,9 +84,13 @@ function simMail(d, { kind, to, subject, body }) {
   if (d.mails.length > 1000) d.mails.splice(0, d.mails.length - 1000);
 }
 
-// requestRefund({ orderId, items: [{id, qty}], reason }) → iade kaydı
-export function requestRefund(input) {
+// requestRefund({ orderId, items: [{id, qty}], reason }, { by }) → iade kaydı
+// `by` TALEP EDEN panel kullanıcısıdır ve yalnız oturumdan gelir (gövdeden asla okunmaz); dört göz kuralı
+// için kayda `requestedBy` olarak yazılır: aynı kişi settle() ile kendi talebini onaylayamaz.
+/** @param {any} input @param {{ by?: string }} [o2] */
+export function requestRefund(input, { by } = {}) {
   const o = input && typeof input === 'object' ? input : {};
+  const requestedBy = str(by, 80) || null;
   const orderId = str(o.orderId, 40),
     reason = str(o.reason, 500);
   if (!orderId) fail('invalid', 'orderId gerekli');
@@ -124,11 +128,12 @@ export function requestRefund(input) {
       invoiceNo: null,
       invoice: null,
       approvedBy: null,
+      requestedBy,
       created: now,
       updated: now,
     };
     d.refunds[r.id] = r;
-    d.events.push({ t: now, refundId: r.id, from: null, to: 'requested', by: 'müşteri' });
+    d.events.push({ t: now, refundId: r.id, from: null, to: 'requested', by: requestedBy || 'müşteri' });
     return clone(r);
   });
 }
@@ -220,6 +225,9 @@ export function settle(refundId, { approvedBy, provider } = {}) {
       if (r.status === 'received') move(d, r, 'pending_approval', 'sistem');
       return { refund: clone(r), payment: null, duplicate: false };
     }
+    // Dört göz kuralı: iadeyi talep eden kişi kendi talebini onaylayamaz (onaylayan oturumdan gelir).
+    if (by && r.requestedBy && by === r.requestedBy)
+      fail('conflict', 'Dört göz kuralı: iadeyi talep eden kişi kendi onaylayamaz');
     if (by) r.approvedBy = by;
     move(d, r, 'refunded', by || 'sistem');
     const pay = {

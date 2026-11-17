@@ -1,4 +1,5 @@
 import { send } from '../lib/http.mjs';
+import { assertShared } from '../services/scope.mjs';
 import {
   ShippingError,
   addCarrier,
@@ -18,8 +19,10 @@ const WRITES = new Set(['delivery', 'choose', 'carrier']);
 
 const bad = (res, msg) => send(res, 400, { error: msg });
 
+// KAPSAM NOTU: kargo istatistiği, firma listesi ve seçim günlüğünde kiracı alanı YOK (sayaçlar kurulum geneli).
+// Okuma uçları bu yüzden kiracıya bağlı kullanıcıya (yönetici dışı) kapalıdır.
 export async function adminShippingRoutes(c) {
-  const { req, res, p, url, body } = c;
+  const { req, res, p, url, body, me } = c;
   const m = /^\/api\/admin\/shipping(?:\/([^/]+))?$/.exec(p);
   if (!m) return;
   const sub = m[1];
@@ -40,6 +43,7 @@ export async function adminShippingRoutes(c) {
     }
     if (req.method !== 'GET' && req.method !== 'HEAD')
       return send(res, 405, { error: 'GET bekleniyor' }, { allow: 'GET, HEAD' });
+    assertShared(me, 'Kargo verisi');
     if (!sub) return send(res, 200, stats());
     if (sub === 'log')
       return send(res, 200, { log: selectionLog(url.searchParams.get('limit') ?? undefined) });

@@ -12,6 +12,129 @@ const cleanName = n =>
     .replace(/[\r\n\0\u2028\u2029]+/g, ' ')
     .trim()
     .slice(0, 80);
+// Veri sahibi hakları (erişim/silme) ve izin geri çekme. makeConsent'ten ayrı tutulur (okunurluk).
+function makeSubjectRights({ db, save, logConsent, simMail, lower, SITE, CONSENT_TEXT, MAX_CONSENT_LOG }) {
+  /* ───────── Abmelden: tek tıkla izin geri çekme (H-05) ───────── */
+  // Çerezden bağımsız: bağlantı adresin kendisine gittiği için imza kimlik kanıtıdır.
+  // Belirteç adrese bağlıdır ve süresizdir (eski e-postadaki bağlantı da çalışmalı).
+  const unsubToken = email => sign(`unsub:${lower(email)}`);
+  const unsubscribeUrl = email =>
+    `${SITE}/api/consent/unsubscribe?e=${encodeURIComponent(lower(email))}&token=${unsubToken(email)}`;
+  // Dönüş: 'ok' | 'already' | 'bad'
+  function unsubscribe(email, token, ip) {
+    email = lower(email);
+    if (!EMAIL_RE.test(email) || !sigOk(String(token || ''), `unsub:${email}`)) return 'bad';
+    if (!db.optins[email]) return 'already';
+    logConsent(email, 'revoke', { ip: ip || null, via: 'unsubscribe-link' });
+    delete db.optins[email];
+    delete db.carts[email];
+    save();
+    return 'ok';
+  }
+
+  /* ───────── Veri sahibi hakları: erişim (Art. 15) ve silme (Art. 17) (H-04) ───────── */
+  // Kimlik doğrulaması: bağlantı yalnız adresin KENDİSİNE gönderilir ve imzalıdır (sipariş/rıza onayı
+  // bağlantılarının aynı deseni). Rastgele biri başkasının verisini ne indirebilir ne silebilir.
+  // Belirteç zaman damgasına bağlıdır; bağlantı CONFIRM_DAYS gün sonra geçersizdir.
+  const subjectToken = (action, email, ts) => sign(`subj:${action}:${lower(email)}:${ts}`);
+  const subjectUrl = (action, email, ts) =>
+    `${SITE}/api/privacy/${action}?e=${encodeURIComponent(lower(email))}&ts=${ts}&token=${subjectToken(action, email, ts)}`;
+  function subjectOk(action, email, ts, token) {
+    email = lower(email);
+    const n = Number(ts);
+    if (!EMAIL_RE.test(email) || !Number.isFinite(n)) return false;
+    if (Math.abs(Date.now() - n) > CONFIRM_DAYS * DAY) return false;
+    return sigOk(String(token || ''), `subj:${action}:${email}:${n}`);
+  }
+  // Veri sahibi talebi: imzalı erişim/silme bağlantılarını adresin kendisine yollar.
+  // Adresin kayıtlı olup olmadığı dışarı sızmaz; çağıran uç her durumda aynı yanıtı verir.
+  function requestSubjectLinks(email) {
+    email = lower(email);
+    if (!EMAIL_RE.test(email)) return false;
+    const ts = Date.now();
+    simMail({
+      kind: `privacy:${email}:${ts}`,
+      name: 'Datenauskunft',
+      to: email,
+      subject: 'Ihre Daten: Auskunft oder Löschung',
+      body: `Hallo,\n\nSie haben Auskunft über Ihre Daten oder deren Löschung angefordert.\n\nAuskunft (Art. 15 DSGVO):\n${subjectUrl('export', email, ts)}\n\nLöschung (Art. 17 DSGVO):\n${subjectUrl('erase', email, ts)}\n\nDie Links sind ${CONFIRM_DAYS} Tage gültig. Wenn Sie das nicht angefordert haben, ignorieren Sie diese E-Mail — ohne Klick passiert nichts.`,
+    });
+    return true;
+  }
+  // Rıza günlüğünde adres yerine geri döndürülemez anahtar (anahtarlı HMAC; ham e-posta kalmaz).
+  const emailKey = email => sign(`subject:${lower(email)}`);
+  // Bu adrese dair sakladığımız veri (erişim hakkı). Rıza günlüğü kanıt olarak birlikte döner.
+  function exportSubject(email) {
+    email = lower(email);
+    if (!EMAIL_RE.test(email)) return null;
+    const key = emailKey(email);
+    return {
+      email,
+      generatedAt: Date.now(),
+      optin: db.optins[email] ? { ...db.optins[email] } : null,
+      cart: db.carts[email] ? { ...db.carts[email] } : null,
+      consentLog: (db.consent || [])
+        .filter(x => x.email === email || x.emailKey === key)
+        .map(x => ({ ...x })),
+      mails: (db.sim || [])
+        .filter(x => x.to === email)
+        .map(x => ({ t: x.t, rule: x.rule, subject: x.subject, body: x.body, simulated: true })),
+    };
+  }
+  // Silme hakkı: izin kaydı, sepet ve simüle posta kutusundaki kişisel alanlar silinir.
+  // Rıza günlüğü SİLİNMEZ (ispat yükü): ama oradaki ham e-posta geri döndürülemez anahtara çevrilir
+  // ve silme işleminin kendisi ayrı bir kayıt olarak günlüğe yazılır (silme kanıtı).
+  function eraseSubject(email, ip) {
+    email = lower(email);
+    if (!EMAIL_RE.test(email)) return null;
+    const key = emailKey(email);
+    const out = {
+      optin: !!db.optins[email],
+      cart: !!db.carts[email],
+      mails: 0,
+      consentEntries: 0,
+    };
+    delete db.optins[email];
+    delete db.carts[email];
+    db.sim ??= [];
+    for (let i = db.sim.length - 1; i >= 0; i--)
+      if (db.sim[i].to === email) {
+        db.sim.splice(i, 1); // dizi yerinde değişir: başka modüllerin tuttuğu referans bozulmaz
+        out.mails++;
+      }
+    db.consent ??= [];
+    for (const x of db.consent)
+      if (x.email === email) {
+        out.consentEntries++;
+        x.email = null; // ham e-posta kalmaz
+        x.emailKey = key;
+        x.erased = true;
+      }
+    // Silme kanıtı: kim değil, hangi anahtar ve ne zaman. Ham e-posta burada da yazılmaz.
+    db.consent.push({
+      t: Date.now(),
+      email: null,
+      emailKey: key,
+      action: 'erase',
+      text: CONSENT_TEXT,
+      ip: ip || null,
+    });
+    if (db.consent.length > MAX_CONSENT_LOG) db.consent.splice(0, db.consent.length - MAX_CONSENT_LOG);
+    save();
+    return out;
+  }
+
+  return {
+    unsubscribe,
+    unsubscribeUrl,
+    requestSubjectLinks,
+    subjectOk,
+    exportSubject,
+    eraseSubject,
+    emailKey,
+  };
+}
+
 export function makeConsent(c) {
   const { db, MAX_OPTINS, MAX_CONSENT_LOG, CONSENT_TEXT, SITE, save, P, uid } = c;
   const lower = e =>
@@ -137,7 +260,19 @@ export function makeConsent(c) {
   };
   const consentRecord = email => db.optins[lower(email)] || null;
   const consentLog = () => db.consent || [];
+
+  const rights = makeSubjectRights({
+    db,
+    save,
+    logConsent,
+    simMail,
+    lower,
+    SITE,
+    CONSENT_TEXT,
+    MAX_CONSENT_LOG,
+  });
   return {
+    ...rights,
     optIn,
     saveCart,
     orderPlaced,

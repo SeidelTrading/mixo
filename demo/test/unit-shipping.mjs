@@ -129,3 +129,42 @@ test('labelFor seçimi günlüğe yazar; günlük LOG_MAX ile sınırlıdır; st
   const st = sh.stats();
   assert.ok(st.zones.some(z => z.zone === '44' && z.carriers.gls.reliable));
 });
+
+/* ───────── kayıp güncelleme: oku-değiştir-yaz store.tx içinde ───────── */
+test('çok sayıda recordDelivery çağrısından sonra kayıt sayısı tam (süreç içi)', () => {
+  const zip = '20095',
+    before = sh.scoreOf('dhl', zip).samples;
+  for (let i = 0; i < 300; i++) sh.recordDelivery({ carrier: 'dhl', zip, outcome: 'delivered' });
+  assert.equal(sh.scoreOf('dhl', zip).samples, before + 300);
+});
+
+test('iki ayrı süreç aynı veritabanına yazarken kayıt kaybolmaz (store.tx)', async () => {
+  const { spawn } = await import('node:child_process');
+  const zip = '30159',
+    N = 150;
+  const code = `
+    const sh = await import('./services/shipping.mjs');
+    for (let i = 0; i < ${N}; i++) sh.recordDelivery({ carrier: 'gls', zip: '${zip}', outcome: 'delivered' });
+  `;
+  const run = () =>
+    new Promise((resolve, reject) => {
+      const p = spawn(process.execPath, ['--no-warnings', '--input-type=module', '-e', code], {
+        cwd: path.resolve(import.meta.dirname, '..'),
+        env: { ...process.env },
+        stdio: ['ignore', 'ignore', 'pipe'],
+      });
+      let err = '';
+      p.stderr.on('data', d => (err += d));
+      p.on('exit', c => (c === 0 ? resolve() : reject(new Error(`süreç ${c}: ${err}`))));
+    });
+  await Promise.all([run(), run()]);
+  assert.equal(sh.scoreOf('gls', zip).samples, 2 * N);
+});
+
+test('firma kimliği "constructor" olsa da sayaç ve prototip bozulmaz', () => {
+  sh.addCarrier({ id: 'constructor', name: 'Garip' });
+  sh.recordDelivery({ carrier: 'constructor', zip: '40210', outcome: 'delivered' });
+  assert.equal(sh.scoreOf('constructor', '40210').samples, 1);
+  assert.equal(/** @type {any} */ ({}).delivered, undefined);
+  assert.equal(/** @type {any} */ (Object).delivered, undefined);
+});

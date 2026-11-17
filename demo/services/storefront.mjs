@@ -5,7 +5,7 @@ import { isHidden } from './visibility.mjs';
 import { liveOrders } from './orders.mjs';
 import { freeShip } from './pricing.mjs';
 import { homeCache } from '../lib/cache.mjs';
-import { events } from './analytics.mjs';
+import { consented, events } from './analytics.mjs';
 
 // Vitrin: indirimli ürünler (eski fiyat > fiyat) ve çok bakılan/eklenen ürünler
 // Katalogda eski fiyat yok; indirim yalnızca yönetici eski fiyat girerse (overrides.was) görünür. Sahte indirim uydurulmaz.
@@ -74,9 +74,11 @@ export function shopHome() {
       if (first('o|' + o.customer.email + '|' + i.id)) sold.set(i.id, (sold.get(i.id) || 0) + 5);
     }
   const from = Date.now() - 30 * 864e5;
+  // Çerez onayı kapısı: damgasız (onaysız ya da bu kapıdan önce yazılmış eski) olaylar şeride girmez.
   for (const x of events)
     if (
       x.t >= from &&
+      consented(x) &&
       x.id &&
       (x.e === 'add' || x.e === 'view') &&
       (who(x.id, 'v:' + x.vid), first(x.e + '|' + x.vid + '|' + x.id))

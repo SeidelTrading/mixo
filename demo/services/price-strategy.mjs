@@ -1,5 +1,6 @@
 import { store } from '../lib/store.mjs';
 import { money } from './pricing.mjs';
+import { dict } from '../lib/safe.mjs';
 
 // Şirket bazlı fiyat stratejisi (HTTP bilmez). Rakip (buy box) fiyatı YALNIZ resmi API ya da lisanslı sağlayıcıdan gelir
 // ve bu dosyaya parametre olarak verilir; burada hiçbir ağ çağrısı, scraping, proxy ya da captcha kodu yoktur.
@@ -25,8 +26,9 @@ const num = v => (v === undefined || v === null || v === '' ? NaN : Number(v));
 
 const load = () => {
   const d = store.doc('price_strategy', { strategies: {} });
-  return d && typeof d.strategies === 'object' && d.strategies ? d.strategies : {};
+  return dict(d && typeof d.strategies === 'object' && d.strategies ? d.strategies : {});
 };
+const run = fn => store.tx(fn);
 
 export function setStrategy(input) {
   const o = input ?? {};
@@ -41,7 +43,11 @@ export function setStrategy(input) {
     minMargin,
     excluded: [...new Set((o.excluded ?? []).map(x => str(x, 120)).filter(Boolean))],
   };
-  store.saveDoc('price_strategy', { strategies: { ...load(), [lc(company)]: rec } });
+  run(() => {
+    const all = load();
+    all[lc(company)] = rec;
+    store.saveDoc('price_strategy', { strategies: all });
+  });
   return rec;
 }
 
@@ -49,11 +55,13 @@ export const listStrategies = () => Object.values(load());
 export const getStrategy = company => load()[lc(company)] ?? load()[ALL] ?? null;
 
 export function removeStrategy(company) {
-  const all = load(),
-    k = lc(company || ALL);
-  if (!all[k]) fail('notfound', 'Strateji yok');
-  delete all[k];
-  store.saveDoc('price_strategy', { strategies: all });
+  run(() => {
+    const all = load(),
+      k = lc(company || ALL);
+    if (!all[k]) fail('notfound', 'Strateji yok');
+    delete all[k];
+    store.saveDoc('price_strategy', { strategies: all });
+  });
 }
 
 // Taban = (maliyet + kargo + maliyet × asgari marj) / (1 − komisyon); komisyon satış fiyatı üzerinden alındığı için

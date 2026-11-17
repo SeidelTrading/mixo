@@ -145,3 +145,43 @@ test('personel ortalamaları, p90 ve küçük ekip uyarısı', () => {
   assert.equal(staff.performance({}).warning, undefined); // 5 kişi
   assert.equal(staff.performance({ from: Date.now() + 100000 }).people.length, 0);
 });
+
+/* ───────── prototip kirlenmesi ───────── */
+test("__proto__ kimlikli anlaşma Object.prototype'ı kirletmez, notfound döner", () => {
+  const s = seller(),
+    b = b2b.registerBuyer({ name: 'Müller GmbH', country: 'DE', vat: 'DE123456789' });
+  void s;
+  assert.throws(
+    () => b2b.createDeal({ offerId: '__proto__', buyerId: '__proto__', qty: 7 }),
+    code('notfound'),
+  );
+  assert.throws(() => b2b.advanceDeal('__proto__', 'shipped'), code('notfound'));
+  assert.throws(() => b2b.createDeal({ offerId: 'constructor', buyerId: b.id, qty: 1 }), code('notfound'));
+  assert.equal(/** @type {any} */ ({}).remaining, undefined);
+  assert.equal('remaining' in {}, false);
+  assert.equal('status' in {}, false);
+});
+
+test('b2b: iki ayrı süreç aynı belgeye kayıt eklerken kayıp olmaz (store.tx)', async () => {
+  const { spawn } = await import('node:child_process');
+  const before = b2b.summary().counts.sellers,
+    N = 40;
+  const src = `
+    const b2b = await import('./services/b2b.mjs');
+    for (let i = 0; i < ${N}; i++)
+      b2b.registerSeller({ name: 'S' + i, country: 'TR', vat: 'TR1234567890', categories: ['tekstil'] });
+  `;
+  const run = () =>
+    new Promise((resolve, reject) => {
+      const p = spawn(process.execPath, ['--no-warnings', '--input-type=module', '-e', src], {
+        cwd: path.resolve(import.meta.dirname, '..'),
+        env: { ...process.env },
+        stdio: ['ignore', 'ignore', 'pipe'],
+      });
+      let err = '';
+      p.stderr.on('data', d => (err += d));
+      p.on('exit', c => (c === 0 ? resolve() : reject(new Error(`süreç ${c}: ${err}`))));
+    });
+  await Promise.all([run(), run()]);
+  assert.equal(b2b.summary().counts.sellers, before + 2 * N);
+});

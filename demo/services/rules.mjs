@@ -28,6 +28,9 @@ const load = () => {
 };
 const save = rules => store.saveDoc('rules', { rules });
 
+// Oku-değiştir-yaz dizisini tek işlemde yapar (kayıp güncellemeyi önler). store.tx iç içe açılamaz: fn içinde başka tx açılmaz.
+const run = fn => store.tx(fn);
+
 function clean(input, base = {}) {
   const o = { ...base, ...input };
   const r = {
@@ -54,27 +57,33 @@ export function listRules() {
 
 export function addRule(input) {
   const rule = clean(input ?? {}, { id: crypto.randomUUID().slice(0, 8), created: Date.now() });
-  save([...load(), rule]);
-  return rule;
+  return run(() => {
+    save([...load(), rule]);
+    return rule;
+  });
 }
 
 export function updateRule(id, patch) {
-  const rules = load();
-  const i = rules.findIndex(r => r.id === id);
-  if (i < 0) fail('notfound', 'Kural yok');
-  const next = clean(patch ?? {}, rules[i]);
-  rules[i] = next;
-  save(rules);
-  return next;
+  return run(() => {
+    const rules = load();
+    const i = rules.findIndex(r => r.id === id);
+    if (i < 0) fail('notfound', 'Kural yok');
+    const next = clean(patch ?? {}, rules[i]);
+    rules[i] = next;
+    save(rules);
+    return next;
+  });
 }
 
 export function removeRule(id) {
-  const rules = load();
-  const i = rules.findIndex(r => r.id === id);
-  if (i < 0) fail('notfound', 'Kural yok');
-  const [gone] = rules.splice(i, 1);
-  save(rules);
-  return gone;
+  return run(() => {
+    const rules = load();
+    const i = rules.findIndex(r => r.id === id);
+    if (i < 0) fail('notfound', 'Kural yok');
+    const [gone] = rules.splice(i, 1);
+    save(rules);
+    return gone;
+  });
 }
 
 const matches = (ruleVal, v) => !ruleVal || key(ruleVal) === key(v);

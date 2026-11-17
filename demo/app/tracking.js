@@ -13,8 +13,9 @@
       S.vid = crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
       store.set('mx-vid', S.vid);
     }
-    // consent:true — bu gönderim yalnız onay varken yapılır (üstteki kapı). Sunucu olayları bu işaretle damgalar;
-    // onay işareti taşımayan olay davranış modeline (services/insights.mjs) alınmaz.
+    // consent:true — bu gönderim yalnız onay varken yapılır (üstteki kapı). Sunucu bu beyanı ZORUNLU tutar:
+    // beyan taşımayan gönderimde ne olay saklanır ne de ziyaretçi çerezi (mxv) verilir (services/analytics.mjs
+    // ingest + routes/public.mjs). Damgasız olayı hiçbir tüketici saymaz (pano, öneri, çok satanlar).
     const body = JSON.stringify({ vid: S.vid, consent: true, events: outbox.splice(0, 60) });
     try {
       if (!navigator.sendBeacon?.('/api/events', new Blob([body], { type: 'text/plain' })))

@@ -13,6 +13,7 @@ process.env.ORDER_VERIFY = 'off';
 
 const pool = await import('../services/pool.mjs');
 const feed = await import('../services/feed.mjs');
+const rules = await import('../services/rules.mjs');
 const { store } = await import('../lib/store.mjs');
 
 const LEGAL = { representative: 'Acme GmbH', address: 'Hauptstr. 1, Berlin', taxId: 'DE123456789' };
@@ -91,4 +92,54 @@ test('bulkUpload yasal alanı eksik ürünü blocked yapar', async () => {
   await assert.rejects(feed.bulkUpload({ brands: [], shops: ['s1'], market: 'billiga' }), {
     code: 'invalid',
   });
+});
+
+test('bulkUpload marka yasağını uygular (kural motoru statik yüklenir)', async () => {
+  const p = pool.ingest(full('D1', { vendor: 'YasakMarka', eans: ['4006381334013'] }));
+  const rule = rules.addRule({ vendor: 'YasakMarka', reason: 'AB mevzuatı: satış yasak' });
+  const r = await feed.bulkUpload({ brands: ['YasakMarka'], shops: ['s1'], market: 'billiga' });
+  assert.deepEqual(r.uploaded, []);
+  assert.equal(r.blocked[0].poolId, p.id);
+  assert.match(r.blocked[0].reason, /YasakMarka/);
+  rules.removeRule(rule.id);
+});
+
+test('bulkUpload şirket ve kategori bazlı yasakları kural motoruna geçirir', async () => {
+  const p = pool.ingest(full('D2', { vendor: 'KatMarka', eans: ['4006381334020'], category: 'elektronik' }));
+  const byCat = rules.addRule({
+    vendor: 'KatMarka',
+    category: 'elektronik',
+    reason: 'AB mevzuatı: bu kategoride satış yasak',
+  });
+  const r1 = await feed.bulkUpload({ brands: ['KatMarka'], shops: ['s1'], market: 'idealo' });
+  assert.deepEqual(r1.uploaded, [], 'kategori yasağı uygulanmalı');
+  assert.equal(r1.blocked[0].poolId, p.id);
+  rules.removeRule(byCat.id);
+
+  const byCompany = rules.addRule({ company: 'AcmeGmbH', vendor: 'KatMarka', reason: 'sözleşme gereği' });
+  const r2 = await feed.bulkUpload({
+    brands: ['KatMarka'],
+    shops: ['s1'],
+    market: 'idealo',
+    company: 'AcmeGmbH',
+  });
+  assert.deepEqual(r2.uploaded, [], 'şirket yasağı uygulanmalı');
+  // Başka şirket için aynı kural geçerli değil.
+  const r3 = await feed.bulkUpload({
+    brands: ['KatMarka'],
+    shops: ['s1'],
+    market: 'idealo',
+    company: 'BaskaGmbH',
+  });
+  assert.equal(r3.uploaded.length, 1);
+  rules.removeRule(byCompany.id);
+});
+
+test('buildFeed yasaklı markayı XML dışında bırakır', () => {
+  const p = pool.ingest(full('E1', { vendor: 'FeedYasak', eans: ['4006381334037'] }));
+  assert.ok(feed.buildFeed('billiga').includes(p.id), 'yasak yokken feed içinde');
+  const rule = rules.addRule({ vendor: 'FeedYasak', market: 'billiga', reason: 'mevzuat' });
+  assert.ok(!feed.buildFeed('billiga').includes(p.id), 'yasaklı ürün XML dışında kalmalı');
+  assert.ok(feed.buildFeed('pricerunner').includes(p.id), 'yasak yalnız ilgili pazar yerinde');
+  rules.removeRule(rule.id);
 });

@@ -134,3 +134,20 @@ test('onaysız adres retargeting listesine girmez, çift onaydan sonra girer', a
   assert.match(promo.body, /App/);
   assert.equal(promo.simulated, true);
 });
+
+test('kampanya adı __proto__ / constructor: Object.prototype kirlenmez, kayıt sıradan ad olur', () => {
+  assert.throws(
+    () => ads.keywords({ campaign: '__proto__' }),
+    e => e instanceof ads.AdsError && e.code === 'notfound',
+  );
+  const r = ads.addKeyword('__proto__', 'ayakkabı', { negative: true });
+  assert.equal(r.added, true);
+  ads.addKeyword('constructor', 'çanta');
+  assert.deepEqual(ads.keywords({ campaign: '__proto__' }).negative, ['ayakkabı']);
+  assert.deepEqual(ads.keywords({ campaign: 'constructor' }).positive, ['çanta']);
+  assert.equal(/** @type {any} */ ({}).positive, undefined);
+  assert.equal(/** @type {any} */ ({}).negative, undefined);
+  assert.equal('negative' in {}, false);
+  ads.removeKeyword('__proto__', 'ayakkabı', { negative: true });
+  assert.deepEqual(ads.keywords({ campaign: '__proto__' }).negative, []);
+});

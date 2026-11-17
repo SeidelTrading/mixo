@@ -129,3 +129,30 @@ test('listTickets süzer', () => {
   assert.ok(sup.listTickets({ kind: 'critical' }).every(t => t.kind === 'critical'));
   assert.ok(sup.listTickets({ status: 'needs_human' }).length >= 1);
 });
+
+test("prototip anahtarlı kimlik/tedarikçi/poolId Object.prototype'ı kirletmez", () => {
+  assert.throws(
+    () => sup.autoReply('__proto__'),
+    e => e instanceof sup.SupportError && e.code === 'notfound',
+  );
+  assert.throws(
+    () => sup.customerReply('constructor', 'Ja'),
+    e => e instanceof sup.SupportError && e.code === 'notfound',
+  );
+  sup.setMinCount(1);
+  sup.recordComplaint({ poolId: '__proto__', supplier: '__proto__', reason: 'kırık' });
+  sup.recordComplaint({ poolId: 'constructor', supplier: 'prototype' });
+  const rep = sup.complaintReport();
+  assert.ok(rep.some(g => g.poolId === '__proto__' && g.supplier === '__proto__' && g.count === 1));
+  assert.equal(/** @type {any} */ ({}).count, undefined);
+  assert.equal('reasons' in {}, false);
+  assert.equal(sup.getTicket('__proto__'), null);
+});
+
+test('çok sayıda recordComplaint çağrısı sonrası kayıt sayısı tam', () => {
+  sup.setMinCount(1000);
+  const before = sup.complaintReport({ minCount: 1 }).reduce((n, g) => n + g.count, 0);
+  for (let i = 0; i < 200; i++) sup.recordComplaint({ poolId: 'p-yaris', supplier: 'S-yarış' });
+  const after = sup.complaintReport({ minCount: 1 }).reduce((n, g) => n + g.count, 0);
+  assert.equal(after, before + 200);
+});

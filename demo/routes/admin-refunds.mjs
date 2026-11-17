@@ -1,4 +1,5 @@
 import { send } from '../lib/http.mjs';
+import { assertShared, isSafeKey } from '../services/scope.mjs';
 import {
   RefundError,
   getRefund,
@@ -21,6 +22,9 @@ const WRITES = new Set(['request', 'storno', 'label', 'received', 'settle', 'rej
 const bad = (res, msg) => send(res, 400, { error: msg });
 const needStr = (v, name) => (typeof v === 'string' && v.trim() ? null : `${name} gerekli`);
 
+// KAPSAM NOTU: iade kayıtlarında kiracı alanı YOK; kayıtlar fatura ve müşteri verisi taşıdığı için okuma uçları
+// kiracıya bağlı kullanıcıya (yönetici dışı) kapatılır. settle + approve:true ayrıca handler.mjs'teki
+// ADMIN_ONLY tablosuyla yöneticiye kısıtlıdır; dört göz kuralı services/refunds.mjs içindedir.
 export async function adminRefundRoutes(c) {
   const { req, res, p, url, body, me } = c;
   const m = /^\/api\/admin\/refunds(?:\/([^/]+))?$/.exec(p);
@@ -34,10 +38,13 @@ export async function adminRefundRoutes(c) {
       if (sub === 'request') {
         const err = needStr(body.orderId, 'orderId');
         if (err) return bad(res, err);
-        return send(res, 201, { ok: true, refund: requestRefund(body) });
+        // Talep eden oturumdan yazılır (dört göz kuralının dayanağı); gövdeden isim kabul edilmez.
+        return send(res, 201, { ok: true, refund: requestRefund(body, { by }) });
       }
       const err = needStr(body.refundId, 'refundId');
       if (err) return bad(res, err);
+      // `d.refunds[refundId]` nesne indeksidir: __proto__ gibi anahtarlar reddedilir (konsey bulgusu #4/#6).
+      if (!isSafeKey(body.refundId)) return bad(res, 'Geçersiz kimlik');
       if (sub === 'storno') return send(res, 200, { ok: true, invoice: storno(body.refundId) });
       if (sub === 'label') {
         const e2 = needStr(body.trackingNo, 'trackingNo');
@@ -47,17 +54,19 @@ export async function adminRefundRoutes(c) {
       if (sub === 'received')
         return send(res, 200, { ok: true, refund: markReceived(body.refundId, { by }) });
       if (sub === 'reject') return send(res, 200, { ok: true, refund: reject(body.refundId, { by }) });
-      // settle: onay yalnız oturumdaki kullanıcıdan gelir; gövdedeki approvedBy yalnız onay istendiğini bildirir (bool).
-      const approvedBy = body.approve === true ? by || 'yönetici' : undefined;
+      // settle: onaylayanın adı YALNIZ oturumdan gelir; gövde yalnız onay istendiğini bildirir (approve: true).
+      // Oturumda kullanıcı adı yoksa onay üretilmez (eskiden 'yönetici' varsayılanı yazılıyordu).
+      const approvedBy = body.approve === true ? by : undefined;
       return send(res, 200, { ok: true, ...settle(body.refundId, { approvedBy, provider: body.provider }) });
     }
     if (req.method !== 'GET' && req.method !== 'HEAD')
       return send(res, 405, { error: 'GET bekleniyor' }, { allow: 'GET, HEAD' });
+    assertShared(me, 'İade');
     if (!sub)
       return send(res, 200, {
         refunds: listRefunds({ status: url.searchParams.get('status') || undefined }),
       });
-    if (!ID_RE.test(sub)) return bad(res, 'Geçersiz kimlik');
+    if (!ID_RE.test(sub) || !isSafeKey(sub)) return bad(res, 'Geçersiz kimlik');
     const r = getRefund(sub);
     return r ? send(res, 200, r) : send(res, 404, { error: 'İade yok' });
   } catch (e) {

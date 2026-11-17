@@ -73,18 +73,28 @@ function findMatch({ src, ref, eans, vendor, mpn, title }) {
   const owners = new Set(eans.map(e => db().poolByEan(e.ean)).filter(Boolean));
   if (owners.size > 1) fail('conflict', "Verilen EAN'lar farklı ürünlere bağlı; önce ürünleri birleştirin");
   if (owners.size === 1) return [...owners][0];
-  // (b) vendor + mpn, (c) vendor + başlık
+  // Eşleştirme sırası ve gerekçesi:
+  //   (b) vendor + MPN — üreticinin kendi parça numarası en güvenilir kimliktir.
+  //   (c) vendor + başlık — YALNIZ SON ÇARE: başlık pazarlama metnidir, aynı serinin farklı
+  //       modelleri çoğu kez aynı başlıkla gelir. Bu yüzden başlık eşleşmesi ancak MPN bilgisi
+  //       YOKSA kullanılır: iki kaydın da MPN'i doluysa ve farklıysa bunlar ayrı üründür ve
+  //       başlıkları aynı olsa bile birleştirilmez (aksi halde ikinci ürünün MPN'i, fiyatı ve
+  //       görseli kanonik kayda düşmeden kaybolur ve hiçbir pazar yerinde yayınlanmaz).
   const v = key(vendor),
     m = keyMpn(mpn),
     t = key(title);
   if (!v) return null;
-  const all = db().poolKeys();
+  const sameVendor = db()
+    .poolKeys()
+    .filter(p => key(p.vendor) === v);
   if (m) {
-    const hit = all.find(p => key(p.vendor) === v && keyMpn(p.mpn) === m);
+    const hit = sameVendor.find(p => keyMpn(p.mpn) === m);
     if (hit) return hit.id;
   }
-  if (t) return all.find(p => key(p.vendor) === v && key(p.title) === t)?.id ?? null;
-  return null;
+  if (!t) return null;
+  const byTitle = sameVendor.filter(p => key(p.title) === t);
+  // Gelen kaydın MPN'i varsa, MPN'i dolu (ve yukarıda eşleşmediği için farklı) adaylar elenir.
+  return (m ? byTitle.filter(p => !keyMpn(p.mpn)) : byTitle)[0]?.id ?? null;
 }
 
 // ingest({ src, ref, title, vendor?, mpn?, eans?, ...ek alanlar }) → { id, created, pool }

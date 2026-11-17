@@ -1,4 +1,5 @@
 import { send } from '../lib/http.mjs';
+import { assertShared } from '../services/scope.mjs';
 import { FeedError, auditFeed, buildFeed, bulkUpload, lastAudit } from '../services/feed.mjs';
 
 // Feed uçları: GET son rapor (?market=), POST audit | build | bulk. Yetki ve yöntem kapıları handler.mjs'tedir.
@@ -6,8 +7,10 @@ import { FeedError, auditFeed, buildFeed, bulkUpload, lastAudit } from '../servi
 const STATUS = { invalid: 400, notfound: 404 };
 const WRITES = new Set(['audit', 'build', 'bulk']);
 
+// KAPSAM NOTU: feed denetim raporlarında kiracı alanı YOK (rapor pazar yerine göre tutulur).
+// Rapor kiracıya bağlanamadığı için okuma ucu kiracıya bağlı kullanıcıya (yönetici dışı) kapalıdır.
 export async function adminFeedRoutes(c) {
-  const { req, res, p, url, body } = c;
+  const { req, res, p, url, body, me } = c;
   const m = /^\/api\/admin\/feed(?:\/([^/]+))?$/.exec(p);
   if (!m) return;
   const sub = m[1];
@@ -27,6 +30,7 @@ export async function adminFeedRoutes(c) {
     }
     if (req.method !== 'GET' && req.method !== 'HEAD')
       return send(res, 405, { error: 'GET bekleniyor' }, { allow: 'GET, HEAD' });
+    assertShared(me, 'Feed denetimi');
     const market = url.searchParams.get('market');
     if (!market) return send(res, 400, { error: 'market gerekli' });
     // Henüz denetim çalıştırılmamış olması bir hata değil, normal boş durumdur: panel ilk açılışta 404 görmemeli.

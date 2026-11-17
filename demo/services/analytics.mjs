@@ -55,17 +55,31 @@ export function visitorOf(req, ip) {
     setCookie: `mxv=${v}.${sign('v:' + v)}; Path=/; SameSite=Lax; Max-Age=31536000${req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : ''}`,
   };
 }
+// ÇEREZ ONAYI KAPISI (tek yer, H-01/H-02). Onaylı olayın işareti: consent === true (yeni kayıtlar)
+// ya da c === 1 (eski sayısal işaret; kategori alanı `c` string olduğundan karışmaz).
+// DAMGASIZ ESKİ OLAYLAR: bu kapıdan önce yazılmış ve ham aktarılan (db/legacy.mjs) olaylarda işaret yoktur.
+// Bunlar ONAYSIZ sayılır ve hiçbir yerde SAYILMAZ: ne analytics(), ne kampanya önerisi
+// (marketing/suggest.mjs), ne de vitrin "çok satanlar" şeridi (services/storefront.mjs) onları görür.
+// Saklama tavanı (90 gün) dolana kadar dosyada kalırlar, ama hiçbir tüketiciye ulaşmazlar.
+export const consented = e => e.consent === true || e.c === 1;
+export const consentedEvents = () => events.filter(consented);
+// Onay beyanı olmadığı için saklanmayan gönderim sayısı (şeffaflık; yalnız gözlem amaçlı).
+export const ingestStats = { droppedNoConsent: 0, droppedEvents: 0 };
 export function ingest(body, req, vid) {
-  if (!vid || !Array.isArray(body.events)) return 0;
+  if (!body || !Array.isArray(body.events)) return 0;
+  const valid = body.events.slice(0, 60).filter(x => x && EVENT_TYPES.has(x.e));
+  // Onay beyanı yoksa olay KAYDEDİLMEZ (ve çağıran ziyaretçi çerezi de vermez, bkz. routes/public.mjs).
+  // Vitrin kırılmasın diye istek yine 200 ve sayı ile yanıtlanır; sayılan olaylar hiçbir yere yazılmaz.
+  if (body.consent !== true || !vid) {
+    ingestStats.droppedNoConsent++;
+    ingestStats.droppedEvents += valid.length;
+    return valid.length;
+  }
   if (events.length > EVENT_MAX + 5000) pruneEvents();
   const dev = /Mobi|Android|iPhone/i.test(req.headers['user-agent'] || '') ? 'm' : 'd',
     lines = [];
-  for (const x of body.events.slice(0, 60)) {
-    if (!x || !EVENT_TYPES.has(x.e)) continue;
-    const ev = { t: Date.now(), vid, s: Number(x.s) || 1, e: x.e, d: dev };
-    // Çerez onayı damgası: vitrin yalnız onay varken gönderir (app/tracking.js). İşaret taşımayan olay
-    // davranış modeline alınmaz (services/insights.mjs). Varsayılan "onay yok" tarafındadır.
-    if (body.consent === true) ev.consent = true;
+  for (const x of valid) {
+    const ev = { t: Date.now(), vid, s: Number(x.s) || 1, e: x.e, d: dev, consent: true };
     if (typeof x.id === 'string' && P.has(x.id)) ev.id = x.id;
     if (typeof x.c === 'string' && CATS.some(c => c.k === x.c)) ev.c = x.c;
     if (Number.isInteger(x.si) && x.si >= 0) ev.si = x.si;
@@ -83,7 +97,8 @@ export function ingest(body, req, vid) {
 export function analytics(days = 7) {
   days = Math.min(90, Math.max(1, Number(days) || 7));
   const from = Date.now() - days * 864e5,
-    ev = events.filter(x => x.t >= from);
+    // Onay kapısı: damgasız (eski ya da onaysız) olaylar panoya ve yapay zeka aracına da girmez.
+    ev = events.filter(x => x.t >= from && consented(x));
   const nul = () => Object.create(null),
     cnt = nul(),
     vis = new Set(),

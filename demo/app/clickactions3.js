@@ -80,6 +80,30 @@
       },
     ],
     [
+      (d, t) => 'privacy' in d,
+      // GDPR: sunucudaki kişisel veri için erişim/silme isteği. Bağlantı YALNIZ adresin kendisine gider,
+      // bu yüzden burada kimlik doğrulaması yapılmaz ve yanıt adresin kayıtlı olup olmadığını söylemez.
+      async (d, t, e) => {
+        e.preventDefault();
+        const email = (prompt('Ihre E-Mail-Adresse:') || '').trim();
+        if (!email) return;
+        try {
+          const r = await fetch('/api/privacy/request', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ email }),
+          });
+          toast(
+            r.ok
+              ? 'Wenn zu dieser Adresse Daten vorliegen, haben wir einen Link dorthin gesendet.'
+              : 'Anfrage momentan nicht möglich. Bitte später erneut versuchen.',
+          );
+        } catch {
+          toast('Anfrage momentan nicht möglich. Bitte später erneut versuchen.');
+        }
+      },
+    ],
+    [
       (d, t) => 'logout' in d,
       (d, t, e) => {
         B.user = null;

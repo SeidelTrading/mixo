@@ -33,9 +33,23 @@ const posInt = (v, name, min = 1) => {
 const dayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul' });
 const dayKey = t => dayFmt.format(new Date(t));
 
+// Nesne indeksi olarak kullanılan anahtarlar: '__proto__' gibi adlar Object.prototype'a yazabildiği için
+// hem reddedilir hem de sayaç nesneleri prototipsiz tutulur (çift koruma).
+const RESERVED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const safeKey = (k, name) => {
+  if (RESERVED_KEYS.has(k)) fail('invalid', `${name} ayrılmış bir ad olamaz (${k})`);
+  return k;
+};
+// Prototipsiz kopya: JSON'dan gelen '__proto__' anahtarı bile sıradan bir alan olarak kalır.
+const bare = o => {
+  const r = Object.create(null);
+  if (o && typeof o === 'object') for (const k of Object.keys(o)) r[k] = o[k];
+  return r;
+};
+
 const load = () => {
   const d = store.doc('dashboard', {});
-  return { targets: d.targets || {}, lastReset: d.lastReset || '', spots: d.spots || {} };
+  return { targets: bare(d.targets), lastReset: d.lastReset || '', spots: bare(d.spots) };
 };
 const save = d => store.saveDoc('dashboard', d);
 
@@ -53,7 +67,30 @@ const toMs = (v, name) => {
   if (!Number.isFinite(t)) fail('invalid', `${name} geçersiz tarih`);
   return t;
 };
-const cents = n => Math.round(Number(n) * 100) || 0;
+// Sayı okumanın TEK güvenli noktası. Dönüş: tam sayı kuruş ya da null (= toplama girmez, `skipped` sayılır).
+// - Metin tutarlarda hem '.' hem ',' ondalık ayracı çözülür ('12,50' → 1250, '1.234,56' → 123456, '1,234.56' → 123456).
+// - Sonlu olmayan (Infinity, NaN) ya da kuruş olarak güvenli tam sayıya sığmayan değer sessizce 0 sayılmaz, elenir.
+export function toCents(v) {
+  let n;
+  if (typeof v === 'number') n = v;
+  else if (typeof v === 'string') {
+    const s = v.replace(/[\s\u00a0]/g, '');
+    const dot = s.lastIndexOf('.'),
+      comma = s.lastIndexOf(',');
+    let t;
+    if (dot >= 0 && comma >= 0)
+      // İki ayraç da varsa sondaki ondalıktır, öteki binlik ayracıdır.
+      t = dot > comma ? s.replaceAll(',', '') : s.replaceAll('.', '').replace(',', '.');
+    else if (comma >= 0)
+      // Yalnız virgül: 1-2 hanelik son grup ondalıktır ('12,50'); değilse binlik ayracıdır ('1,234').
+      t = /,\d{1,2}$/.test(s) ? s.replace(',', '.') : s.replaceAll(',', '');
+    else t = s;
+    n = t === '' ? NaN : Number(t);
+  } else n = NaN;
+  if (!Number.isFinite(n)) return null;
+  const c = Math.round(n * 100);
+  return Number.isSafeInteger(c) ? c : null;
+}
 
 export function revenue({ from, to, groupBy = 'company' } = /** @type {any} */ ({}), now = Date.now()) {
   if (!GROUPS.has(groupBy)) fail('invalid', 'groupBy company, shop, market ya da day olmalı');
@@ -62,14 +99,22 @@ export function revenue({ from, to, groupBy = 'company' } = /** @type {any} */ (
   const acc = new Map();
   let total = 0,
     count = 0,
-    last = 0;
+    last = 0,
+    skipped = 0;
   for (const o of orders) {
     if (o.status === 'cancelled' || o.status === 'unverified') continue;
     if (o.t > last) last = o.t;
     if ((lo !== null && o.t < lo) || (hi !== null && o.t > hi)) continue;
     // Toplam tam sayı kuruş üzerinden: kayan nokta hatası birikmez.
-    const c = cents(o.total),
-      k = keyOf(o, groupBy),
+    // Okunamayan tutar (Infinity, NaN, çöp metin) toplamı zehirlemesin diye elenir ve `skipped`'ta raporlanır.
+    // Negatif tutar bu dükkanda veri bozulmasıdır (iade ayrı bir akıştır, ciroya eksi sipariş olarak girmez):
+    // sonlu olmayan değerler gibi toplama alınmaz, skipped sayacında raporlanır.
+    const c = toCents(o.total);
+    if (c === null || c < 0) {
+      skipped++;
+      continue;
+    }
+    const k = keyOf(o, groupBy),
       q = o.items.reduce((a, i) => a + (Number(i.qty) || 0), 0);
     const r = acc.get(k) || { key: k, cents: 0, count: 0 };
     r.cents += c;
@@ -86,6 +131,8 @@ export function revenue({ from, to, groupBy = 'company' } = /** @type {any} */ (
     rows,
     total: total / 100,
     orders: count,
+    // Tutarı okunamadığı için toplama girmeyen sipariş sayısı (sessizce yutulmaz).
+    skipped,
     // updatedAt: en son (iptal/doğrulanmamış dışı) siparişin zamanı; veri kaynağı bu kadar tazedir. null = hiç sipariş yok.
     updatedAt: last || null,
     stale: !last || now - last > STALE_MS,
@@ -96,7 +143,7 @@ export function revenue({ from, to, groupBy = 'company' } = /** @type {any} */ (
 const pubTarget = t => ({ cat: t.cat, label: t.label, count: t.count, left: t.left, done: t.count - t.left });
 
 export function setTarget({ cat, label, count } = /** @type {any} */ ({}), now = Date.now()) {
-  const c = str(cat, 40);
+  const c = safeKey(str(cat, 40), 'cat');
   if (!CAT_RE.test(c)) fail('invalid', 'cat gerekli (harf, rakam, - . _)');
   const n = posInt(count, 'count');
   const d = load(),
@@ -133,7 +180,7 @@ export function consume({ cat, qty = 1 } = /** @type {any} */ ({}), now = Date.n
   const q = posInt(qty, 'qty');
   resetDaily(now);
   const d = load(),
-    t = d.targets[str(cat, 40)];
+    t = d.targets[safeKey(str(cat, 40), 'cat')];
   if (!t) fail('notfound', 'Hedef yok');
   t.left = Math.max(0, t.left - q); // sıfırın altına inmez
   save(d);
@@ -180,7 +227,7 @@ const universe = spot => {
 };
 
 export function spotStatus(id, now = Date.now()) {
-  const spot = load().spots[str(id, 80)];
+  const spot = load().spots[safeKey(str(id, 80), 'id')];
   if (!spot) fail('notfound', 'Spot ürün yok');
   let sold = 0,
     first = 0;

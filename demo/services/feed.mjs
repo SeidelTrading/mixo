@@ -1,5 +1,8 @@
 import { store } from '../lib/store.mjs';
 import { eanFor, getPool, isEan, listPools } from './pool.mjs';
+// Kural motoru STATİK içe aktarılır (döngü yok): yüklenemezse sistem sessizce izin vermek yerine
+// açıkça patlar. Dinamik `import(...).catch(() => null)` deseni satış yasaklarını fail-open yapıyordu.
+import { evaluate } from './rules.mjs';
 
 // Feed kalite denetimi (K-03) ve toplu yükleme (K-04). HTTP bilmez; gerçek ağ çağrısı yapmaz (yükleme simülasyondur).
 export class FeedError extends Error {
@@ -22,8 +25,6 @@ export const MARKETS = Object.freeze({
 });
 export const LEGAL_FIELDS = Object.freeze(['representative', 'address', 'taxId']);
 const MAX_SCAN = 5000;
-// Kural motoru başka bir modülde yazılıyor; değişken yol, dosya yokken tip denetimini bozmaz.
-const RULES_PATH = './rules.mjs';
 
 const cleanMarket = m => {
   const k = typeof m === 'string' ? m.trim().toLowerCase() : '';
@@ -46,6 +47,8 @@ const legalOf = pool => {
   const l = field(pool, 'legal');
   return l && typeof l === 'object' && !Array.isArray(l) ? l : {};
 };
+// Ürün kategorisi: kural motorunun kategori bazlı yasakları için gerekli ('category', yoksa 'cat').
+const categoryOf = pool => txt(field(pool, 'category')) || txt(field(pool, 'cat'));
 const priceOf = pool => {
   const n = Number(field(pool, 'price'));
   return Number.isFinite(n) && n > 0 ? n : null;
@@ -151,11 +154,19 @@ export function escXml(v) {
   );
 }
 
+// buildFeed(market, { limit?, company? }): yalnız denetimden geçen VE satış yasağı olmayan ürünleri yayınlar.
 export function buildFeed(market, opts) {
   const mk = cleanMarket(market);
+  const company = txt(opts?.company);
   const items = [];
   for (const p of scan(clampLimit(opts?.limit))) {
     if (!checkProduct(p, mk).ok) continue;
+    // Yasaklı ürün XML'e girmemeli: denetim ve yükleme ile aynı kural motorundan geçilir.
+    if (
+      evaluate({ vendor: p.vendor, market: mk, poolId: p.id, company, category: categoryOf(p) }).allowed ===
+      false
+    )
+      continue;
     const l = legalOf(p);
     const tags = [
       ['id', p.id],
@@ -190,12 +201,12 @@ const idList = (v, name) => {
 
 // K-04: markaya göre toplu yükleme (simülasyon). Eksik alan / kural motoru yasağı olan ürün yüklenmez.
 export async function bulkUpload(input) {
-  const { brands, shops, market } = input ?? {};
+  const { brands, shops, market, company } = input ?? {};
   const mk = cleanMarket(market);
   const bs = idList(brands, 'brands'),
     ss = idList(shops, 'shops');
+  const co = txt(company);
   const want = new Set(bs.map(b => b.toLowerCase()));
-  const rules = await import(RULES_PATH).catch(() => null);
   const uploaded = [],
     blocked = [];
   for (const p of scan(MAX_SCAN)) {
@@ -218,15 +229,24 @@ export async function bulkUpload(input) {
       blocked.push({ poolId: p.id, reason: `Eksik yasal alan: ${noLegal.join(', ')}` });
       continue;
     }
+    const category = categoryOf(p);
     for (const shopId of ss) {
-      const verdict = rules?.evaluate?.({ vendor: p.vendor, market: mk, poolId: p.id, shopId });
-      if (verdict && verdict.allowed === false)
+      // company ve category geçirilmezse şirket/kategori bazlı mevzuat yasakları sessizce devre dışı kalır.
+      const verdict = evaluate({
+        vendor: p.vendor,
+        market: mk,
+        poolId: p.id,
+        shopId,
+        company: co,
+        category,
+      });
+      if (verdict.allowed === false)
         blocked.push({ poolId: p.id, shopId, reason: verdict.reason || 'Satış yasağı kuralı' });
       else uploaded.push({ poolId: p.id, shopId, title: p.title });
     }
   }
   const out = { uploaded, blocked, t: Date.now() };
   const d = readDoc();
-  store.saveDoc('feed', { ...d, bulk: { ...out, market: mk, brands: bs, shops: ss } });
+  store.saveDoc('feed', { ...d, bulk: { ...out, market: mk, brands: bs, shops: ss, company: co } });
   return out;
 }

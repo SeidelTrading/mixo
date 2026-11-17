@@ -1,5 +1,6 @@
 import { actorCtx } from '../lib/store.mjs';
 import { SUNUM_PROTECT } from '../lib/config.mjs';
+import { ScopeError } from '../services/scope.mjs';
 import { authOf, clientIp, endSession } from '../lib/auth.mjs';
 import { SEC_HEADERS, readBody, send, serveStatic } from '../lib/http.mjs';
 import { publicRoutes } from './public.mjs';
@@ -43,6 +44,24 @@ const ADMIN = [
   adminStoreRoutes,
   adminAssistantRoutes,
 ];
+
+// Yönetici rolü isteyen uçlar: yol kalıbı → gereken rol tablosu (konsey bulgusu: rol kapısı yalnız users|backups|jobs'u kısıtlıyordu).
+// `when` verilirse kapı yalnız o koşulda (gövdeye bakarak) uygulanır; verilmezse yol eşleşmesi yeter.
+// Dağınık `if` yığını yerine tek tablo: yeni bir uç yöneticiye kısıtlanacaksa buraya bir satır eklenir.
+const ADMIN_ONLY = [
+  { p: /^\/api\/admin\/(users|backups?|jobs)$/, why: 'kullanıcı, yedek ve iş uçları' },
+  // Kiracı kasası ve paket yönetimi: anahtar koyma/iptal, kiracı oluşturma, paket değiştirme, kullanıcı atama.
+  { p: /^\/api\/admin\/tenants\/(create|update|key|user)$/, why: 'kiracı yönetimi ve API anahtarı kasası' },
+  // Eşik üstü iade onayı: onay isteği (approve:true) yalnız yöneticiden gelebilir (dört göz kuralı servis katmanında).
+  { p: /^\/api\/admin\/refunds\/settle$/, when: b => b?.approve === true, why: 'iade onayı' },
+  { p: /^\/api\/admin\/ads\/brand$/, why: 'marka yetkisi verme' },
+  // Satış yasağı kuralı silme ve fiyat stratejisi değiştirme/silme.
+  { p: /^\/api\/admin\/rules\/(remove|strategy|strategy-remove)$/, why: 'kural ve fiyat stratejisi' },
+  { p: /^\/api\/admin\/b2b\/deal-status$/, why: 'B2B anlaşma durumu' },
+];
+// Eşleşen ilk satırın gerekçesi (yönetici değilse) ya da null. Birim testi tabloyu bu işlevle denetler.
+export const adminOnlyReason = (p, body) =>
+  ADMIN_ONLY.find(g => g.p.test(p) && (!g.when || g.when(body)))?.why ?? null;
 
 async function run(handlers, c) {
   for (const h of handlers) {
@@ -112,17 +131,22 @@ export const handle = async (req, res) => {
     const me = auth.user,
       isBoss = me.role === 'yonetici',
       canEdit = me.role !== 'goruntuleyen';
-    // Yetki: okuma uçları tüm roller · değiştiren uçlar düzenleyen ve yönetici · kullanıcı, yedek ve iş uçları yalnız yönetici.
+    // Yetki: okuma uçları tüm roller · değiştiren uçlar düzenleyen ve yönetici · ADMIN_ONLY tablosundaki uçlar yalnız yönetici.
     if (req.method === 'POST' && !canEdit && p !== '/api/admin/password')
       return send(res, 403, { error: 'Bu hesap yalnız görüntüleme yetkisine sahip.' });
-    if (/^\/api\/admin\/(users|backups?|jobs)$/.test(p) && !isBoss)
-      return send(res, 403, { error: 'Bu işlem için yönetici rolü gerekir.' });
+    if (!isBoss) {
+      const why = adminOnlyReason(p, c.body);
+      if (why) return send(res, 403, { error: `Bu işlem için yönetici rolü gerekir (${why}).` });
+    }
     c.me = me;
     return await actorCtx.run(me, async () => {
       if (await run(ADMIN, c)) return;
       return send(res, 404, { error: 'yok' });
     });
   } catch (e) {
+    // Kiracı kapsamı ihlali: uçlar services/scope.mjs yardımcılarını çağırır, hata tek yerde 403'e çevrilir.
+    if (e instanceof ScopeError && !res.headersSent)
+      return send(res, 403, { error: e.message, code: e.code });
     const code = e?.http || 500;
     if (code === 500) console.error(e);
     if (!res.headersSent)

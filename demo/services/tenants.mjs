@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { store } from '../lib/store.mjs';
+import { dict } from '../lib/safe.mjs';
 
 // Çok kiracılılık (K-07) ve entegrasyon anahtarları (K-09) iş kuralları (HTTP bilmez).
 // Durum iki belgede durur: 'tenants' (kiracılar) ve 'tenant_keys' (şifreli anahtarlar). Anahtarlar kiracı kaydından ayrı tutulur ki
@@ -29,14 +30,15 @@ const fail = (code, msg) => {
 
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 const plain = v => JSON.parse(JSON.stringify(v));
-const load = () => {
-  const d = store.doc('tenants', {});
-  return d && typeof d === 'object' && !Array.isArray(d) ? d : {};
-};
+const load = () => dict(store.doc('tenants', {}));
+// kiracı → sağlayıcı → kayıt; sağlayıcı adı 'constructor' gibi olabildiği için her iki düzey prototipsiz
 const loadKeys = () => {
-  const d = store.doc('tenant_keys', {});
-  return d && typeof d === 'object' && !Array.isArray(d) ? d : {};
+  const keys = dict(store.doc('tenant_keys', {}));
+  for (const k of Object.keys(keys)) keys[k] = dict(keys[k]);
+  return keys;
 };
+// Oku-değiştir-yaz dizisi tek işlemde (kayıp güncelleme olmasın). store.tx iç içe açılamaz: fn içinde başka tx açılmaz.
+const run = fn => store.tx(fn);
 const cleanPlan = p => {
   if (!Object.hasOwn(PLAN_LIMITS, p)) fail('invalid', 'plan bronze, silver ya da gold olmalı');
   return p;
@@ -60,17 +62,19 @@ export function createTenant({ name, plan, account } = /** @type {any} */ ({})) 
   if (!nm) fail('invalid', 'name gerekli');
   const pl = cleanPlan(plan);
   const acc = str(account, 80);
-  const d = load();
-  const all = Object.values(d);
-  if (all.some(t => t.name.toLowerCase() === nm.toLowerCase())) fail('conflict', 'Bu adda bir kiracı var');
-  if (acc && all.filter(t => t.account === acc).length >= PLAN_LIMITS[pl].companies)
-    fail('limit', `${pl} paketinde en fazla ${PLAN_LIMITS[pl].companies} şirket açılabilir`);
-  const id = 't_' + crypto.randomUUID().replaceAll('-', '').slice(0, 12);
-  const t = { id, name: nm, plan: pl, created: Date.now(), shops: [], users: [], disabled: false };
-  if (acc) t.account = acc;
-  d[id] = t;
-  store.saveDoc('tenants', d);
-  return plain(t);
+  return run(() => {
+    const d = load();
+    const all = Object.values(d);
+    if (all.some(t => t.name.toLowerCase() === nm.toLowerCase())) fail('conflict', 'Bu adda bir kiracı var');
+    if (acc && all.filter(t => t.account === acc).length >= PLAN_LIMITS[pl].companies)
+      fail('limit', `${pl} paketinde en fazla ${PLAN_LIMITS[pl].companies} şirket açılabilir`);
+    const id = 't_' + crypto.randomUUID().replaceAll('-', '').slice(0, 12);
+    const t = { id, name: nm, plan: pl, created: Date.now(), shops: [], users: [], disabled: false };
+    if (acc) t.account = acc;
+    d[id] = t;
+    store.saveDoc('tenants', d);
+    return plain(t);
+  });
 }
 
 export function getTenant(id) {
@@ -82,55 +86,61 @@ export const listTenants = () => Object.values(load()).map(plain);
 
 // updateTenant(id, { name?, plan?, disabled? }): pakit düşürülürken mevcut mağaza sayısı yeni sınırı aşıyorsa limit hatası.
 export function updateTenant(id, patch) {
-  const d = load();
-  const t = must(d, id);
-  const p = patch && typeof patch === 'object' ? patch : {};
-  if (p.name !== undefined) {
-    const nm = str(p.name, 120);
-    if (!nm) fail('invalid', 'name boş olamaz');
-    if (Object.values(d).some(x => x.id !== t.id && x.name.toLowerCase() === nm.toLowerCase()))
-      fail('conflict', 'Bu adda bir kiracı var');
-    t.name = nm;
-  }
-  if (p.plan !== undefined) {
-    const pl = cleanPlan(p.plan);
-    if (t.shops.length > PLAN_LIMITS[pl].shops)
-      fail('limit', `${pl} paketi en fazla ${PLAN_LIMITS[pl].shops} mağazaya izin verir`);
-    t.plan = pl;
-  }
-  if (p.disabled !== undefined) {
-    if (typeof p.disabled !== 'boolean') fail('invalid', 'disabled true ya da false olmalı');
-    t.disabled = p.disabled;
-  }
-  store.saveDoc('tenants', d);
-  return plain(t);
+  return run(() => {
+    const d = load();
+    const t = must(d, id);
+    const p = patch && typeof patch === 'object' ? patch : {};
+    if (p.name !== undefined) {
+      const nm = str(p.name, 120);
+      if (!nm) fail('invalid', 'name boş olamaz');
+      if (Object.values(d).some(x => x.id !== t.id && x.name.toLowerCase() === nm.toLowerCase()))
+        fail('conflict', 'Bu adda bir kiracı var');
+      t.name = nm;
+    }
+    if (p.plan !== undefined) {
+      const pl = cleanPlan(p.plan);
+      if (t.shops.length > PLAN_LIMITS[pl].shops)
+        fail('limit', `${pl} paketi en fazla ${PLAN_LIMITS[pl].shops} mağazaya izin verir`);
+      t.plan = pl;
+    }
+    if (p.disabled !== undefined) {
+      if (typeof p.disabled !== 'boolean') fail('invalid', 'disabled true ya da false olmalı');
+      t.disabled = p.disabled;
+    }
+    store.saveDoc('tenants', d);
+    return plain(t);
+  });
 }
 
 export function addShop(tenantId, { name, market } = /** @type {any} */ ({})) {
-  const d = load();
-  const t = must(d, tenantId);
-  const nm = str(name, 120),
-    mk = str(market, 40).toLowerCase();
-  if (!nm) fail('invalid', 'name gerekli');
-  if (!MARKET_RE.test(mk)) fail('invalid', 'Geçersiz pazar yeri');
-  if (t.shops.length >= PLAN_LIMITS[t.plan].shops)
-    fail('limit', `${t.plan} paketinde en fazla ${PLAN_LIMITS[t.plan].shops} mağaza açılabilir`);
-  if (t.shops.some(s => s.market === mk && s.name.toLowerCase() === nm.toLowerCase()))
-    fail('conflict', 'Bu mağaza zaten var');
-  const shop = { id: 's_' + crypto.randomUUID().replaceAll('-', '').slice(0, 10), name: nm, market: mk };
-  t.shops.push(shop);
-  store.saveDoc('tenants', d);
-  return plain(shop);
+  return run(() => {
+    const d = load();
+    const t = must(d, tenantId);
+    const nm = str(name, 120),
+      mk = str(market, 40).toLowerCase();
+    if (!nm) fail('invalid', 'name gerekli');
+    if (!MARKET_RE.test(mk)) fail('invalid', 'Geçersiz pazar yeri');
+    if (t.shops.length >= PLAN_LIMITS[t.plan].shops)
+      fail('limit', `${t.plan} paketinde en fazla ${PLAN_LIMITS[t.plan].shops} mağaza açılabilir`);
+    if (t.shops.some(s => s.market === mk && s.name.toLowerCase() === nm.toLowerCase()))
+      fail('conflict', 'Bu mağaza zaten var');
+    const shop = { id: 's_' + crypto.randomUUID().replaceAll('-', '').slice(0, 10), name: nm, market: mk };
+    t.shops.push(shop);
+    store.saveDoc('tenants', d);
+    return plain(shop);
+  });
 }
 
 export function removeShop(tenantId, shopId) {
-  const d = load();
-  const t = must(d, tenantId);
-  const i = t.shops.findIndex(s => s.id === shopId);
-  if (i < 0) fail('notfound', 'Mağaza yok');
-  t.shops.splice(i, 1);
-  store.saveDoc('tenants', d);
-  return plain(t);
+  return run(() => {
+    const d = load();
+    const t = must(d, tenantId);
+    const i = t.shops.findIndex(s => s.id === shopId);
+    if (i < 0) fail('notfound', 'Mağaza yok');
+    t.shops.splice(i, 1);
+    store.saveDoc('tenants', d);
+    return plain(t);
+  });
 }
 
 /* ───────── kullanıcı → kiracı ───────── */
@@ -139,12 +149,14 @@ export function removeShop(tenantId, shopId) {
 export function assignUser(tenantId, username) {
   const u = str(username, 80);
   if (!USER_RE.test(u)) fail('invalid', 'Geçersiz kullanıcı adı');
-  const d = load();
-  const t = must(d, tenantId);
-  for (const x of Object.values(d)) x.users = x.users.filter(n => n !== u);
-  t.users.push(u);
-  store.saveDoc('tenants', d);
-  return plain(t);
+  return run(() => {
+    const d = load();
+    const t = must(d, tenantId);
+    for (const x of Object.values(d)) x.users = x.users.filter(n => n !== u);
+    t.users.push(u);
+    store.saveDoc('tenants', d);
+    return plain(t);
+  });
 }
 
 export const tenantOfUser = username => {
@@ -186,16 +198,19 @@ export function setKey(tenantId, provider, apiKey) {
   must(load(), tenantId);
   const pv = cleanProvider(provider);
   if (!goodShape(apiKey)) fail('invalid', 'Anahtar 8-512 karakter olmalı ve boşluk içermemeli');
-  const keys = loadKeys();
-  keys[tenantId] ||= {};
-  keys[tenantId][pv] = {
-    ...encrypt(apiKey, tenantId, pv),
-    added: Date.now(),
-    last4: apiKey.slice(-4),
-    active: true,
-  };
-  store.saveDoc('tenant_keys', keys);
-  return { provider: pv, added: keys[tenantId][pv].added, last4: keys[tenantId][pv].last4, active: true };
+  return run(() => {
+    must(load(), tenantId);
+    const keys = loadKeys();
+    keys[tenantId] ||= dict();
+    keys[tenantId][pv] = {
+      ...encrypt(apiKey, tenantId, pv),
+      added: Date.now(),
+      last4: apiKey.slice(-4),
+      active: true,
+    };
+    store.saveDoc('tenant_keys', keys);
+    return { provider: pv, added: keys[tenantId][pv].added, last4: keys[tenantId][pv].last4, active: true };
+  });
 }
 
 // Yalnız sunucu içi kullanım: çözülmüş anahtar. Yok, iptal edilmiş ya da çözülemiyorsa null.
@@ -223,12 +238,14 @@ export function listKeys(tenantId) {
 // İptalde şifreli veri silinir; kayıt (provider, added, last4) etkin değil olarak kalır.
 export function revokeKey(tenantId, provider) {
   const pv = cleanProvider(provider);
-  const keys = loadKeys();
-  const rec = keys[tenantId]?.[pv];
-  if (!rec) fail('notfound', 'Anahtar yok');
-  keys[tenantId][pv] = { iv: '', tag: '', data: '', added: rec.added, last4: rec.last4, active: false };
-  store.saveDoc('tenant_keys', keys);
-  return { provider: pv, added: rec.added, last4: rec.last4, active: false };
+  return run(() => {
+    const keys = loadKeys();
+    const rec = keys[tenantId]?.[pv];
+    if (!rec) fail('notfound', 'Anahtar yok');
+    keys[tenantId][pv] = { iv: '', tag: '', data: '', added: rec.added, last4: rec.last4, active: false };
+    store.saveDoc('tenant_keys', keys);
+    return { provider: pv, added: rec.added, last4: rec.last4, active: false };
+  });
 }
 
 // Ağ çağrısı yok: yalnız anahtar var mı, çözülüyor mu, biçimi sağlıklı mı.

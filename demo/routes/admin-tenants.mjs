@@ -1,4 +1,5 @@
 import { send } from '../lib/http.mjs';
+import { assertScope, filterScope } from '../services/scope.mjs';
 import {
   TenantError,
   addShop,
@@ -26,8 +27,10 @@ const bad = (res, msg) => send(res, 400, { error: msg });
 const needStr = (v, name) => (typeof v === 'string' && v.trim() ? null : `${name} gerekli`);
 const withKeys = t => ({ ...t, keys: listKeys(t.id) });
 
+// Kiracı kapsamı (services/scope.mjs): 'yonetici' tüm kiracıları görür, diğer roller yalnız kendi kiracısını.
+// create/update/key/user uçları ayrıca handler.mjs'teki ADMIN_ONLY tablosuyla yöneticiye kısıtlıdır.
 export async function adminTenantRoutes(c) {
-  const { req, res, p, body } = c;
+  const { req, res, p, body, me } = c;
   const m = /^\/api\/admin\/tenants(?:\/([^/]+))?$/.exec(p);
   if (!m) return;
   const sub = m[1];
@@ -42,6 +45,7 @@ export async function adminTenantRoutes(c) {
       }
       const err = needStr(b.tenantId, 'tenantId');
       if (err) return bad(res, err);
+      assertScope(me, b.tenantId); // başka kiracının kaydına yazma yok (yönetici hepsine yazabilir)
       if (sub === 'update') return send(res, 200, { ok: true, tenant: updateTenant(b.tenantId, b) });
       if (sub === 'shop') {
         // shop: { tenantId, action: 'add' | 'remove', name, market | shopId }
@@ -76,8 +80,10 @@ export async function adminTenantRoutes(c) {
     }
     if (req.method !== 'GET' && req.method !== 'HEAD')
       return send(res, 405, { error: 'GET bekleniyor' }, { allow: 'GET, HEAD' });
-    if (!sub) return send(res, 200, { tenants: listTenants().map(withKeys) });
+    // Liste ve tek kayıt kapsamla süzülür: kiracı kullanıcısı başka kiracıyı (ve anahtar özetini) görmez.
+    if (!sub) return send(res, 200, { tenants: filterScope(me, listTenants(), t => t.id).map(withKeys) });
     if (!ID_RE.test(sub)) return bad(res, 'Geçersiz kimlik');
+    assertScope(me, sub);
     const t = getTenant(sub);
     return t ? send(res, 200, withKeys(t)) : send(res, 404, { error: 'Kiracı yok' });
   } catch (e) {

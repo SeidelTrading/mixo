@@ -1,4 +1,5 @@
 import { send } from '../lib/http.mjs';
+import { assertShared } from '../services/scope.mjs';
 import {
   PoolError,
   addEan,
@@ -21,8 +22,10 @@ const WRITES = new Set(['ingest', 'merge', 'unmerge', 'ean']);
 const bad = (res, msg) => send(res, 400, { error: msg });
 const needStr = (v, name) => (typeof v === 'string' && v.trim() ? null : `${name} gerekli`);
 
+// KAPSAM NOTU: havuz kayıtlarında kiracı alanı YOK (tek ortak havuz). Kayıt kiracıya bağlanamadığı için
+// listeleme ve tek kayıt uçları, bir kiracıya bağlı kullanıcıya (yönetici dışı) assertShared ile kapatılır.
 export async function adminPoolRoutes(c) {
-  const { req, res, p, url, body } = c;
+  const { req, res, p, url, body, me } = c;
   const m = /^\/api\/admin\/pool(?:\/([^/]+))?$/.exec(p);
   if (!m) return;
   const sub = m[1];
@@ -58,6 +61,7 @@ export async function adminPoolRoutes(c) {
     }
     if (req.method !== 'GET' && req.method !== 'HEAD')
       return send(res, 405, { error: 'GET bekleniyor' }, { allow: 'GET, HEAD' });
+    assertShared(me, 'Ürün havuzu');
     if (!sub) {
       const sp = url.searchParams;
       return send(

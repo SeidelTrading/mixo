@@ -82,7 +82,8 @@
         )
         .join('') || '<li>Noch keine Ereignisse.</li>'
     }</ol>
-    <div class="cta"><button class="btn btn-ghost" data-wipe>Meine Daten löschen</button><button class="btn btn-ghost" data-consent="0">Analyse ausschalten</button></div>`;
+    <div class="cta"><button class="btn btn-ghost" data-wipe>Meine Daten löschen</button><button class="btn btn-ghost" data-privacy>Daten beim Shop anfordern</button><button class="btn btn-ghost" data-consent="0">Analyse ausschalten</button></div>
+    <p class="fnote" style="font-size:13px">„Meine Daten löschen“ löscht nur den Verlauf in diesem Browser. Für die Daten, die der Shop zu Ihrer E-Mail-Adresse gespeichert hat (Einwilligung, Warenkorb, Nachrichten), nutzen Sie „Daten beim Shop anfordern“ — wir senden einen Link an genau diese Adresse.</p>`;
   }
   function openInsights() {
     closeModal(true);

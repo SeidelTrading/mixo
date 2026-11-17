@@ -1,4 +1,5 @@
 import { send } from '../lib/http.mjs';
+import { assertShared } from '../services/scope.mjs';
 import {
   SupportError,
   alerts,
@@ -21,8 +22,10 @@ const WRITES = new Set(['intake', 'reply', 'customer', 'complaint']);
 const bad = (res, msg) => send(res, 400, { error: msg });
 const needStr = (v, name) => (typeof v === 'string' && v.trim() ? null : `${name} gerekli`);
 
+// KAPSAM NOTU: destek ticket'larında ve şikâyet kayıtlarında kiracı alanı YOK. Kayıtlar müşteri e-postası ve
+// yazışma gövdesi taşıdığı için okuma uçları kiracıya bağlı kullanıcıya (yönetici dışı) tamamen kapatılır.
 export async function adminSupportRoutes(c) {
-  const { req, res, p, url, body } = c;
+  const { req, res, p, url, body, me } = c;
   const m = /^\/api\/admin\/support(?:\/([^/]+))?$/.exec(p);
   if (!m) return;
   const sub = m[1];
@@ -48,6 +51,7 @@ export async function adminSupportRoutes(c) {
     }
     if (req.method !== 'GET' && req.method !== 'HEAD')
       return send(res, 405, { error: 'GET bekleniyor' }, { allow: 'GET, HEAD' });
+    assertShared(me, 'Destek');
     const sp = url.searchParams;
     if (sub === 'alerts') return send(res, 200, { alerts: alerts() });
     if (sub === 'report')

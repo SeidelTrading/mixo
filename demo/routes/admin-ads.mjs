@@ -1,4 +1,5 @@
 import { send } from '../lib/http.mjs';
+import { assertShared } from '../services/scope.mjs';
 import {
   AdsError,
   addKeyword,
@@ -19,8 +20,10 @@ const WRITES = new Set(['post', 'brand', 'keyword', 'command']);
 const bad = (res, msg) => send(res, 400, { error: msg });
 const needStr = (v, name) => (typeof v === 'string' && v.trim() ? null : `${name} gerekli`);
 
+// KAPSAM NOTU: kampanya durumu ve alıcı listesinde kiracı alanı YOK. Alıcı listesi müşteri e-postası taşıdığı için
+// okuma uçları kiracıya bağlı kullanıcıya (yönetici dışı) kapatılır; marka yetkisi ucu ADMIN_ONLY tablosundadır.
 export async function adminAdsRoutes(c) {
-  const { req, res, p, url, body } = c;
+  const { req, res, p, url, body, me } = c;
   const m = /^\/api\/admin\/ads(?:\/([^/]+))?$/.exec(p);
   if (!m) return;
   const sub = m[1];
@@ -59,6 +62,7 @@ export async function adminAdsRoutes(c) {
     }
     if (req.method !== 'GET' && req.method !== 'HEAD')
       return send(res, 405, { error: 'GET bekleniyor' }, { allow: 'GET, HEAD' });
+    assertShared(me, 'Reklam verisi');
     if (!sub) return send(res, 200, status());
     if (sub === 'audience')
       return send(res, 200, await audience({ kind: url.searchParams.get('kind') ?? '' }));

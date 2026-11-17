@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { store } from '../lib/store.mjs';
+import { dict } from '../lib/safe.mjs';
 
 // B2B platformu iş kuralları (HTTP bilmez; gerçek ödeme ya da ağ çağrısı yok). Lojistik yazılımı verisi Wawi verisiyle
 // birleştirilir; Türk satıcılar Almanya'daki küçük alıcılarla eşleştirilir ve platform komisyon alır.
@@ -40,7 +41,8 @@ const newId = prefix => prefix + crypto.randomUUID().replaceAll('-', '').slice(0
 const load = () => {
   /** @type {any} */
   const d = store.doc('b2b', null) || {};
-  return { sellers: d.sellers || {}, buyers: d.buyers || {}, offers: d.offers || {}, deals: d.deals || {} };
+  // kimlikler istekten gelir (offerId, buyerId, deal id): prototipsiz haritalar, `__proto__` bulunamayan kimlik olur
+  return { sellers: dict(d.sellers), buyers: dict(d.buyers), offers: dict(d.offers), deals: dict(d.deals) };
 };
 const run = fn =>
   store.tx(() => {

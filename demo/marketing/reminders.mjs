@@ -85,7 +85,8 @@ export function makeReminders(c) {
         )
         .replace(/\{link\}/g, link)
         .replace(/\{datum\}/g, new Date(r.ref).toLocaleDateString('de-DE'))
-        .replace(/\{abmelden\}/g, `${SITE}/abmelden (Echtversand: persönlicher Abmelde-Link)`);
+        // Gerçek, kişisel ve imzalı abmelden bağlantısı: tek tıkla izin geri çekilir (çerez gerekmez).
+        .replace(/\{abmelden\}/g, c.unsubscribeUrl(r.email));
     return { subject: fill(rule.subject).replace(/[\r\n\0]+/g, ' '), body: fill(rule.body) };
   }
   const rowOut = (rule, r) => ({

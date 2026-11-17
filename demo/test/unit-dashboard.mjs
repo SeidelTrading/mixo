@@ -119,6 +119,40 @@ test('ciro: kuruş hassasiyeti korunur (0.1 + 0.2 tuzağı)', () => {
   drop(many);
 });
 
+test('ciro: bozuk total toplamı zehirlemez, skipped sayacında raporlanır', () => {
+  const good = fake(10, { company: 'Sağlam' });
+  const bad = [
+    fake(Infinity, { company: 'Bozuk1' }),
+    fake(-Infinity, { company: 'Bozuk2' }),
+    fake(NaN, { company: 'Bozuk3' }),
+    fake('çöp', { company: 'Bozuk4' }),
+    fake(undefined, { company: 'Bozuk5' }),
+  ];
+  const r = dash.revenue({ groupBy: 'company' });
+  assert.ok(Number.isFinite(r.total), 'toplam her zaman sonlu olmalı');
+  assert.equal(r.total, 10);
+  assert.equal(r.skipped, bad.length);
+  assert.equal(r.orders, 1);
+  assert.deepEqual(
+    r.rows.map(x => x.key),
+    ['Sağlam'],
+  );
+  assert.equal(JSON.parse(JSON.stringify(r)).total, 10, 'JSON içinde null olmamalı');
+  drop([good, ...bad]);
+});
+
+test('ciro: metin tutarlarda hem "." hem "," ondalık ayracı çözülür', () => {
+  const os = [fake('12,50'), fake('1.234,56'), fake('1,234.56'), fake('7.25'), fake('1,234')];
+  const r = dash.revenue({ groupBy: 'company' });
+  assert.equal(r.skipped, 0);
+  assert.equal(r.total, 12.5 + 1234.56 + 1234.56 + 7.25 + 1234);
+  assert.equal(dash.toCents('12,50'), 1250);
+  assert.equal(dash.toCents('1.234,56'), 123456);
+  assert.equal(dash.toCents(Infinity), null);
+  assert.equal(dash.toCents('abc'), null);
+  drop(os);
+});
+
 test('ciro: eski siparişte veri bayat sayılır; sipariş yoksa da', () => {
   assert.equal(dash.revenue({}).stale, true);
   const o = fake(1, { t: Date.now() - dash.STALE_MS - 1000 });
@@ -151,6 +185,17 @@ test('hedef: gün değişince sıfırlanır, aynı gün içinde sıfırlanmaz', 
   assert.equal(dash.listTargets(now + 36 * 3600e3).find(t => t.cat === 'saat').left, 50);
   assert.equal(dash.listTargets(now + 36 * 3600e3).find(t => t.cat === 'parfum').left, 100);
   assert.equal(dash.resetDaily(now + 36 * 3600e3), false);
+});
+
+test("hedef/spot: __proto__ gibi anahtarlar Object.prototype'ı kirletmez", () => {
+  assert.throws(() => dash.consume({ cat: '__proto__', qty: 3 }), { code: 'invalid' });
+  assert.throws(() => dash.setTarget({ cat: '__proto__', count: 5 }), { code: 'invalid' });
+  assert.throws(() => dash.consume({ cat: 'constructor', qty: 1 }), { code: 'invalid' });
+  assert.throws(() => dash.spotStatus('__proto__'), { code: 'invalid' });
+  assert.equal(Object.prototype.left, undefined);
+  assert.equal(Object.prototype.count, undefined);
+  assert.equal({}.left, undefined);
+  assert.equal('left' in {}, false);
 });
 
 test('spot: kalan adet, günlük hız ve eksik mağazalar', () => {

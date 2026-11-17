@@ -1,4 +1,5 @@
 import { send } from '../lib/http.mjs';
+import { assertShared } from '../services/scope.mjs';
 import {
   InsightsError,
   arbitrage,
@@ -17,8 +18,10 @@ const STATUS = { invalid: 400, notfound: 404 };
 const POSTS = new Set(['import', 'compare', 'arbitrage']);
 const GETS = new Set(['trends', 'funnel', 'cohort']);
 
+// KAPSAM NOTU: pazar verisi ve davranış içgörülerinde kiracı alanı YOK (veri EAN/kategori kırılımında tutulur).
+// Okuma uçları bu yüzden kiracıya bağlı kullanıcıya (yönetici dışı) kapalıdır.
 export async function adminInsightsRoutes(c) {
-  const { req, res, p, url, body } = c;
+  const { req, res, p, url, body, me } = c;
   const m = /^\/api\/admin\/insights(?:\/([^/]+))?$/.exec(p);
   if (!m) return;
   const sub = m[1];
@@ -31,6 +34,7 @@ export async function adminInsightsRoutes(c) {
     }
     if (req.method !== 'GET' && req.method !== 'HEAD')
       return send(res, 405, { error: 'GET bekleniyor' }, { allow: 'GET, HEAD' });
+    assertShared(me, 'İçgörü verisi');
     if (!sub) return send(res, 200, summary());
     if (!GETS.has(sub)) return send(res, 404, { error: 'Bulunamadı' });
     const days = url.searchParams.get('days') ?? undefined;

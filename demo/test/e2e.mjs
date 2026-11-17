@@ -342,6 +342,7 @@ try {
   ok(
     (
       await call(null, '/api/events', {
+        consent: true,
         events: [
           { e: 'view', id: pid, s: 1 },
           { e: 'search', q: 'test', s: 1 },
@@ -349,6 +350,15 @@ try {
       })
     ).j.ok === 2,
     'olaylar kaydedildi',
+  );
+  // Çerez onayı beyanı olmayan gönderim saklanmaz: istek 200 döner (vitrin kırılmasın) ama hiçbir olay yazılmaz.
+  ok(
+    (
+      await call(null, '/api/events', {
+        events: [{ e: 'view', id: pid, s: 1 }],
+      })
+    ).s === 200,
+    'onaysız olay gönderimi 200 döner',
   );
 
   console.log('5) Yedek ve iş kuyruğu');

@@ -105,6 +105,8 @@ const load = () => {
   };
 };
 const save = d => store.saveDoc('support', d);
+// Oku-değiştir-yaz dizisi tek işlemde (kayıp güncelleme olmasın). store.tx iç içe açılamaz: fn içinde başka tx açılmaz.
+const run = fn => store.tx(fn);
 const uid = prefix => prefix + crypto.randomUUID().replaceAll('-', '').slice(0, 12);
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 const mustFind = (d, id) => d.tickets.find(t => t.id === id) || fail('notfound', 'Ticket yok');
@@ -128,60 +130,64 @@ export function intake(mail) {
   if (!subject && !body) fail('invalid', 'subject ya da body gerekli');
   const orderId = str(typeof m.orderId === 'number' ? String(m.orderId) : m.orderId, 60) || null;
   const { kind, signals } = classify({ from, subject, body });
-  const d = load();
-  const now = Date.now();
-  const t = {
-    id: uid('t_'),
-    t: now,
-    from,
-    subject,
-    body,
-    kind,
-    signals,
-    status: 'open',
-    orderId,
-    thread: [{ t: now, by: 'customer', text: body || subject }],
-    escalated: false,
-    assignedTo: null,
-  };
-  if (kind === 'critical') {
-    t.escalated = true;
-    t.status = 'needs_human';
-    addMsg(t, 'system', 'Kritik yazışma: otomatik cevap üretilmedi, yetkiliye bildirim gönderildi.');
-    d.alerts.push({
-      id: uid('a_'),
+  return run(() => {
+    const d = load();
+    const now = Date.now();
+    const t = {
+      id: uid('t_'),
       t: now,
-      ticketId: t.id,
       from,
       subject,
+      body,
+      kind,
       signals,
-      notified: true,
-      simulated: true,
-    });
-    if (d.alerts.length > MAX_ALERTS) d.alerts.splice(0, d.alerts.length - MAX_ALERTS);
-  }
-  d.tickets.push(t);
-  if (d.tickets.length > MAX_TICKETS) d.tickets.splice(0, d.tickets.length - MAX_TICKETS);
-  save(d);
-  return t;
+      status: 'open',
+      orderId,
+      thread: [{ t: now, by: 'customer', text: body || subject }],
+      escalated: false,
+      assignedTo: null,
+    };
+    if (kind === 'critical') {
+      t.escalated = true;
+      t.status = 'needs_human';
+      addMsg(t, 'system', 'Kritik yazışma: otomatik cevap üretilmedi, yetkiliye bildirim gönderildi.');
+      d.alerts.push({
+        id: uid('a_'),
+        t: now,
+        ticketId: t.id,
+        from,
+        subject,
+        signals,
+        notified: true,
+        simulated: true,
+      });
+      if (d.alerts.length > MAX_ALERTS) d.alerts.splice(0, d.alerts.length - MAX_ALERTS);
+    }
+    d.tickets.push(t);
+    if (d.tickets.length > MAX_TICKETS) d.tickets.splice(0, d.tickets.length - MAX_TICKETS);
+    save(d);
+    return t;
+  });
 }
 
 // autoReply(ticketId) → yalnız iade talebine %20 kısmi iade teklifi.
 export function autoReply(ticketId) {
-  const d = load();
-  const t = mustFind(d, ticketId);
-  assertNoAgentReply(t);
-  if (t.kind !== 'refund') fail('conflict', 'Otomatik cevap yalnız iade talepleri için');
-  if (t.status !== 'open') fail('conflict', `Ticket durumu uygun değil: ${t.status}`);
-  const ref = t.orderId ? ` (Bestellung ${t.orderId})` : '';
-  addMsg(
-    t,
-    'agent',
-    `Guten Tag,\n\nvielen Dank für Ihre Nachricht${ref}. Als Entgegenkommen bieten wir Ihnen eine Teilerstattung von ${REFUND_PERCENT} % des Kaufpreises an, ohne dass Sie die Ware zurücksenden müssen. Wenn Sie einverstanden sind, antworten Sie bitte mit "Ja". Wenn Sie die Ware lieber zurücksenden möchten, antworten Sie mit "Retoure" und wir senden Ihnen ein DHL-Rücksendeetikett.\n\nFreundliche Grüße`,
-  );
-  t.status = 'offer_sent';
-  save(d);
-  return t;
+  return run(() => {
+    const d = load();
+    const t = mustFind(d, ticketId);
+    assertNoAgentReply(t);
+    if (t.kind !== 'refund') fail('conflict', 'Otomatik cevap yalnız iade talepleri için');
+    if (t.status !== 'open') fail('conflict', `Ticket durumu uygun değil: ${t.status}`);
+    const ref = t.orderId ? ` (Bestellung ${t.orderId})` : '';
+    addMsg(
+      t,
+      'agent',
+      `Guten Tag,\n\nvielen Dank für Ihre Nachricht${ref}. Als Entgegenkommen bieten wir Ihnen eine Teilerstattung von ${REFUND_PERCENT} % des Kaufpreises an, ohne dass Sie die Ware zurücksenden müssen. Wenn Sie einverstanden sind, antworten Sie bitte mit "Ja". Wenn Sie die Ware lieber zurücksenden möchten, antworten Sie mit "Retoure" und wir senden Ihnen ein DHL-Rücksendeetikett.\n\nFreundliche Grüße`,
+    );
+    t.status = 'offer_sent';
+    save(d);
+    return t;
+  });
 }
 
 const word = list => new RegExp(`(?<![\\p{L}\\d])(?:${list.join('|')})(?![\\p{L}\\d])`, 'u');
@@ -194,26 +200,28 @@ const NEGATE = word(['nicht', 'kein', 'keine', 'nie']);
 export function customerReply(ticketId, text) {
   const s = str(text, 5000);
   if (!s) fail('invalid', 'text gerekli');
-  const d = load();
-  const t = mustFind(d, ticketId);
-  assertNoAgentReply(t);
-  if (t.status !== 'offer_sent') fail('conflict', `Teklif beklenmiyor (durum: ${t.status})`);
-  addMsg(t, 'customer', s);
-  const low = s.toLowerCase();
-  const yes = ACCEPT.test(low),
-    no = REJECT.test(low),
-    neg = NEGATE.test(low);
-  if (yes && !no && !neg) t.status = 'offer_accepted';
-  else if (no && !yes) {
-    t.status = 'label_required';
-    t.labelRequested = true;
-    addMsg(t, 'system', 'DHL iade etiketi talep edildi.');
-  } else {
-    t.status = 'needs_human';
-    addMsg(t, 'system', 'Müşteri cevabı net yorumlanamadı; insana devredildi.');
-  }
-  save(d);
-  return t;
+  return run(() => {
+    const d = load();
+    const t = mustFind(d, ticketId);
+    assertNoAgentReply(t);
+    if (t.status !== 'offer_sent') fail('conflict', `Teklif beklenmiyor (durum: ${t.status})`);
+    addMsg(t, 'customer', s);
+    const low = s.toLowerCase();
+    const yes = ACCEPT.test(low),
+      no = REJECT.test(low),
+      neg = NEGATE.test(low);
+    if (yes && !no && !neg) t.status = 'offer_accepted';
+    else if (no && !yes) {
+      t.status = 'label_required';
+      t.labelRequested = true;
+      addMsg(t, 'system', 'DHL iade etiketi talep edildi.');
+    } else {
+      t.status = 'needs_human';
+      addMsg(t, 'system', 'Müşteri cevabı net yorumlanamadı; insana devredildi.');
+    }
+    save(d);
+    return t;
+  });
 }
 
 /* ───────── K-23: tekrarlayan şikayetler ───────── */
@@ -225,20 +233,24 @@ export function recordComplaint(input) {
     reason = str(o.reason, 300);
   if (!poolId) fail('invalid', 'poolId gerekli');
   if (!supplier) fail('invalid', 'supplier ya da vendor gerekli');
-  const d = load();
-  const c = { id: uid('c_'), t: Date.now(), poolId, vendor, supplier, reason };
-  d.complaints.push(c);
-  if (d.complaints.length > MAX_COMPLAINTS) d.complaints.splice(0, d.complaints.length - MAX_COMPLAINTS);
-  save(d);
-  return c;
+  return run(() => {
+    const d = load();
+    const c = { id: uid('c_'), t: Date.now(), poolId, vendor, supplier, reason };
+    d.complaints.push(c);
+    if (d.complaints.length > MAX_COMPLAINTS) d.complaints.splice(0, d.complaints.length - MAX_COMPLAINTS);
+    save(d);
+    return c;
+  });
 }
 
 export function setMinCount(n) {
   if (!Number.isInteger(n) || n < 1 || n > 1000) fail('invalid', 'minCount 1-1000 arası tam sayı olmalı');
-  const d = load();
-  d.minCount = n;
-  save(d);
-  return n;
+  return run(() => {
+    const d = load();
+    d.minCount = n;
+    save(d);
+    return n;
+  });
 }
 
 // complaintReport({ minCount? }) → eşiğe ulaşan (count >= minCount) ürün/tedarikçi çiftleri, çoktan aza.
