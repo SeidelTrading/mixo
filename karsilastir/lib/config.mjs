@@ -26,5 +26,11 @@ export function loadConfig(env = process.env) {
     scheduler: env.SCHEDULER !== '0',
     offerMaxAgeDays: Number(env.OFFER_MAX_AGE_DAYS || 30),
     allowPrivateHosts: env.ALLOW_PRIVATE_HOSTS === '1',
+    ownDomains: (env.OWN_DOMAINS || '')
+      .split(',')
+      .map(x => x.trim())
+      .filter(Boolean),
+    ownIntervalMs: Number(env.OWN_INTERVAL_MS || 2000),
+    mixoCatalogTotal: Number(env.MIXO_CATALOG_TOTAL || 44862),
   };
 }

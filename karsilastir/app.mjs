@@ -25,6 +25,8 @@ export function createApp(config, { now = Date.now } = {}) {
       siteUrl: config.siteUrl,
       now,
       allowPrivateHosts: config.allowPrivateHosts,
+      ownDomains: config.ownDomains,
+      ownIntervalMs: config.ownIntervalMs,
       log: m => console.log(m),
     }));
   const server = createServer(createHandler(ctx));

@@ -28,10 +28,11 @@ export class RateLimiter {
     this.waiters.shift()?.();
   }
 
-  async run(host, fn) {
+  /** interval: bu host için özel aralık (yalnızca kullanıcının kendi sitesi için; bkz. crawler ownDomains). */
+  async run(host, fn, interval = this.minIntervalMs) {
     const t = this.now();
     const slot = Math.max(t, this.nextAt.get(host) ?? 0);
-    this.nextAt.set(host, slot + this.minIntervalMs);
+    this.nextAt.set(host, slot + interval);
     if (slot > t) await this.sleep(slot - t);
     await this.#acquire();
     try {

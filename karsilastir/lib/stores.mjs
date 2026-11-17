@@ -12,8 +12,10 @@ import { isMarket } from './config.mjs';
  */
 export const STORES = [
   // --- Almanya
-  { market: 'de', name: 'Mixoutlet', domain: 'mixoutlet.de', crawl: true },
+  // shopify: true -> ürün listesi /products.json üzerinden içe aktarılır (kullanıcının kendi mağazası; OWN_DOMAINS ile hızlandırılabilir).
+  { market: 'de', name: 'Mixoutlet', domain: 'mixoutlet.de', crawl: true, shopify: true },
   { market: 'de', name: 'Alternate', domain: 'alternate.de', crawl: true },
+  { market: 'de', name: 'Uhrcenter', domain: 'uhrcenter.de', crawl: true },
   { market: 'de', name: 'Christ', domain: 'christ.de', crawl: true },
   { market: 'de', name: 'Uhren4you', domain: 'uhren4you.de', crawl: true },
   { market: 'de', name: 'Parfumdreams', domain: 'parfumdreams.de', crawl: true },

@@ -219,7 +219,7 @@ export function botPage(ctx) {
 const nf = (n, locale = 'en') => new Intl.NumberFormat(locale).format(n);
 
 /** Kök ana sayfa: arama, istatistikler, pazarlar, kategori/marka, örnek ürünler. */
-export function marketChooser(ctx, { stats, topCats, brands, latest, lang = 'en' }) {
+export function marketChooser(ctx, { stats, topCats, brands, latest, mixo, lang = 'en' }) {
   const t = k => tr(lang, k);
   const marketOpts = MARKET_IDS.map(
     id => `<option value="${id}">${esc(MARKETS[id].name)} (${id.toUpperCase()})</option>`,
@@ -258,7 +258,58 @@ export function marketChooser(ctx, { stats, topCats, brands, latest, lang = 'en'
 <section class="hero-band"><h1>${esc(t('homeHeading'))}</h1><p>${esc(t('homeLead'))}</p>
 <form class="search hero-search home-search" action="/de/search" method="get" role="search" onsubmit="this.action='/'+this.elements.m.value+'/search'"><label class="sr" for="hq">${esc(t('searchLabel'))}</label><input id="hq" type="search" name="q" placeholder="${esc(t('searchPlaceholder'))}" required><label class="sr" for="hm">${esc(t('marketLabel'))}</label><select id="hm" name="m">${marketOpts.replace('value="de"', 'value="de" selected')}</select><button type="submit">${esc(t('search'))}</button></form></section>
 <ul class="stats" aria-label="${esc(t('coverage'))}">${stat(total.products, t('statProducts'))}${stat(total.shops, t('statShops'))}${stat(total.offers, t('statOffers'))}${stat(MARKET_IDS.length, t('statCountries'))}</ul>
+${mixo?.hasShop ? `<section class="block mixo-band"><h2>${esc(t('mixoHeadline').replace('{n}', nf(mixo.total)).replace('{x}', nf(mixo.covered)))}</h2><p><a class="chip" href="/de/mixoutlet?lang=${lang}">${esc(t('mixoCta'))}</a></p></section>` : ''}
 <section class="block"><h2>${esc(t('chooseMarket'))}</h2><ul class="mcards">${cards}</ul></section>
 ${brands.length ? `<section class="block"><h2>${esc(t('popularBrands'))}</h2><ul class="chiprow">${brandChips}</ul></section>` : ''}${latestCards}`,
+  });
+}
+
+/** Mixoutlet karşılaştırma sayfası: kapsama ölçüsü, mağaza başına eşleşme, ürün başına rakip fiyatlar ve fark. */
+export function mixoPage(ctx, { summary, cmp, sort, page, perPage, lang }) {
+  const t = k => tr(lang, k);
+  const market = 'de';
+  const money = n => formatMoney(market, n, 'EUR');
+  const pct = n => `${n > 0 ? '+' : ''}${new Intl.NumberFormat(MARKETS[market].locale).format(n)} %`;
+  const nfl = n => new Intl.NumberFormat(MARKETS[market].locale).format(n);
+  const head = t('mixoHeadline').replace('{n}', nfl(summary.total)).replace('{x}', nfl(summary.covered));
+  const share = summary.total ? Math.round((summary.covered / summary.total) * 1000) / 10 : 0;
+  const stat = (n, label) => `<li><strong>${esc(nfl(n))}</strong><span>${esc(label)}</span></li>`;
+  const shops = summary.byShop
+    .map(s => `<li><span class="chip">${esc(s.name)} · ${esc(nfl(s.n))}</span></li>`)
+    .join('');
+  const link = (s, p) => `/de/mixoutlet?lang=${lang}&amp;sort=${s}&amp;page=${p}`;
+  const sorts = [
+    ['diff', 'mixoSortDiff'],
+    ['cheap', 'mixoSortCheap'],
+    ['shops', 'mixoSortShops'],
+  ]
+    .map(
+      ([s, k]) =>
+        `<a class="chip" href="${link(s, 1)}"${s === sort ? ' aria-current="true"' : ''}>${esc(t(k))}</a>`,
+    )
+    .join('');
+  const rows = cmp.items
+    .map(
+      p => `<tr><td><a href="/de/product/${esc(p.ean)}">${esc(p.title)}</a><br><small>${esc(p.brand || '')} · ${esc(p.ean)}</small></td>
+<td>${esc(money(p.mixo))}</td>
+<td>${p.rivals.map(r => `${esc(r.shop)} ${esc(money(r.total))}`).join('<br>')}</td>
+<td>${esc(money(p.best))}</td><td class="${p.diff > 0 ? 'drop' : ''}">${esc(money(p.diff))}<br><small>${esc(pct(p.pct))}</small></td></tr>`,
+    )
+    .join('');
+  const pages = Math.max(1, Math.ceil(cmp.total / perPage));
+  const pager = `<nav class="markets" aria-label="Pager">${page > 1 ? `<a href="${link(sort, page - 1)}">${esc(t('prev'))}</a>` : ''} ${page}/${pages} ${page < pages ? `<a href="${link(sort, page + 1)}">${esc(t('next'))}</a>` : ''}</nav>`;
+  return layout(ctx, market, {
+    lang,
+    title: `${t('mixoNav')} · ${t('siteName')}`,
+    description: head,
+    canonicalPath: '/de/mixoutlet',
+    body: `<section class="hero-band"><h1>${esc(head)}</h1><p>${esc(share)} % · ${esc(t('mixoNote'))}</p></section>
+<ul class="stats" aria-label="${esc(t('mixoCoverage'))}">${stat(summary.known, t('mixoKnown'))}${stat(summary.withEan, t('mixoWithEan'))}${stat(summary.covered, t('mixoNav'))}${stat(summary.cheaper, t('mixoCheaperCount'))}</ul>
+${shops ? `<section class="block"><h2>${esc(t('mixoByShop'))}</h2><ul class="chiprow">${shops}</ul></section>` : ''}
+<section class="block"><p>${sorts}</p>${
+      cmp.items.length
+        ? `<table><thead><tr><th>${esc(t('shop'))}</th><th>${esc(t('mixoPrice'))}</th><th>${esc(t('mixoRivals'))}</th><th>${esc(t('mixoBest'))}</th><th>${esc(t('mixoDiff'))}</th></tr></thead><tbody>${rows}</tbody></table>${pager}`
+        : `<p class="empty">${esc(t('mixoEmpty'))}</p>`
+    }</section>`,
   });
 }

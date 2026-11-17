@@ -19,7 +19,17 @@ import {
   topBrands,
   sitemapEans,
 } from '../db/repo.mjs';
-import { botPage, homeBody, layout, legalPage, marketChooser, productPage, searchBody } from './views.mjs';
+import {
+  botPage,
+  homeBody,
+  layout,
+  legalPage,
+  marketChooser,
+  mixoPage,
+  productPage,
+  searchBody,
+} from './views.mjs';
+import { mixoComparison, mixoSummary } from '../db/mixo.mjs';
 
 const STATIC = {
   'style.css': 'text/css; charset=utf-8',
@@ -52,6 +62,7 @@ export function handlePublic(ctx, req, res, url) {
       : pickLang(req.headers['accept-language']);
     const page = marketChooser(ctx, {
       lang,
+      mixo: mixoSummary(db, now, maxAge0, config.mixoCatalogTotal),
       stats: siteStats(db, now, maxAge0),
       topCats,
       brands: topBrands(db, now, maxAge0),
@@ -103,6 +114,18 @@ export function handlePublic(ctx, req, res, url) {
     logClick(db, o.id, now); // yalnızca gün + teklif; IP/UA/çerez saklanmaz
     redirect(res, o.url, 302, { 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow' });
     return true;
+  }
+
+  if (seg[0] === 'de' && seg[1] === 'mixoutlet' && seg.length === 2) {
+    const q = url.searchParams;
+    const lang = LANGS.includes(q.get('lang') || '') ? q.get('lang') : 'de';
+    const sort = ['diff', 'cheap', 'shops'].includes(q.get('sort') || '') ? q.get('sort') : 'diff';
+    const page = Math.max(1, Math.min(10000, Number(q.get('page')) || 1));
+    const perPage = 50;
+    const maxAge = config.offerMaxAgeDays;
+    const cmp = mixoComparison(db, now, maxAge, { sort, limit: perPage, offset: (page - 1) * perPage });
+    const summary = mixoSummary(db, now, maxAge, config.mixoCatalogTotal);
+    return (html(res, 200, mixoPage(ctx, { summary, cmp, sort, page, perPage, lang }), cache), true);
   }
 
   if (!isMarket(seg[0])) return false;

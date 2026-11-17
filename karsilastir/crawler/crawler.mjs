@@ -36,6 +36,7 @@ export const ACCEPT = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*
 const MAX_SITEMAPS = 4;
 const MAX_CHILD_SITEMAPS = 3;
 const MAX_DISCOVERED = 500;
+const MAX_TARGETED = 2500;
 const MAX_HOPS = 3;
 const hostname = h => h.replace(/:\d+$/, '').toLowerCase();
 /** a ve b yalnızca baştaki "www." ile farklı mı? (www.x.de <-> x.de) */
@@ -104,6 +105,58 @@ export function looksLikeProductUrl(url) {
     });
   if (!segs.length) return false;
   return !segs.some(s => NON_PRODUCT_SEGMENTS.has(s.replace(/\.(html?|php|aspx?)$/, '')));
+}
+
+/**
+ * Hedefli tarama: URL'nin ürün adı kısmı Mixoutlet'in bir parça numarasını (normalize: küçük harf, yalnız harf-rakam,
+ * en az 5 karakter) içeriyor mu? Yol parçaları 1-3'lü birleştirilerek denenir ("tk-5240m" -> "tk5240m").
+ */
+export function urlMatches(url, targets) {
+  let path;
+  try {
+    path = decodeURIComponent(new URL(url).pathname).toLowerCase();
+  } catch {
+    return false;
+  }
+  const toks = path.split(/[^a-z0-9]+/).filter(Boolean);
+  for (let i = 0; i < toks.length; i++) {
+    let j = '';
+    for (let n = 0; n < 3 && i + n < toks.length; n++) {
+      j += toks[i + n];
+      if (j.length >= 5 && /\d/.test(j) && targets.has(j)) return true;
+    }
+  }
+  return false;
+}
+
+/** Mixoutlet'in parça numaraları (mpn / sku) -> hedef kümesi. */
+export function mixoTargets(db) {
+  const set = new Set();
+  const norm = v =>
+    String(v ?? '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '');
+  const add = v => {
+    const n = norm(v);
+    if (n.length >= 5 && /\d/.test(n)) set.add(n);
+  };
+  const ids = db
+    .prepare(
+      "SELECT id FROM shops WHERE market = 'de' AND replace(lower(domain), 'www.', '') = 'mixoutlet.de'",
+    )
+    .all()
+    .map(r => r.id);
+  if (!ids.length) return set;
+  const q = ids.map(() => '?').join(',');
+  for (const r of db.prepare(`SELECT mpn, sku FROM unmatched WHERE shopId IN (${q})`).all(...ids)) {
+    add(r.mpn);
+    add(r.sku);
+  }
+  for (const r of db
+    .prepare(`SELECT p.mpn FROM products p JOIN offers o ON o.ean = p.ean WHERE o.shopId IN (${q})`)
+    .all(...ids))
+    add(r.mpn);
+  return set;
 }
 
 /** 0: ürün değil, 1: olabilir, 2: güçlü ürün işareti var (önce bunlar alınır). */
@@ -240,6 +293,8 @@ export function createCrawler({
   limiter,
   allowPrivateHosts = false,
   maxConcurrent = 2,
+  ownDomains = [],
+  ownIntervalMs = 2000,
   log = () => {},
 }) {
   const userAgent = `${BOT_TOKEN}/${BOT_VERSION} (+${siteUrl}/bot)`;
@@ -276,14 +331,18 @@ export function createCrawler({
   }
 
   /** Tek HTTP isteği: hız sınırlı, UA'lı, yönlendirme izlemeden, çerezsiz. 403/429/503 -> host 24 saat bekletilir. */
-  async function requestOnce(u, { stream = false } = {}) {
-    const res = await lim.run(u.host, () =>
-      fetchImpl(u.href, {
-        headers: { 'user-agent': userAgent, accept: ACCEPT },
-        redirect: 'manual',
-        // Site haritaları büyük ve yavaş üretilebilir: akış okuması dahil 60 sn; sayfalar 15 sn.
-        signal: AbortSignal.timeout(stream ? 60_000 : 15_000),
-      }),
+  async function requestOnce(u, { stream = false, maxBytes = MAX_BYTES } = {}) {
+    const own = ownDomains.some(d => onSite(u.host, siteOf(d)));
+    const res = await lim.run(
+      u.host,
+      () =>
+        fetchImpl(u.href, {
+          headers: { 'user-agent': userAgent, accept: ACCEPT },
+          redirect: 'manual',
+          // Site haritaları büyük ve yavaş üretilebilir: akış okuması dahil 60 sn; sayfalar 15 sn.
+          signal: AbortSignal.timeout(stream ? 60_000 : 15_000),
+        }),
+      own ? ownIntervalMs : undefined,
     );
     if (BACKOFF_STATUSES.has(res.status)) {
       setBackoff(u.host, `HTTP ${res.status}`);
@@ -300,7 +359,7 @@ export function createCrawler({
       return { status: res.status, body: '', type };
     }
     if (stream) return { status: res.status, res, type }; // gövdeyi çağıran tüketir ya da kapatır
-    const { buf } = await readBytes(res, MAX_BYTES);
+    const { buf } = await readBytes(res, maxBytes);
     return { status: res.status, body: new TextDecoder('utf-8').decode(buf), type };
   }
 
@@ -350,10 +409,10 @@ export function createCrawler({
    * Güvenli sayfa çekme: tüm kurallar burada uygulanır. Dönüş: { ok, body, finalUrl } ya da { ok:false, reason }.
    * sitemap: true ise gövde akış olarak okunur ve { ok, index, locs, truncated, finalUrl } döner (readSitemap).
    * @param {any} shop @param {string} rawUrl
-   * @param {{ sitemap?: boolean, keep?: (loc: string) => number, want?: number }} [opts]
+   * @param {{ sitemap?: boolean, keep?: (loc: string) => number, want?: number, json?: boolean }} [opts]
    * @returns {Promise<any>}
    */
-  async function guardedGet(shop, rawUrl, { sitemap = false, keep, want } = {}) {
+  async function guardedGet(shop, rawUrl, { sitemap = false, keep, want, json = false } = {}) {
     let u;
     try {
       u = new URL(rawUrl);
@@ -371,7 +430,7 @@ export function createCrawler({
       if (why2) return { ok: false, reason: why2 };
       let r;
       try {
-        r = await requestOnce(u, { stream: sitemap });
+        r = await requestOnce(u, { stream: sitemap, maxBytes: json ? 12 * 1024 * 1024 : MAX_BYTES });
       } catch (e) {
         return { ok: false, reason: 'network-error: ' + String(e.message).slice(0, 80) };
       }
@@ -394,7 +453,8 @@ export function createCrawler({
           await body?.cancel().catch(() => {}); // erken bırakılan akışın bağlantısı kapatılır
         }
       }
-      if (!/html|xml|text\/plain/i.test(r.type)) return { ok: false, reason: 'content-type' };
+      if (!(json ? /json/i : /html|xml|text\/plain/i).test(r.type))
+        return { ok: false, reason: 'content-type' };
       return { ok: true, body: r.body, finalUrl: u.href };
     }
     return { ok: false, reason: 'too-many-redirects' };
@@ -434,6 +494,8 @@ export function createCrawler({
           )
         ]++;
       }
+      // Sayfadan EAN'lı teklif çıktıysa katalogdan gelen EAN'sız kayıt (aynı URL) artık gereksiz: sayım çift olmasın.
+      if (out.offer) db.prepare('DELETE FROM unmatched WHERE shopId = ? AND url = ?').run(shop.id, seed.url);
     }
     db.prepare('UPDATE seeds SET lastCrawledAt = ?, lastStatus = ? WHERE id = ?').run(
       now(),
@@ -451,8 +513,10 @@ export function createCrawler({
    * Mağaza sitesi www ile çıplak alan adı ve alt alan adlarını kapsar (örn. sitemap.boyner.com.tr, www -> çıplak).
    * Her harita isteği guardedGet'ten geçer (robots + host hız sınırı + engel/opt-out). Dönüş: eklenen tohum sayısı.
    */
-  /** @param {any} shop @param {string} [origin] @param {{ stats?: any }} [opts] */
-  async function discoverSeeds(shop, origin = `https://${shop.domain}`, { stats } = {}) {
+  /** @param {any} shop @param {string} [origin] @param {{ stats?: any, targets?: Set<string> }} [opts] */
+  async function discoverSeeds(shop, origin = `https://${shop.domain}`, { stats, targets } = {}) {
+    const targeted = !!targets?.size;
+    const maxDiscovered = targeted ? MAX_TARGETED : MAX_DISCOVERED;
     const u = new URL(origin);
     const robots = await getRobots(u);
     if (!robots) return 0;
@@ -472,17 +536,21 @@ export function createCrawler({
       const r = robotsOf.get(x.host);
       return !r || isAllowed(r, BOT_TOKEN, x.pathname + x.search);
     };
-    const keep = l => (onShop(l) && allowed(l) ? productUrlScore(l) : 0);
+    const keep = l => {
+      if (!onShop(l) || !allowed(l)) return 0;
+      const sc = productUrlScore(l);
+      return targeted && sc && urlMatches(l, targets) ? 2 : targeted ? Math.min(sc, 1) : sc;
+    };
     const seen = new Set();
     const queue = rankSitemaps([...new Set(robots.sitemaps.filter(onShop))]);
     const strong = [];
     const weak = [];
     let maps = 0;
-    while (queue.length && maps < MAX_SITEMAPS && strong.length < MAX_DISCOVERED) {
+    while (queue.length && maps < (targeted ? 10 : MAX_SITEMAPS) && strong.length < maxDiscovered) {
       const mapUrl = queue.shift();
       if (seen.has(mapUrl)) continue;
       seen.add(mapUrl);
-      const r = await guardedGet(shop, mapUrl, { sitemap: true, keep, want: MAX_DISCOVERED - strong.length });
+      const r = await guardedGet(shop, mapUrl, { sitemap: true, keep, want: maxDiscovered - strong.length });
       maps++;
       if (stats)
         (stats.maps ||= []).push({
@@ -493,9 +561,14 @@ export function createCrawler({
       if (!r.ok) continue;
       if (r.index)
         queue.unshift(
-          ...rankSitemaps(r.locs.filter(l => onShop(l) && !seen.has(l))).slice(0, MAX_CHILD_SITEMAPS),
+          ...rankSitemaps(r.locs.filter(l => onShop(l) && !seen.has(l))).slice(
+            0,
+            targeted ? 8 : MAX_CHILD_SITEMAPS,
+          ),
         );
-      else for (const l of r.locs) (productUrlScore(l) >= 2 ? strong : weak).push(l);
+      else
+        for (const l of r.locs)
+          ((targeted ? urlMatches(l, targets) : productUrlScore(l) >= 2) ? strong : weak).push(l);
     }
     // Başka host'taki (www <-> çıplak) ürün URL'leri: o host'un robots.txt'i de denetlenir.
     let urls = [...new Set([...strong, ...weak])];
@@ -507,11 +580,11 @@ export function createCrawler({
     }
     urls = urls.filter(allowed);
     let added = 0;
-    for (const url of urls.slice(0, MAX_DISCOVERED))
+    for (const url of urls.slice(0, maxDiscovered))
       added += Number(
         db
-          .prepare("INSERT OR IGNORE INTO seeds (shopId, url, source) VALUES (?, ?, 'sitemap')")
-          .run(shop.id, url).changes,
+          .prepare('INSERT OR IGNORE INTO seeds (shopId, url, source) VALUES (?, ?, ?)')
+          .run(shop.id, url, targeted ? 'targeted' : 'sitemap').changes,
       );
     return added;
   }
@@ -543,22 +616,136 @@ export function createCrawler({
     return added;
   }
 
+  const getState = k => db.prepare('SELECT value FROM crawl_state WHERE key = ?').get(k)?.value ?? null;
+  const setState = (k, v) =>
+    db
+      .prepare(
+        'INSERT INTO crawl_state (key, value, updatedAt) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updatedAt = excluded.updatedAt',
+      )
+      .run(k, String(v), now());
+
+  /**
+   * Hedefli keşif: taranabilir rakip mağazaların site haritalarında Mixoutlet parça numarası geçen URL'ler 'targeted'
+   * tohum olarak eklenir ve tarama kuyruğunda öne alınır. Mağaza başına günde bir. Mixoutlet'in kendisi atlanır.
+   */
+  async function discoverTargeted() {
+    const targets = mixoTargets(db);
+    if (!targets.size) return 0;
+    let added = 0;
+    const shops = db
+      .prepare(
+        "SELECT * FROM shops WHERE active = 1 AND blocked = 0 AND domain != '' AND feedUrl IS NULL AND network IS NULL",
+      )
+      .all()
+      .filter(s => siteOf(s.domain) !== 'mixoutlet.de');
+    for (const shop of shops) {
+      const key = `targeted:${shop.id}`;
+      if (now() - Number(getState(key) ?? 0) < 24 * 3600 * 1000) continue;
+      setState(key, now());
+      try {
+        const n = await discoverSeeds(shop, undefined, { targets });
+        log(`targeted ${shop.domain}: ${n} seeds`);
+        added += n;
+      } catch (e) {
+        log(`targeted ${shop.domain}: ${String(e.message).slice(0, 80)}`);
+      }
+    }
+    return added;
+  }
+
+  /**
+   * Shopify ürün dökümü (/products.json, herkese açık, robots.txt ve hız sınırına tabi). Sayfa sayfa ilerler, ilerleme
+   * crawl_state'te tutulur; `pages` bu çağrıda en çok kaç sayfa alınacağı. Varyantın barkodu (barcode) varsa EAN olarak
+   * kullanılır; yoksa sku mpn olarak yazılır (marka + mpn eşleşmesi için). Dönüş: { pages, products, done }.
+   */
+  async function importShopify(shop, { pages = 10 } = {}) {
+    const key = `shopify:${shop.id}`;
+    let page = Number(getState(key) ?? 1);
+    const out = { pages: 0, products: 0, done: false };
+    while (out.pages < pages) {
+      const r = await guardedGet(shop, `https://${shop.domain}/products.json?limit=250&page=${page}`, {
+        json: true,
+      });
+      if (!r.ok) {
+        out.reason = r.reason;
+        break;
+      }
+      let list;
+      try {
+        list = JSON.parse(r.body).products ?? [];
+      } catch {
+        out.reason = 'bad-json';
+        break;
+      }
+      for (const p of list) {
+        const base = `https://${shop.domain}/products/${p.handle}`;
+        const v = (p.variants || []).find(x => x.available) || p.variants?.[0];
+        if (!v) continue;
+        const withBarcode = (p.variants || []).filter(x => x.barcode);
+        for (const x of withBarcode.length ? withBarcode : [v])
+          ingestOffer(
+            db,
+            shop,
+            {
+              ean: x.barcode || '',
+              mpn: x.sku || '',
+              sku: x.sku || '',
+              title: p.title,
+              brand: p.vendor,
+              category: p.product_type,
+              image: p.images?.[0]?.src,
+              price: x.price,
+              inStock: !!x.available,
+              url: withBarcode.length > 1 ? `${base}?variant=${x.id}` : base,
+            },
+            now(),
+          );
+        db.prepare("INSERT OR IGNORE INTO seeds (shopId, url, source) VALUES (?, ?, 'catalog')").run(
+          shop.id,
+          base,
+        );
+        out.products++;
+      }
+      out.pages++;
+      if (list.length < 250) {
+        out.done = true;
+        page = 1;
+        setState(`shopify-done:${shop.id}`, now());
+        setState(key, 1);
+        break;
+      }
+      setState(key, ++page);
+    }
+    log(`shopify ${shop.domain}: ${out.products} products ${out.reason || ''}`);
+    return out;
+  }
+
   /** Zamanı gelen (son tarama > 24 saat) tohumları sırayla tarar. */
   /**
    * Mağazalar arasında sırayla (round-robin): her mağazanın en eski tohumu önce gelir, böylece ilk eklenen mağaza
    * kuyruğu tek başına doldurmaz. Engelli/pasif mağazaların tohumları atlanır. Host hız sınırı (10 sn) aynen geçerli.
    */
-  async function runCycle({ limit = 50 } = {}) {
+  async function runCycle({ limit = 50, ownOnly = false } = {}) {
+    const own = db
+      .prepare('SELECT id, domain FROM shops')
+      .all()
+      .filter(r => ownDomains.some(d => onSite(hostname(r.domain), siteOf(d))))
+      .map(r => r.id);
+    // Kendi sitemiz hızlı aralıkla ayrı turda taranır (ownOnly); normal turda yer kaplamaz.
+    const only = ownOnly ? own : null;
+    const skip = ownOnly ? [] : own;
     const seeds = db
       .prepare(
         `SELECT * FROM (
            SELECT s.*, row_number() OVER (
-             PARTITION BY s.shopId ORDER BY s.lastCrawledAt IS NOT NULL, s.lastCrawledAt, s.id) AS rn
+             PARTITION BY s.shopId ORDER BY s.lastCrawledAt IS NOT NULL, s.source != 'targeted', s.lastCrawledAt, s.id) AS rn
            FROM seeds s JOIN shops sh ON sh.id = s.shopId
-           WHERE sh.active = 1 AND sh.blocked = 0 AND (s.lastCrawledAt IS NULL OR s.lastCrawledAt < ?))
+           WHERE sh.active = 1 AND sh.blocked = 0 AND (s.lastCrawledAt IS NULL OR s.lastCrawledAt < ?)
+             AND (? IS NULL OR sh.id IN (SELECT value FROM json_each(?)))
+             AND sh.id NOT IN (SELECT value FROM json_each(?)))
          ORDER BY rn, shopId LIMIT ?`,
       )
-      .all(now() - BACKOFF_MS, limit);
+      .all(now() - BACKOFF_MS, only && '1', JSON.stringify(only ?? []), JSON.stringify(skip), limit);
     const totals = { seeds: seeds.length, offer: 0, unmatched: 0, skipped: 0 };
     const queue = [...seeds];
     const worker = async () => {
@@ -573,5 +760,15 @@ export function createCrawler({
     return totals;
   }
 
-  return { userAgent, crawlSeed, discoverSeeds, discoverMissing, runCycle, guardedGet };
+  return {
+    userAgent,
+    crawlSeed,
+    discoverSeeds,
+    discoverMissing,
+    discoverTargeted,
+    importShopify,
+    getState,
+    runCycle,
+    guardedGet,
+  };
 }
