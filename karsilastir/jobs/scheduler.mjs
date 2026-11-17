@@ -13,11 +13,18 @@ export function startScheduler(ctx) {
   timers.push(setInterval(feeds, 15 * 60 * 1000));
   setTimeout(feeds, 5000).unref();
   if (ctx.config.crawlerEnabled) {
-    const crawl = () =>
+    // Önceki tur bitmeden yenisi başlamaz (aynı tohum iki kez istenmesin). Tur başına 200 tohum, mağazalar arası
+    // sırayla: 10 sn/host sınırıyla her mağazaya turda ~15 istek düşer.
+    let running = false;
+    const crawl = () => {
+      if (running) return;
+      running = true;
       ctx
         .getCrawler()
-        .runCycle()
-        .catch(e => console.error('crawler', e));
+        .runCycle({ limit: 200 })
+        .catch(e => console.error('crawler', e))
+        .finally(() => (running = false));
+    };
     timers.push(setInterval(crawl, 10 * 60 * 1000));
     setTimeout(crawl, 10_000).unref();
   }

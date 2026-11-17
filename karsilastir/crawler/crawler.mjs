@@ -517,10 +517,19 @@ export function createCrawler({
   }
 
   /** Zamanı gelen (son tarama > 24 saat) tohumları sırayla tarar. */
+  /**
+   * Mağazalar arasında sırayla (round-robin): her mağazanın en eski tohumu önce gelir, böylece ilk eklenen mağaza
+   * kuyruğu tek başına doldurmaz. Engelli/pasif mağazaların tohumları atlanır. Host hız sınırı (10 sn) aynen geçerli.
+   */
   async function runCycle({ limit = 50 } = {}) {
     const seeds = db
       .prepare(
-        'SELECT * FROM seeds WHERE lastCrawledAt IS NULL OR lastCrawledAt < ? ORDER BY lastCrawledAt IS NOT NULL, lastCrawledAt LIMIT ?',
+        `SELECT * FROM (
+           SELECT s.*, row_number() OVER (
+             PARTITION BY s.shopId ORDER BY s.lastCrawledAt IS NOT NULL, s.lastCrawledAt, s.id) AS rn
+           FROM seeds s JOIN shops sh ON sh.id = s.shopId
+           WHERE sh.active = 1 AND sh.blocked = 0 AND (s.lastCrawledAt IS NULL OR s.lastCrawledAt < ?))
+         ORDER BY rn, shopId LIMIT ?`,
       )
       .all(now() - BACKOFF_MS, limit);
     const totals = { seeds: seeds.length, offer: 0, unmatched: 0, skipped: 0 };

@@ -287,3 +287,26 @@ test('site haritası: 403 alınırsa host bekletilir; sıkıştırma bombası s�
   assert.ok(db.prepare('SELECT until FROM host_backoff WHERE host = ?').get('shop.example'));
   db.close();
 });
+
+test('runCycle: mağazalar arasında sırayla seçer (ilk eklenen mağaza kuyruğu doldurmaz); engelli mağaza atlanır', async () => {
+  const s = setup();
+  const other = addShop(s.db, { market: 'de', name: 'Other', domain: 'localhost' });
+  const blocked = addShop(s.db, { market: 'de', name: 'Blocked', domain: 'localhost' });
+  s.db.prepare('UPDATE shops SET blocked = 1 WHERE id = ?').run(blocked);
+  for (const p of ['/p/1', '/p/2', '/p/3']) s.seed(p);
+  const add = (shop, p) =>
+    s.db
+      .prepare('INSERT INTO seeds (shopId, url) VALUES (?, ?)')
+      .run(shop, base.replace('127.0.0.1', 'localhost') + p);
+  add(other, '/p/1');
+  add(blocked, '/p/2');
+  const r = await s.crawler.runCycle({ limit: 2 });
+  assert.equal(r.seeds, 2);
+  const crawled = s.db
+    .prepare('SELECT shopId FROM seeds WHERE lastCrawledAt IS NOT NULL ORDER BY shopId')
+    .all();
+  assert.deepEqual(
+    crawled.map(c => c.shopId),
+    [s.shopId, other],
+  );
+});
