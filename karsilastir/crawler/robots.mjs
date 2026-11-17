@@ -4,7 +4,8 @@ export function parseRobots(text) {
   const sitemaps = [];
   let cur = null;
   let lastWasAgent = false;
-  for (const raw of String(text || '').split(/\r?\n/)) {
+  for (const raw of String(text || '').split(/\r\n|\r|\n/)) {
+    // Yalnız CR satır sonu (eski Mac biçimi) da satır sayılır; yoksa kurallar tek satıra yapışır.
     const line = raw.replace(/#.*/, '').trim();
     const i = line.indexOf(':');
     if (i < 0) continue;

@@ -250,7 +250,7 @@ test('site haritası keşfi (sahte fetch): gzip, dizin önceliği, URL süzgeci,
   db.close();
 });
 
-test('site haritası: 403 alınırsa host bekletilir; sıkıştırma bombası reddedilir', async () => {
+test('site haritası: 403 alınırsa host bekletilir; sıkıştırma bombası sınırda kesilir', async () => {
   const { gzipSync } = await import('node:zlib');
   const O = 'https://shop.example';
   const bomb = gzipSync(Buffer.alloc(60 * 1024 * 1024, 0x20));
@@ -278,7 +278,11 @@ test('site haritası: 403 alınırsa host bekletilir; sıkıştırma bombası re
   const crawler = createCrawler({ db, siteUrl: 'https://kb.example', fetchImpl, now, limiter });
   const stats = {};
   assert.equal(await crawler.discoverSeeds(shop, O, { stats }), 0);
-  assert.match(stats.maps[0].result, /^sitemap-decode/);
+  // 60 MB açılan bomba 50 MB'ta kesilir; <loc> yok -> tohum yok
+  assert.deepEqual(
+    { result: stats.maps[0].result, locs: stats.maps[0].locs, truncated: stats.maps[0].truncated },
+    { result: 'ok', locs: 0, truncated: true },
+  );
   assert.equal(stats.maps[1].result, 'backoff-403');
   assert.ok(db.prepare('SELECT until FROM host_backoff WHERE host = ?').get('shop.example'));
   db.close();

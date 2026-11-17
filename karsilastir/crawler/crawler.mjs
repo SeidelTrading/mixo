@@ -9,7 +9,8 @@
  *  6. 403/429/503 alınırsa o host 24 saat boyunca bırakılır; yeniden deneme döngüsü YOK (bir istek, bir sonuç).
  *  7. Mağaza başına `blocked` bayrağı ve opt-out listesi HER istekten hemen önce veritabanından okunur (anında etkili).
  *  8. Tohum URL'ler yalnızca robots.txt'te listelenen site haritalarından ya da admin'in girdiği adreslerden gelir.
- *     Yönlendirmeler yalnızca aynı host içinde izlenir ve her adım yeniden robots/hız denetiminden geçer.
+ *     Yönlendirmeler yalnızca mağazanın kendi sitesi içinde (www <-> çıplak alan adı ve alt alan adları) izlenir;
+ *     her adım yeniden robots/hız denetiminden geçer.
  */
 import { decompress, textChunks } from '../feeds/stream.mjs';
 import { isPrivateHostname } from '../lib/http.mjs';
@@ -28,16 +29,34 @@ const MAX_BYTES = 2 * 1024 * 1024;
 /** Site haritası sınırları: sıkıştırılmış en çok 10 MB, açılmış en çok 50 MB (sitemaps.org protokol sınırı). */
 const MAX_SITEMAP_BYTES = 10 * 1024 * 1024;
 const MAX_SITEMAP_INFLATED = 50 * 1024 * 1024;
-const GZIP_MAGIC = [0x1f, 0x8b];
+/** Bir harita dosyasından en çok bu kadar <loc> okunur (sitemaps.org: dosya başına en çok 50 000). */
+const MAX_SITEMAP_LOCS = 50_000;
+/** Standart, dürüst Accept değeri: HTML/XML tercih edilir, ama `*` ile başka türler (text/xml vb.) de kabul edilir. */
+export const ACCEPT = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
 const MAX_SITEMAPS = 4;
 const MAX_CHILD_SITEMAPS = 3;
 const MAX_DISCOVERED = 500;
 const MAX_HOPS = 3;
 const hostname = h => h.replace(/:\d+$/, '').toLowerCase();
+/** a ve b yalnızca baştaki "www." ile farklı mı? (www.x.de <-> x.de) */
+const isWwwPair = (a, b) => {
+  const [x, y] = [hostname(a), hostname(b)];
+  return x !== y && x.replace(/^www\./, '') === y.replace(/^www\./, '');
+};
+/** Mağazanın sitesi: baştaki "www." atılır; site ve tüm alt alan adları aynı mağazadır. */
+export const siteOf = h => hostname(h).replace(/^www\./, '');
+export const onSite = (host, site) => {
+  const h = hostname(host);
+  return h === site || h.endsWith('.' + site);
+};
 
-const PRODUCT_MAP = /product|urun|ürün|produkt|artikel|(^|[^a-z])p-/i;
+const PRODUCT_MAP = /product|urun|ürün|produkt|artikel|articles?(?![a-z])|(^|[^a-z])p-/i;
+// "page" yalnız ürün ayrıntı sayfası haritası değilse elenir (MediaMarkt/Saturn: sitemap-productdetailspages-000.xml).
 const NON_PRODUCT_MAP =
-  /brand|marka|marke|merk|categor|kategori|blog|page|sayfa|cms|content|static|news|haber|kampanya|landing|tag|store|magaza|filial|video|image|gorsel|faq|help|yardim/i;
+  /brand|marka|marke|merk|categor|kategori|blog|(?<!details?)pages?(?![a-z])|sayfa|cms|content|static|news|haber|kampanya|landing|tag|store|magaza|filial|video|image|gorsel|faq|help|yardim/i;
+/** Güçlü ürün sayfası işareti: /p/, /product(s)/, -p-123, uzun sayısal kimlik, index_123.aspx vb. */
+const STRONG_PRODUCT_URL =
+  /\/(p|pd|dp|product|products|produkt|produkte|urun|artikel|article|item)\/|-p-\d+|[/_-]\d{6,}(\.html?|\/|$)|\/\d{5,}\/product\/?$|index_\d+\.aspx$/i;
 const NON_PRODUCT_SEGMENTS = new Set(
   (
     'marka markalar brand brands marke marken merk merken kategori kategoriler category categories c ' +
@@ -45,7 +64,7 @@ const NON_PRODUCT_SEGMENTS = new Set(
     'yardim help hilfe klantenservice iletisim contact kontakt sss faq hakkimizda about ueber-uns over-ons ' +
     'impressum agb datenschutz privacy gizlilik kvkk sepet cart warenkorb winkelwagen login giris uyelik ' +
     'hesabim account konto magazalar stores filialen winkels tag tags etiket news haber haberler sayfa page pages ' +
-    'cms info service lp landing'
+    'cms info service lp landing inloggen anmelden registrieren uye-ol'
   ).split(' '),
 );
 
@@ -87,6 +106,19 @@ export function looksLikeProductUrl(url) {
   return !segs.some(s => NON_PRODUCT_SEGMENTS.has(s.replace(/\.(html?|php|aspx?)$/, '')));
 }
 
+/** 0: ürün değil, 1: olabilir, 2: güçlü ürün işareti var (önce bunlar alınır). */
+export function productUrlScore(url) {
+  if (!looksLikeProductUrl(url)) return 0;
+  const raw = new URL(url).pathname;
+  let path = raw;
+  try {
+    path = decodeURIComponent(raw);
+  } catch {
+    // bozuk yüzde kodlaması: ham yol kullanılır
+  }
+  return STRONG_PRODUCT_URL.test(path) ? 2 : 1;
+}
+
 /** Gövdeyi en çok `limit` bayta kadar okur; aşılırsa { truncated: true }. */
 async function readBytes(res, limit) {
   const chunks = [];
@@ -107,18 +139,96 @@ async function readBytes(res, limit) {
   return { buf: Buffer.concat(chunks), truncated: false };
 }
 
-/** Site haritası baytlarını metne çevirir: .gz uzantısı ya da 1f 8b sihirli baytları varsa gzip açılır (boyut sınırlı). */
-async function sitemapText(buf, url) {
-  const gz = /\.gz$/i.test(new URL(url).pathname) || (buf[0] === GZIP_MAGIC[0] && buf[1] === GZIP_MAGIC[1]);
-  const src = (async function* () {
-    yield buf;
-  })();
-  let text = '';
-  for await (const t of textChunks(
-    decompress(src, { compression: gz ? 'gzip' : 'none', maxBytes: MAX_SITEMAP_INFLATED }),
-  ))
-    text += t;
-  return text;
+/** Site haritası dosyası gibi görünen URL (.xml / .xml.gz): urlset içinde listelenirse alt harita sayılır (boyner.com.tr). */
+const SITEMAP_FILE = /\.xml(\.gz)?$/i;
+const isSitemapFile = l => {
+  try {
+    return SITEMAP_FILE.test(new URL(l).pathname);
+  } catch {
+    return false;
+  }
+};
+const LOC_RE = /<loc>\s*(?:<!\[CDATA\[)?\s*([^<\s\]]+)\s*(?:\]\]>)?\s*<\/loc>/gi;
+
+/**
+ * Site haritasını AKIŞ olarak okur; belleğe tamamı alınmaz. Sıkıştırma YALNIZCA içerikten (1f 8b) anlaşılır:
+ * ".xml.gz" adlı ama düz XML sunan sunucular (otto.de) ve fetch'in Content-Encoding'i zaten açtığı yanıtlar böylece
+ * çift açılmaz. Ham gövde MAX_SITEMAP_BYTES'ta, açılmış metin MAX_SITEMAP_INFLATED'da kesilir (kısmi sonuç döner).
+ * `keep(loc)`: urlset girdileri için 0 (at) / 1 (zayıf aday) / 2 (güçlü aday); dizin (sitemapindex) girdileri süzülmez.
+ * `want` kadar güçlü aday bulununca okuma durdurulur ve bağlantı kapatılır.
+ * Yalnız .xml/.xml.gz adresi içeren urlset dizin sayılır. Dönüş: { index, locs (güçlüler önce), truncated }.
+ * @param {AsyncIterable<Uint8Array>} body
+ * @param {{ keep?: (loc: string) => number, want?: number }} [opts]
+ */
+export async function readSitemap(body, { keep = () => 2, want = MAX_SITEMAP_LOCS } = {}) {
+  let raw = 0;
+  let truncated = false;
+  const it = body[Symbol.asyncIterator]();
+  /** @type {AsyncIterable<Uint8Array>} */
+  const capped = {
+    [Symbol.asyncIterator]: () => ({
+      async next() {
+        if (raw >= MAX_SITEMAP_BYTES) {
+          truncated = true;
+          return { done: true, value: undefined };
+        }
+        const r = await it.next();
+        if (!r.done) raw += r.value.length;
+        return r;
+      },
+      async return() {
+        // Erken bırakma: bağlantı kapatılır ama beklenmez (askıdaki bir okuma kapanışı kilitlemesin).
+        it.return?.().catch(() => {});
+        return { done: true, value: undefined };
+      },
+    }),
+  };
+  let index = null;
+  const strong = [];
+  const weak = [];
+  const nested = [];
+  let buf = '';
+  let inflated = 0;
+  const take = loc => {
+    if (index) return void (strong.length < MAX_SITEMAP_LOCS && strong.push(loc));
+    if (isSitemapFile(loc)) return void (nested.length < 1000 && nested.push(loc));
+    const k = keep(loc);
+    if (k >= 2) strong.push(loc);
+    else if (k === 1 && weak.length < want) weak.push(loc);
+  };
+  try {
+    for await (const t of textChunks(decompress(capped, { compression: 'auto', maxBytes: Infinity }))) {
+      inflated += t.length;
+      buf += t;
+      if (index === null) {
+        const m = /<(sitemapindex|urlset)\b/i.exec(buf);
+        if (m) index = m[1].toLowerCase() === 'sitemapindex';
+        else if (buf.length < 64 * 1024) continue;
+        else index = false;
+      }
+      let end = 0;
+      LOC_RE.lastIndex = 0;
+      for (let m; (m = LOC_RE.exec(buf)); end = LOC_RE.lastIndex) take(m[1].replace(/&amp;/g, '&'));
+      buf = buf.slice(end);
+      if (buf.length > 64 * 1024) buf = buf.slice(-8 * 1024); // <loc> içermeyen dev blok (resim/çeviri uzantıları)
+      if ((!index && strong.length >= want) || strong.length >= MAX_SITEMAP_LOCS) {
+        truncated = true;
+        break; // yeterli: bağlantı for-await çıkışında kapatılır
+      }
+      if (inflated > MAX_SITEMAP_INFLATED) {
+        truncated = true;
+        break;
+      }
+    }
+  } catch (e) {
+    // Kesilmiş gzip ya da bozuk veri: elde aday varsa kısmi sonuç kullanılır, yoksa hata.
+    if (!(strong.length + weak.length)) throw e;
+    truncated = true;
+  }
+  // Yalnız harita dosyası listeleyen urlset (sitemapindex yerine yanlış kök): dizin gibi işlenir.
+  if (!index && !strong.length && !weak.length && nested.length)
+    return { index: true, locs: nested, truncated };
+  return { index: !!index, locs: [...strong, ...weak], truncated };
 }
 
 /** @param {any} o */
@@ -160,22 +270,19 @@ export function createCrawler({
     const fresh = db.prepare('SELECT blocked, active FROM shops WHERE id = ?').get(shop.id);
     if (!fresh || fresh.blocked || !fresh.active) return 'shop-blocked';
     if (optedOut(u.host)) return 'opt-out';
-    const d = shop.domain.toLowerCase().replace(/:\d+$/, '');
-    if (hostname(u.host) !== d && !hostname(u.host).endsWith('.' + d)) return 'host-mismatch';
+    if (!onSite(u.host, siteOf(shop.domain))) return 'host-mismatch';
     if (inBackoff(u.host)) return 'backoff';
     return null;
   }
 
   /** Tek HTTP isteği: hız sınırlı, UA'lı, yönlendirme izlemeden, çerezsiz. 403/429/503 -> host 24 saat bekletilir. */
-  async function requestOnce(u, { binary = false } = {}) {
+  async function requestOnce(u, { stream = false } = {}) {
     const res = await lim.run(u.host, () =>
       fetchImpl(u.href, {
-        headers: {
-          'user-agent': userAgent,
-          accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8',
-        },
+        headers: { 'user-agent': userAgent, accept: ACCEPT },
         redirect: 'manual',
-        signal: AbortSignal.timeout(15_000),
+        // Site haritaları büyük ve yavaş üretilebilir: akış okuması dahil 60 sn; sayfalar 15 sn.
+        signal: AbortSignal.timeout(stream ? 60_000 : 15_000),
       }),
     );
     if (BACKOFF_STATUSES.has(res.status)) {
@@ -190,14 +297,25 @@ export function createCrawler({
     const type = res.headers.get('content-type') || '';
     if (!res.ok) {
       await res.body?.cancel();
-      return { status: res.status, body: binary ? Buffer.alloc(0) : '', type };
+      return { status: res.status, body: '', type };
     }
-    const { buf, truncated } = await readBytes(res, binary ? MAX_SITEMAP_BYTES : MAX_BYTES);
-    if (binary) return { status: res.status, body: buf, type, truncated };
+    if (stream) return { status: res.status, res, type }; // gövdeyi çağıran tüketir ya da kapatır
+    const { buf } = await readBytes(res, MAX_BYTES);
     return { status: res.status, body: new TextDecoder('utf-8').decode(buf), type };
   }
 
-  /** robots.txt: 24 saat önbellek. Dönüş: ayrıştırılmış robots ya da null (bu turda çekme). */
+  const saveRobots = (host, body) =>
+    db
+      .prepare(
+        'INSERT INTO robots_cache (host, body, fetchedAt) VALUES (?, ?, ?) ON CONFLICT(host) DO UPDATE SET body = excluded.body, fetchedAt = excluded.fetchedAt',
+      )
+      .run(host, body, now());
+
+  /**
+   * robots.txt: 24 saat önbellek. Dönüş: ayrıştırılmış robots ya da null (bu turda çekme).
+   * Yönlendirme yalnızca aynı sitedeki www <-> çıplak alan adı eşine izlenir (örn. www.mixoutlet.de -> mixoutlet.de);
+   * RFC 9309'a göre hedefteki kurallar kaynak host için de geçerlidir, ikisine de önbelleğe yazılır.
+   */
   async function getRobots(u) {
     const cached = db.prepare('SELECT body, fetchedAt FROM robots_cache WHERE host = ?').get(u.host);
     if (cached && now() - cached.fetchedAt < ROBOTS_TTL_MS) return parseRobots(cached.body);
@@ -213,15 +331,14 @@ export function createCrawler({
       if (r.backoff) return null;
       if (r.location) {
         const next = new URL(r.location, target);
-        if (next.host !== u.host) return null;
+        if (next.host !== u.host && !(isWwwPair(next.host, u.host) && next.port === u.port)) return null;
         target = next;
         continue;
       }
       if (r.status === 200 || r.status === 404 || r.status === 410) {
         const body = r.status === 200 ? r.body : ''; // 404/410: kural yok
-        db.prepare(
-          'INSERT INTO robots_cache (host, body, fetchedAt) VALUES (?, ?, ?) ON CONFLICT(host) DO UPDATE SET body = excluded.body, fetchedAt = excluded.fetchedAt',
-        ).run(u.host, body, now());
+        saveRobots(u.host, body);
+        if (target.host !== u.host) saveRobots(target.host, body);
         return parseRobots(body);
       }
       return null;
@@ -229,8 +346,14 @@ export function createCrawler({
     return null;
   }
 
-  /** Güvenli sayfa çekme: tüm kurallar burada uygulanır. Dönüş: { ok, body, finalUrl } ya da { ok:false, reason }. */
-  async function guardedGet(shop, rawUrl, { sitemap = false } = {}) {
+  /**
+   * Güvenli sayfa çekme: tüm kurallar burada uygulanır. Dönüş: { ok, body, finalUrl } ya da { ok:false, reason }.
+   * sitemap: true ise gövde akış olarak okunur ve { ok, index, locs, truncated, finalUrl } döner (readSitemap).
+   * @param {any} shop @param {string} rawUrl
+   * @param {{ sitemap?: boolean, keep?: (loc: string) => number, want?: number }} [opts]
+   * @returns {Promise<any>}
+   */
+  async function guardedGet(shop, rawUrl, { sitemap = false, keep, want } = {}) {
     let u;
     try {
       u = new URL(rawUrl);
@@ -248,7 +371,7 @@ export function createCrawler({
       if (why2) return { ok: false, reason: why2 };
       let r;
       try {
-        r = await requestOnce(u, { binary: sitemap });
+        r = await requestOnce(u, { stream: sitemap });
       } catch (e) {
         return { ok: false, reason: 'network-error: ' + String(e.message).slice(0, 80) };
       }
@@ -259,12 +382,16 @@ export function createCrawler({
       }
       if (r.status !== 200) return { ok: false, reason: `http-${r.status}` };
       if (sitemap) {
-        if (!/xml|text\/plain|gzip|octet-stream/i.test(r.type)) return { ok: false, reason: 'content-type' };
-        if (r.truncated) return { ok: false, reason: 'sitemap-too-large' };
+        const body = r.res.body;
         try {
-          return { ok: true, body: await sitemapText(r.body, u.href), finalUrl: u.href };
+          if (!/xml|text\/plain|gzip|octet-stream/i.test(r.type))
+            return { ok: false, reason: 'content-type' };
+          if (!body) return { ok: true, index: false, locs: [], truncated: false, finalUrl: u.href };
+          return { ok: true, ...(await readSitemap(body, { keep, want })), finalUrl: u.href };
         } catch (e) {
           return { ok: false, reason: 'sitemap-decode: ' + String(e.message).slice(0, 80) };
+        } finally {
+          await body?.cancel().catch(() => {}); // erken bırakılan akışın bağlantısı kapatılır
         }
       }
       if (!/html|xml|text\/plain/i.test(r.type)) return { ok: false, reason: 'content-type' };
@@ -320,6 +447,8 @@ export function createCrawler({
   /**
    * Tohum keşfi: yalnızca robots.txt'te listelenen site haritaları (en çok 4 harita isteği, dizinden en çok 3 alt harita,
    * 500 URL). Dizinlerde ürün haritaları önce gelir; marka/kategori/blog/sayfa haritaları ve ürün dışı URL'ler atlanır.
+   * Haritalar akış olarak okunur; 500 güçlü ürün adayı bulununca okuma durur (dev haritalar belleğe alınmaz).
+   * Mağaza sitesi www ile çıplak alan adı ve alt alan adlarını kapsar (örn. sitemap.boyner.com.tr, www -> çıplak).
    * Her harita isteği guardedGet'ten geçer (robots + host hız sınırı + engel/opt-out). Dönüş: eklenen tohum sayısı.
    */
   /** @param {any} shop @param {string} [origin] @param {{ stats?: any }} [opts] */
@@ -327,38 +456,56 @@ export function createCrawler({
     const u = new URL(origin);
     const robots = await getRobots(u);
     if (!robots) return 0;
-    const sameHost = s => {
+    const site = siteOf(shop.domain);
+    const onShop = s => {
       try {
-        return new URL(s).host === u.host;
+        const x = new URL(s);
+        return /^https?:$/.test(x.protocol) && onSite(x.host, site);
       } catch {
         return false;
       }
     };
-    const queue = rankSitemaps(robots.sitemaps.filter(sameHost));
-    const urls = [];
+    // Bilinen host'ların robots kuralları (önbellekten; ürün URL'leri yazılmadan önce eksikler çekilir).
+    const robotsOf = new Map([[u.host, robots]]);
+    const allowed = l => {
+      const x = new URL(l);
+      const r = robotsOf.get(x.host);
+      return !r || isAllowed(r, BOT_TOKEN, x.pathname + x.search);
+    };
+    const keep = l => (onShop(l) && allowed(l) ? productUrlScore(l) : 0);
+    const seen = new Set();
+    const queue = rankSitemaps([...new Set(robots.sitemaps.filter(onShop))]);
+    const strong = [];
+    const weak = [];
     let maps = 0;
-    while (queue.length && maps < MAX_SITEMAPS && urls.length < MAX_DISCOVERED) {
+    while (queue.length && maps < MAX_SITEMAPS && strong.length < MAX_DISCOVERED) {
       const mapUrl = queue.shift();
-      const r = await guardedGet(shop, mapUrl, { sitemap: true });
+      if (seen.has(mapUrl)) continue;
+      seen.add(mapUrl);
+      const r = await guardedGet(shop, mapUrl, { sitemap: true, keep, want: MAX_DISCOVERED - strong.length });
       maps++;
-      if (stats) (stats.maps ||= []).push({ url: mapUrl, result: r.ok ? 'ok' : r.reason });
+      if (stats)
+        (stats.maps ||= []).push({
+          url: mapUrl,
+          result: r.ok ? 'ok' : r.reason,
+          ...(r.ok ? { locs: r.locs.length, truncated: r.truncated } : {}),
+        });
       if (!r.ok) continue;
-      const text = String(r.body);
-      const locs = [...text.matchAll(/<loc>\s*(?:<!\[CDATA\[)?\s*([^<\s\]]+)\s*(?:\]\]>)?\s*<\/loc>/gi)].map(
-        m => m[1].replace(/&amp;/g, '&'),
-      );
-      if (/<sitemapindex/i.test(text))
-        queue.unshift(...rankSitemaps(locs.filter(sameHost)).slice(0, MAX_CHILD_SITEMAPS));
-      else
-        urls.push(
-          ...locs.filter(
-            l =>
-              sameHost(l) &&
-              looksLikeProductUrl(l) &&
-              isAllowed(robots, BOT_TOKEN, new URL(l).pathname + new URL(l).search),
-          ),
+      if (r.index)
+        queue.unshift(
+          ...rankSitemaps(r.locs.filter(l => onShop(l) && !seen.has(l))).slice(0, MAX_CHILD_SITEMAPS),
         );
+      else for (const l of r.locs) (productUrlScore(l) >= 2 ? strong : weak).push(l);
     }
+    // Başka host'taki (www <-> çıplak) ürün URL'leri: o host'un robots.txt'i de denetlenir.
+    let urls = [...new Set([...strong, ...weak])];
+    for (const host of new Set(urls.map(l => new URL(l).host))) {
+      if (robotsOf.has(host)) continue;
+      const r = await getRobots(new URL(`${u.protocol}//${host}`));
+      if (r) robotsOf.set(host, r);
+      else urls = urls.filter(l => new URL(l).host !== host);
+    }
+    urls = urls.filter(allowed);
     let added = 0;
     for (const url of urls.slice(0, MAX_DISCOVERED))
       added += Number(
