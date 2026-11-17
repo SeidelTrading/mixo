@@ -7,11 +7,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DB_NAME, TABLES } from './db/util.mjs';
-import { SCHEMA, SCHEMA_V2 } from './db/schema.mjs';
+import { SCHEMA, SCHEMA_V2, SCHEMA_V3 } from './db/schema.mjs';
 import { restoreFile, verifyFile } from './db/verify.mjs';
 import { makeDocuments } from './db/documents.mjs';
 import { makeRecords } from './db/records.mjs';
 import { makePool } from './db/pool.mjs';
+import { makeRecs } from './db/recs.mjs';
 import { makeAccounts } from './db/accounts.mjs';
 import { makeJobs } from './db/jobs.mjs';
 import { makeBackup } from './db/backup.mjs';
@@ -41,11 +42,13 @@ export function openStore(dataDir, { log = console.log } = {}) {
   const version = () => Number(db.prepare('PRAGMA user_version').get().user_version);
   if (version() < 1) tx(() => db.exec(SCHEMA + 'PRAGMA user_version=1;'));
   if (version() < 2) tx(() => db.exec(SCHEMA_V2 + 'PRAGMA user_version=2;'));
+  if (version() < 3) tx(() => db.exec(SCHEMA_V3 + 'PRAGMA user_version=3;'));
   const cache = new Map(),
     q = sql => cache.get(sql) || cache.set(sql, db.prepare(sql)).get(sql);
-  const { doc, saveDoc } = makeDocuments({ q, log });
+  const { doc, saveDoc, docSizes } = makeDocuments({ q, log });
   const records = makeRecords({ q, tx });
   const pool = makePool({ q });
+  const recs = makeRecs({ q, tx });
   const { users, sessions, logins } = makeAccounts({ q });
   const { jobs } = makeJobs({ q, tx });
   const { backupDir, listBackups, backup } = makeBackup({ db, dataDir });
@@ -64,12 +67,14 @@ export function openStore(dataDir, { log = console.log } = {}) {
     file,
     doc,
     saveDoc,
+    docSizes,
     ...records,
     users,
     sessions,
     logins,
     jobs,
     pool,
+    recs,
     backup,
     listBackups,
     backupDir,

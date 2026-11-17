@@ -12,6 +12,12 @@ process.env.RAILWAY_ENVIRONMENT = '';
 process.env.ORDER_VERIFY = 'off';
 
 const sup = await import('../services/support.mjs');
+const { store } = await import('../lib/store.mjs');
+const { recordSet } = await import('../services/records.mjs');
+
+test.after(() => {
+  store.close?.();
+});
 
 const refundMail = () =>
   sup.intake({
@@ -155,4 +161,47 @@ test('çok sayıda recordComplaint çağrısı sonrası kayıt sayısı tam', ()
   for (let i = 0; i < 200; i++) sup.recordComplaint({ poolId: 'p-yaris', supplier: 'S-yarış' });
   const after = sup.complaintReport({ minCount: 1 }).reduce((n, g) => n + g.count, 0);
   assert.equal(after, before + 200);
+});
+
+test("uyarı tavanı en eski uyarıları siler, ticket'ları silmez; belgede liste kalmaz", () => {
+  const tickets0 = recordSet('support_tickets').count();
+  const first = sup.alerts()[0];
+  for (let i = 0; i < 520; i++)
+    sup.intake({ from: `a${i}@finanzamt-x.de`, subject: 'Anfrage ' + i, body: 'Finanzamt Schreiben' });
+  const al = sup.alerts();
+  assert.equal(al.length, 500);
+  assert.ok(!al.some(a => a.id === first.id), 'en eski uyarı silindi');
+  assert.equal(al.at(-1).subject, 'Anfrage 519');
+  // 520 yeni ticket'ın hepsi yerinde: ticket tavanı yok
+  assert.equal(recordSet('support_tickets').count(), tickets0 + 520);
+  assert.equal(
+    sup.listTickets({ kind: 'critical' }).filter(t => t.subject.startsWith('Anfrage ')).length,
+    520,
+  );
+  const d = store.doc('support', {});
+  for (const k of ['tickets', 'alerts', 'complaints']) assert.equal(k in d, false, `belgede ${k} kalmamalı`);
+});
+
+test('ticket ve uyarı satırları eski şekli korur (id, t alanları; sıralama yeniden eskiye)', () => {
+  const t = sup.intake({ from: 'k@example.com', subject: 'Frage', body: 'Hallo' });
+  const got = sup.getTicket(t.id);
+  assert.equal(got.id, t.id);
+  assert.equal(typeof got.t, 'number');
+  assert.equal(sup.listTickets()[0].id, t.id);
+});
+
+test('eski belge biçimi (tickets/alerts/complaints) satırlara taşınır, ikinci kez taşınmaz', async () => {
+  const { moveDocRows } = await import('../services/records.mjs');
+  store.saveDoc('support-eski', {
+    tickets: [{ id: 't_eski1', t: 5, kind: 'other', status: 'open', thread: [] }],
+    alerts: [],
+  });
+  const n = moveDocRows('support_tickets', 'support-eski', {
+    rows: d => d.tickets,
+    strip: d => delete d.tickets,
+  });
+  assert.equal(n, 1);
+  assert.equal(recordSet('support_tickets').get('t_eski1').status, 'open');
+  assert.equal('tickets' in store.doc('support-eski', {}), false);
+  assert.equal(moveDocRows('support_tickets', 'support-eski', { rows: d => d.tickets, strip: () => {} }), 0);
 });

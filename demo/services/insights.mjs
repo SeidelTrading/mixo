@@ -1,6 +1,7 @@
-import { store } from '../lib/store.mjs';
+import crypto from 'node:crypto';
 import { events } from './analytics.mjs';
 import { dict } from '../lib/safe.mjs';
+import { recordSet, moveDocRows } from './records.mjs';
 
 // Pazar ve davranış içgörüleri (HTTP bilmez, ağ çağrısı yok).
 // VERİ KAYNAĞI SINIRI: Bu modülde scraping, bot koruması aşma, dönen proxy, captcha çözme ya da rakip sitelere
@@ -31,14 +32,45 @@ export const RATES = {
   tzOffsetH: 3, // saat bazlı analizde Türkiye saati
 };
 
-// market: EAN → pazar → kayıt. EAN kullanıcıdan gelir (compare ile sorgulanır): prototipsiz harita.
-const load = () => {
-  const d = store.doc('insights', { market: {}, context: [] });
-  return { ...d, market: dict(d?.market), context: Array.isArray(d?.context) ? d.context : [] };
+// Büyüyen veri satır tablosunda durur (belgeye her yazma tüm belgeyi yeniden yazıyordu):
+//  - 'market': pazar verisi, TEK SATIR = (pazar, EAN). Kimlik doğal anahtar `pazar:ean`; aynı kaydın tekrar
+//    içeri aktarılması kopya üretmez, satırı günceller (put ON CONFLICT). t = içeri aktarma anı.
+//  - 'context': hava/iade/şikayet satırları, kimlik rastgele UUID, sıra ekleme sırasıdır.
+// Küçük ve sabit yapılandırma (RATES) zaten kodda; `insights` belgesinde artık veri kalmaz.
+// Tavanlar: context eskiden 5000 satırdı, aynen korunur. market eskiden tavansızdı: 200 bin satır (≈ 40 bin EAN
+// × 5 pazar) koyuldu; aşılırsa en eski (içeri aktarma anına göre en uzun süredir güncellenmeyen) satırlar silinir.
+const marketRows = recordSet('market'),
+  contextRows = recordSet('context');
+const MARKET_MAX = 200000;
+
+// Eski belge biçimi: { market: { ean: { pazar: kayıt } }, context: [...] }. Taşıma modül yüklenirken bir kez çalışır
+// (moveDocRows kendi işlemini açar; bu yüzden store.tx içinde DEĞİL, en üst düzeyde).
+export const legacyMarketRows = d => {
+  const out = [];
+  for (const [ean, m] of Object.entries(d?.market || {}))
+    for (const [mk, v] of Object.entries(m || {}))
+      out.push({ ...v, id: `${mk}:${ean}`, market: mk, ean: v?.ean ?? ean });
+  return out;
 };
-const save = d => store.saveDoc('insights', d);
-// Oku-değiştir-yaz dizisi tek işlemde (kayıp güncelleme olmasın). store.tx iç içe açılamaz: fn içinde başka tx açılmaz.
-const run = fn => store.tx(fn);
+export const legacyContextRows = d =>
+  (Array.isArray(d?.context) ? d.context : []).map(x => ({ ...x, id: crypto.randomUUID() }));
+// Her tür kendi alanını siler: ikinci çağrı, birincinin sildiği alana bağımlı olmasın.
+export const legacyStripMarket = d => {
+  delete d.market;
+};
+export const legacyStripContext = d => {
+  delete d.context;
+};
+moveDocRows('market', 'insights', { rows: legacyMarketRows, strip: legacyStripMarket });
+moveDocRows('context', 'insights', { rows: legacyContextRows, strip: legacyStripContext });
+
+// market: EAN → pazar → kayıt. EAN kullanıcıdan gelir (compare ile sorgulanır): prototipsiz harita.
+const marketMap = () => {
+  const m = dict();
+  for (const { id: _id, market, ean, ...v } of marketRows.all()) (m[ean] ??= dict())[market] = { ean, ...v };
+  return m;
+};
+const loadContext = () => contextRows.all();
 const r2 = n => Math.round(n * 100) / 100;
 const eur = (price, cur) => price * (RATES.fx[cur] ?? fail('invalid', `Desteklenmeyen para birimi: ${cur}`));
 
@@ -67,12 +99,9 @@ export function importMarketData({ market, source, rows } = {}) {
     const cat = typeof x.cat === 'string' ? x.cat.trim().toLowerCase().slice(0, 40) : '';
     return { ean, title: String(x.title ?? '').slice(0, 200), price, currency, sales30d: s, cat };
   });
-  run(() => {
-    const d = load(),
-      t = Date.now();
-    for (const r of clean) (d.market[r.ean] ??= {})[mk] = { ...r, source, t };
-    save(d);
-  });
+  const t = Date.now();
+  marketRows.putMany(clean.map(r => ({ ...r, id: `${mk}:${r.ean}`, market: mk, source, t })));
+  marketRows.prune(MARKET_MAX);
   return { ok: true, market: mk, source, imported: clean.length };
 }
 
@@ -89,24 +118,21 @@ export function importContext({ rows } = {}) {
     if (!Number.isFinite(value)) fail('invalid', `Satır ${i + 1}: geçersiz value`);
     return { type: x.type, key: String(x.key ?? '').slice(0, 60) || '*', value };
   });
-  run(() => {
-    const d = load();
-    d.context = [...d.context, ...clean].slice(-ROW_MAX);
-    save(d);
-  });
+  contextRows.putMany(clean.map(x => ({ ...x, id: crypto.randomUUID() })));
+  contextRows.prune(ROW_MAX);
   return { ok: true, imported: clean.length };
 }
 
 /** @param {{ eans?: any }} [o] */
 export function compare({ eans } = {}) {
   if (!Array.isArray(eans) || !eans.length) fail('invalid', 'eans boş olmayan dizi olmalı');
-  const d = load();
   return eans.slice(0, 200).map(e => {
-    const ean = String(e).trim(),
-      m = d.market[ean];
-    if (!m) fail('notfound', `EAN için veri yok: ${ean}`);
-    const rows = Object.entries(m).map(([market, v]) => ({
-      market,
+    const ean = String(e).trim();
+    // Tüm tabloyu yüklemek yerine bu EAN için olası her pazarın satırı tek tek okunur (kimlik `pazar:ean`).
+    const m = MARKETS.map(k => marketRows.get(`${k}:${ean}`)).filter(Boolean);
+    if (!m.length) fail('notfound', `EAN için veri yok: ${ean}`);
+    const rows = m.map(v => ({
+      market: v.market,
       price: r2(eur(v.price, v.currency)),
       sales30d: v.sales30d,
     }));
@@ -126,7 +152,7 @@ export function arbitrage({ fromMarkets, toMarkets, minMargin = 0 } = {}) {
   const min = Number(minMargin);
   if (!Number.isFinite(min)) fail('invalid', 'minMargin sayı olmalı');
   const out = [];
-  for (const [ean, m] of Object.entries(load().market)) {
+  for (const [ean, m] of Object.entries(marketMap())) {
     const buys = from.filter(k => m[k]).map(k => ({ market: k, price: eur(m[k].price, m[k].currency) }));
     const sells = to.filter(k => m[k]).map(k => ({ market: k, price: eur(m[k].price, m[k].currency) }));
     if (!buys.length || !sells.length) continue;
@@ -177,7 +203,7 @@ export function categoryTrends({ days = 14 } = {}) {
   for (const e of ev)
     if (e.e === 'view' && typeof e.c === 'string') get(e.c)[e.t >= mid ? 'recent' : 'prior']++;
   let salesTotal = 0;
-  for (const m of Object.values(load().market))
+  for (const m of Object.values(marketMap()))
     for (const v of Object.values(m))
       if (v.cat) ((get(v.cat).sales += v.sales30d), (salesTotal += v.sales30d));
   return [...cats]
@@ -249,7 +275,7 @@ export function cohort({ days = 7 } = {}) {
       .sort((a, b) => String(a.key).localeCompare(String(b.key), 'tr', { numeric: true }));
   };
   const ctx = type => {
-    const rows = load().context.filter(x => x.type === type);
+    const rows = loadContext().filter(x => x.type === type);
     if (!rows.length) return NO_DATA;
     const m = new Map();
     for (const x of rows) {
@@ -272,10 +298,11 @@ export function cohort({ days = 7 } = {}) {
 }
 
 export function summary() {
-  const d = load(),
-    eans = Object.keys(d.market);
-  const perMarket = {};
-  for (const m of Object.values(d.market))
-    for (const k of Object.keys(m)) perMarket[k] = (perMarket[k] || 0) + 1;
-  return { markets: MARKETS, eans: eans.length, perMarket, contextRows: d.context.length, rates: RATES };
+  const eans = new Set(),
+    perMarket = {};
+  for (const { ean, market } of marketRows.all()) {
+    eans.add(ean);
+    perMarket[market] = (perMarket[market] || 0) + 1;
+  }
+  return { markets: MARKETS, eans: eans.size, perMarket, contextRows: contextRows.count(), rates: RATES };
 }

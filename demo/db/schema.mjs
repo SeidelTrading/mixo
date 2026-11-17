@@ -25,3 +25,12 @@ CREATE INDEX pool_ean_pool ON pool_ean(pool_id);
 CREATE TABLE pool_src (src TEXT NOT NULL, ref TEXT NOT NULL, pool_id TEXT NOT NULL, t INTEGER NOT NULL, data TEXT NOT NULL DEFAULT '{}', PRIMARY KEY (src, ref));
 CREATE INDEX pool_src_pool ON pool_src(pool_id);
 `;
+
+// Sürüm 3: büyüyen iş kayıtları için ortak satır tablosu.
+// Neden: bu kayıtlar tek bir JSON belgesinde duruyordu ve her yazma TÜM belgeyi yeniden yazıyordu
+// (ölçüm 17.11.2026: 4-5 MB belgede ≈ 150 ms, 35 MB'de ≈ 640 ms olay döngüsü bloke). Satır tablosunda
+// yazma yalnız değişen kaydı yazar. `kind` hangi modülün kaydı olduğunu söyler (ör. 'refunds', 'staff').
+export const SCHEMA_V3 = `
+CREATE TABLE recs (kind TEXT NOT NULL, id TEXT NOT NULL, t INTEGER NOT NULL, data TEXT NOT NULL DEFAULT '{}', PRIMARY KEY (kind, id));
+CREATE INDEX recs_kind_t ON recs(kind, t);
+`;

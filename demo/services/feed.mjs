@@ -1,4 +1,5 @@
 import { store } from '../lib/store.mjs';
+import { recordSet, moveDocRows } from './records.mjs';
 import { eanFor, getPool, isEan, listPools } from './pool.mjs';
 // Kural motoru STATİK içe aktarılır (döngü yok): yüklenemezse sistem sessizce izin vermek yerine
 // açıkça patlar. Dinamik `import(...).catch(() => null)` deseni satış yasaklarını fail-open yapıyordu.
@@ -116,6 +117,66 @@ function readDoc() {
   return d && typeof d === 'object' ? d : {};
 }
 
+// Depolama: belgede (`store.doc('feed')`) yalnız küçük ÖZETLER durur (pazar yeri başına son denetimin özeti, son toplu
+// yüklemenin özeti). Binlerce ürün satırı (sorunlar, yükleme sonuçları) satır tablosundadır; belgede tutulsaydı her
+// yazma 35 MB'lık belgeyi yeniden yazardı (konsey ölçümü: ≈ 640 ms olay döngüsü bloke).
+// Sorun satırları pazar yeri başına ayrı kümededir: yeni denetim o pazarın kümesini tek `clear` ile boşaltır, böylece
+// düzelen ürün raporda kalmaz ve ikinci çalıştırma kopya üretmez.
+const problemSet = mk => recordSet('feed_problems_' + mk);
+const bulkSet = recordSet('feed_bulk');
+// Toplu yükleme satırı tavanı: 5.000 ürün × 100 mağaza teorik olarak yarım milyon satır eder; yalnız son çalıştırmanın
+// ilk 20.000 satırı saklanır (toplam sayılar özette durur). Her çalıştırma öncekini zaten değiştirir.
+const BULK_MAX_ROWS = 20000;
+// lastAudit varsayılan sorun sınırı: çok büyük denetimde de bellek ve yanıt boyutu sınırlı kalsın diye ilk N sorun döner;
+// toplam `problemCount` alanında.
+export const LAST_AUDIT_LIMIT = 500;
+
+// Eski kurulumlarda sorunlar ve yükleme sonuçları belgenin içindeydi: modül yüklenirken bir kez satıra taşınır
+// (store.tx dışında: putMany kendi işlemini açar). Yapılandırma ve özetler belgede kalır.
+for (const mk of Object.keys(MARKETS))
+  moveDocRows(problemSet(mk).kind, 'feed', {
+    rows: d => {
+      const a = d.audits?.[mk];
+      return Array.isArray(a?.problems)
+        ? a.problems.map(x => ({ ...x, id: mk + ':' + x?.poolId, market: mk, t: a.t }))
+        : [];
+    },
+    strip: d => {
+      const a = d.audits?.[mk];
+      if (a && Array.isArray(a.problems)) {
+        a.problemCount = a.problems.length;
+        delete a.problems;
+      }
+    },
+  });
+moveDocRows(bulkSet.kind, 'feed', {
+  rows: d => {
+    const b = d.bulk;
+    if (!b) return [];
+    const u = (Array.isArray(b.uploaded) ? b.uploaded : []).map(x => ({
+      ...x,
+      id: `u:${x?.poolId}:${x?.shopId}`,
+      status: 'uploaded',
+      t: b.t,
+    }));
+    const k = (Array.isArray(b.blocked) ? b.blocked : []).map(x => ({
+      ...x,
+      id: `b:${x?.poolId}:${x?.shopId ?? ''}`,
+      status: 'blocked',
+      t: b.t,
+    }));
+    return [...u, ...k].slice(0, BULK_MAX_ROWS);
+  },
+  strip: d => {
+    const b = d.bulk;
+    if (!b) return;
+    b.uploadedCount = Array.isArray(b.uploaded) ? b.uploaded.length : 0;
+    b.blockedCount = Array.isArray(b.blocked) ? b.blocked.length : 0;
+    delete b.uploaded;
+    delete b.blocked;
+  },
+});
+
 export function auditFeed(market, opts) {
   const mk = cleanMarket(market);
   let checked = 0,
@@ -129,15 +190,35 @@ export function auditFeed(market, opts) {
       (okCount++, problems.push({ poolId: p.id, title: p.title, missing: [], warnings: r.warnings }));
     else problems.push({ poolId: p.id, title: p.title, missing: r.missing, warnings: r.warnings });
   }
-  const report = { market: mk, checked, okCount, problems, t: Date.now() };
-  const d = readDoc();
-  store.saveDoc('feed', { ...d, audits: { ...(d.audits ?? {}), [mk]: report } });
+  const t = Date.now();
+  const report = { market: mk, checked, okCount, problems, problemCount: problems.length, t };
+  const rs = problemSet(mk);
+  // Tek işlemde: eski satırlar silinir, yenileri yazılır, özet belgeye konur. İşlem yarıda kesilse eski rapor korunur.
+  // Satır kimliği `pazar:poolId` olduğundan aynı ürün aynı pazarda iki satır olamaz.
+  store.tx(() => {
+    rs.clear();
+    for (const x of problems) rs.put({ ...x, id: mk + ':' + x.poolId, market: mk, t });
+    const d = readDoc();
+    const { problems: _p, ...summary } = report;
+    store.saveDoc('feed', { ...d, audits: { ...(d.audits ?? {}), [mk]: summary } });
+  });
   return report;
 }
 
-export function lastAudit(market) {
+// Özet belgeden, sorun satırları satır tablosundan (ilk `limit` sorun, varsayılan LAST_AUDIT_LIMIT) birleştirilir.
+export function lastAudit(market, opts) {
   const mk = cleanMarket(market);
-  return readDoc().audits?.[mk] ?? null;
+  const a = readDoc().audits?.[mk];
+  if (!a) return null;
+  const lim = Number.isFinite(opts?.limit) ? Math.max(0, Math.floor(opts.limit)) : LAST_AUDIT_LIMIT;
+  const rs = problemSet(mk);
+  const problems = rs.all({ limit: lim }).map(({ poolId, title, missing, warnings }) => ({
+    poolId,
+    title,
+    missing,
+    warnings,
+  }));
+  return { ...a, problems, problemCount: a.problemCount ?? rs.count() };
 }
 
 // XML kaçışı: & < > " ' ve XML 1.0'da geçersiz denetim karakterleri atılır.
@@ -246,7 +327,27 @@ export async function bulkUpload(input) {
     }
   }
   const out = { uploaded, blocked, t: Date.now() };
-  const d = readDoc();
-  store.saveDoc('feed', { ...d, bulk: { ...out, market: mk, brands: bs, shops: ss, company: co } });
+  store.tx(() => {
+    bulkSet.clear();
+    const rows = [
+      ...uploaded.map(x => ({ ...x, id: `u:${x.poolId}:${x.shopId}`, status: 'uploaded' })),
+      ...blocked.map(x => ({ ...x, id: `b:${x.poolId}:${x.shopId ?? ''}`, status: 'blocked' })),
+    ].slice(0, BULK_MAX_ROWS);
+    for (const r of rows) bulkSet.put({ ...r, t: out.t });
+    const d = readDoc();
+    store.saveDoc('feed', {
+      ...d,
+      bulk: {
+        market: mk,
+        brands: bs,
+        shops: ss,
+        company: co,
+        t: out.t,
+        uploadedCount: uploaded.length,
+        blockedCount: blocked.length,
+        stored: rows.length,
+      },
+    });
+  });
   return out;
 }

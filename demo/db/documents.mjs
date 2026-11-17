@@ -18,5 +18,11 @@ export function makeDocuments({ q, log }) {
       'INSERT INTO kv(key,value,updated) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated=excluded.updated',
     ).run(key, JSON.stringify(obj), Date.now());
   };
-  return { doc, saveDoc };
+  // Belge boyutları: hangi belgenin şiştiğini görmek için (sağlık ucu). Her yazma TÜM belgeyi yeniden yazdığı
+  // için büyük belge doğrudan olay döngüsü gecikmesidir; büyüyen kayıtlar recs tablosuna taşınmalıdır.
+  const docSizes = () =>
+    q('SELECT key, LENGTH(value) AS bytes, updated FROM kv ORDER BY LENGTH(value) DESC')
+      .all()
+      .map(r => ({ key: r.key, bytes: Number(r.bytes) || 0, updated: r.updated }));
+  return { doc, saveDoc, docSizes };
 }

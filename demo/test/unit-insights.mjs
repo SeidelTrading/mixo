@@ -15,6 +15,7 @@ process.env.ORDER_VERIFY = 'off';
 const { store } = await import('../lib/store.mjs');
 const analytics = await import('../services/analytics.mjs');
 const ins = await import('../services/insights.mjs');
+const { recordSet, moveDocRows } = await import('../services/records.mjs');
 
 test.after(() => {
   try {
@@ -91,4 +92,89 @@ test('cohort: veri olmayan boyut uydurma değer üretmez', () => {
   assert.ok(Array.isArray(c.hour));
   ins.importContext({ rows: [{ type: 'returns', key: 'moda', value: 4 }] });
   assert.deepEqual(ins.cohort({ days: 1 }).returns, [{ key: 'moda', avg: 4, n: 1 }]);
+});
+
+test('aynı pazar verisini ikinci kez içeri aktarmak kopya üretmez, günceller', () => {
+  const ean = '4006381333948';
+  const rows = recordSet('market');
+  const imp = price =>
+    ins.importMarketData({
+      market: 'n11',
+      source: 'api',
+      rows: [{ ean, title: 'Kopya testi', price, currency: 'EUR', sales30d: 3 }],
+    });
+  const before = rows.count();
+  imp(10);
+  imp(12);
+  assert.equal(rows.count(), before + 1);
+  assert.equal(rows.get('n11:' + ean).price, 12);
+  assert.equal(ins.compare({ eans: [ean] })[0].rows.length, 1);
+  assert.equal(ins.compare({ eans: [ean] })[0].min, 12);
+  // Aynı toplu içinde tekrarlanan EAN da tek satır olur.
+  ins.importMarketData({
+    market: 'n11',
+    source: 'api',
+    rows: [
+      { ean, price: 20 },
+      { ean, price: 21 },
+    ],
+  });
+  assert.equal(rows.count(), before + 1);
+  assert.equal(rows.get('n11:' + ean).price, 21);
+});
+
+test('belgeden satıra taşıma mevcut pazar ve bağlam verisini korur', () => {
+  const name = 'insights-legacy-test';
+  store.saveDoc(name, {
+    market: {
+      4006381333955: {
+        amazon: {
+          ean: '4006381333955',
+          title: 'Eski',
+          price: 30,
+          currency: 'EUR',
+          sales30d: 5,
+          cat: 'moda',
+          source: 'api',
+          t: 555,
+        },
+        trendyol: {
+          ean: '4006381333955',
+          title: 'Eski',
+          price: 900,
+          currency: 'TRY',
+          sales30d: 7,
+          cat: 'moda',
+          source: 'api',
+          t: 666,
+        },
+      },
+    },
+    context: [
+      { type: 'returns', key: 'eski-kat', value: 2 },
+      { type: 'returns', key: 'eski-kat', value: 4 },
+    ],
+    esik: 42,
+  });
+  const nm = moveDocRows('market', name, { rows: ins.legacyMarketRows, strip: ins.legacyStripMarket });
+  const nc = moveDocRows('context', name, { rows: ins.legacyContextRows, strip: ins.legacyStripContext });
+  assert.equal(nm, 2);
+  assert.equal(nc, 2);
+  const a = recordSet('market').get('amazon:4006381333955');
+  assert.equal(a.t, 555);
+  assert.equal(a.market, 'amazon');
+  assert.equal(a.price, 30);
+  assert.equal(recordSet('market').get('trendyol:4006381333955').currency, 'TRY');
+  assert.equal(
+    recordSet('context')
+      .all()
+      .filter(x => x.key === 'eski-kat').length,
+    2,
+  );
+  const d = store.doc(name, {});
+  assert.equal(d.market, undefined);
+  assert.equal(d.context, undefined);
+  assert.equal(d.esik, 42, 'küçük yapılandırma belgede kalır');
+  assert.equal(moveDocRows('market', name, { rows: ins.legacyMarketRows, strip: ins.legacyStripMarket }), 0);
+  assert.equal(recordSet('market').get('amazon:4006381333955').price, 30);
 });

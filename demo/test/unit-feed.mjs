@@ -143,3 +143,57 @@ test('buildFeed yasaklı markayı XML dışında bırakır', () => {
   assert.ok(feed.buildFeed('pricerunner').includes(p.id), 'yasak yalnız ilgili pazar yerinde');
   rules.removeRule(rule.id);
 });
+
+test('5.000 sorunlu üründen sonra denetim çalışır, belge küçük kalır, kopya olmaz, düzelen ürün çıkar', () => {
+  const N = 5000;
+  const ids = [];
+  for (let i = 0; i < N; i++) {
+    // görsel yok → billiga için sorunlu; benzersiz ve geçerli EAN gerekmez (eksik EAN da sorundur)
+    ids.push(pool.ingest(full('BIG' + i, { vendor: 'BigMarka', image: '', eans: [] })).id);
+  }
+  const r1 = feed.auditFeed('billiga');
+  // tarama tavanı 5.000 ürün (MAX_SCAN): önceki testlerin ürünleri de sayıldığından hepsi taranmayabilir
+  assert.ok(r1.problems.length >= N - 100, 'sorun sayısı: ' + r1.problems.length);
+  const doc = JSON.stringify(store.doc('feed', {}));
+  assert.ok(doc.length < 5000, 'belge küçük kalmalı: ' + doc.length);
+  assert.ok(!doc.includes('BIG0'), 'sorun satırları belgede olmamalı');
+  assert.equal(store.doc('feed', {}).audits.billiga.problems, undefined);
+  const last = feed.lastAudit('billiga');
+  assert.equal(last.problemCount, r1.problems.length);
+  assert.equal(last.problems.length, feed.LAST_AUDIT_LIMIT);
+  assert.equal(last.t, r1.t);
+  assert.equal(feed.lastAudit('billiga', { limit: 10 }).problems.length, 10);
+  assert.deepEqual(Object.keys(last.problems[0]).sort(), ['missing', 'poolId', 'title', 'warnings']);
+
+  // ikinci çalıştırma kopya üretmez
+  const r2 = feed.auditFeed('billiga');
+  assert.equal(r2.problems.length, r1.problems.length);
+  assert.equal(feed.lastAudit('billiga').problemCount, r1.problems.length);
+
+  // düzelen ürün yeni denetimden sonra raporda kalmaz
+  const full1 = new Set(feed.lastAudit('billiga', { limit: 1e6 }).problems.map(x => x.poolId));
+  const idx = ids.findIndex(id => full1.has(id));
+  assert.ok(idx >= 0);
+  const target = ids[idx];
+  pool.ingest(
+    full('BIG' + idx, {
+      vendor: 'BigMarka',
+      image: 'https://cdn.example.com/BIG' + idx + '.jpg',
+      eans: ['4006381334044'],
+    }),
+  );
+  feed.auditFeed('billiga');
+  const after = feed.lastAudit('billiga', { limit: 1e6 });
+  assert.ok(!after.problems.some(x => x.poolId === target), 'düzelen ürün raporda kalmamalı');
+  assert.equal(after.problemCount, r1.problems.length - 1);
+});
+
+test('bulkUpload sonuçları satırda durur, belgede yalnız özet kalır', async () => {
+  const r = await feed.bulkUpload({ brands: ['TopluMarka'], shops: ['s1', 's2'], market: 'billiga' });
+  const b = store.doc('feed', {}).bulk;
+  assert.equal(b.uploaded, undefined);
+  assert.equal(b.blocked, undefined);
+  assert.equal(b.uploadedCount, r.uploaded.length);
+  assert.equal(b.blockedCount, r.blocked.length);
+  assert.ok(r.uploaded.length >= 2);
+});

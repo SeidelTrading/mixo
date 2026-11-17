@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
-import { DB_NAME, POOL_TABLES, TABLES } from './util.mjs';
+import { DB_NAME, OPTIONAL_TABLES, TABLES } from './util.mjs';
 import { decryptFile } from './export.mjs';
 
 // Bir veritabanı dosyasını (yedek) doğrular: SQLite bütünlük denetimi + tablo sayıları. Dosyayı değiştirmez.
@@ -20,7 +20,7 @@ export function verifyFile(file) {
           .all()
           .map(r => r.name),
       ),
-      missing = TABLES.filter(t => !have.has(t) && !POOL_TABLES.includes(t));
+      missing = TABLES.filter(t => !have.has(t) && !OPTIONAL_TABLES.includes(t));
     const counts = Object.fromEntries(
       TABLES.filter(t => have.has(t)).map(t => [t, db.prepare(`SELECT COUNT(*) c FROM ${t}`).get().c]),
     );

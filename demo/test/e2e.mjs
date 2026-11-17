@@ -738,6 +738,13 @@ try {
     hl.t.slice(0, 120),
   );
   ok(hl.j.memory.rssMb > 0 && hl.j.dbMb >= 0, 'bellek ve veritabanı boyutu raporlanır');
+  // Belge boyutu ve satır sayıları: hangi belgenin şiştiği ve hangi modülün kaç kaydı olduğu görünür olmalı.
+  ok(
+    Array.isArray(hl.j.docs) && hl.j.docs.some(d => d.key === 'settings' && typeof d.kb === 'number'),
+    'belge boyutları raporlanır',
+    JSON.stringify(hl.j.docs || []).slice(0, 160),
+  );
+  ok(Array.isArray(hl.j.recs), 'satır tablosu sayıları raporlanır');
   ok((await call(null, '/api/admin/health')).s === 401, 'oturumsuz sağlık ucu 401');
 
   console.log(

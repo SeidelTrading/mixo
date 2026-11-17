@@ -185,3 +185,43 @@ test('b2b: iki ayrı süreç aynı belgeye kayıt eklerken kayıp olmaz (store.t
   await Promise.all([run(), run()]);
   assert.equal(b2b.summary().counts.sellers, before + 2 * N);
 });
+
+test('b2b: kapalı anlaşma tavanı yalnız sonuçlanmışları budar, açık anlaşmalara dokunmaz', () => {
+  const s = seller(),
+    b = buyer(),
+    o = offer(s, { qty: 1000 });
+  const eski = b2b.LIMITS.maxDoneDeals;
+  b2b.LIMITS.maxDoneDeals = 3;
+  try {
+    const open = [1, 2, 3, 4, 5].map(() => b2b.createDeal({ offerId: o.id, buyerId: b.id, qty: 1 }));
+    const closed = [];
+    for (let i = 0; i < 6; i++) {
+      const d = b2b.createDeal({ offerId: o.id, buyerId: b.id, qty: 1 });
+      for (const st of ['confirmed', 'shipped', 'closed']) b2b.advanceDeal(d.id, st);
+      closed.push(d.id);
+    }
+    const ids = new Set(b2b.summary().deals.map(d => d.id));
+    for (const d of open) assert.ok(ids.has(d.id), 'açık anlaşma silinmemeli');
+    assert.equal(closed.filter(id => ids.has(id)).length, 3, 'yalnız en yeni 3 kapalı kalır');
+    assert.ok(!ids.has(closed[0]) && ids.has(closed[5]));
+    // iptal edilen de sonuçlanmıştır; adet teklife geri döner
+    const rem = () => b2b.listOffers().find(x => x.id === o.id).remaining;
+    const before = rem();
+    const c = b2b.createDeal({ offerId: o.id, buyerId: b.id, qty: 4 });
+    assert.equal(rem(), before - 4);
+    b2b.advanceDeal(c.id, 'cancelled');
+    assert.equal(rem(), before);
+    assert.throws(() => b2b.advanceDeal(c.id, 'confirmed'), code('invalid'));
+    // açık anlaşma hâlâ ilerletilebilir
+    assert.equal(b2b.advanceDeal(open[0].id, 'confirmed').status, 'confirmed');
+  } finally {
+    b2b.LIMITS.maxDoneDeals = eski;
+  }
+});
+
+test('b2b: belge küçük kalır, kayıtlar satır tablosundadır', () => {
+  const d = store.doc('b2b', {});
+  assert.equal(d.sellers, undefined);
+  assert.equal(d.deals, undefined);
+  assert.ok(b2b.summary().counts.sellers > 0);
+});

@@ -1,4 +1,5 @@
-import { store } from '../lib/store.mjs';
+import crypto from 'node:crypto';
+import { recordSet, moveDocRows } from './records.mjs';
 
 // SINIR: Bu modül YALNIZCA iş çıktısı metriklerini ölçer (ilk cevap süresi, çözüm süresi, ticket sayısı).
 // Ekran görüntüsü, tuş kaydı, uygulama/süre takibi ya da herhangi bir gizli gözetim İÇERMEZ ve eklenmemelidir
@@ -20,6 +21,19 @@ const fail = (code, msg) => {
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 const MAX_RECORDS = 50000;
 
+// İş kayıtları (sayısı kullanımla büyür) satır tablosunda durur; yazma yalnız yeni satıra dokunur.
+// `staff` belgesinde artık kayıt listesi tutulmaz (eski kurulumlarda kalan liste aşağıda bir kez taşınır).
+const records = recordSet('staff');
+// Kimlik: rastgele UUID. 8 karakterlik kısaltma 50 bin kayıtta ≈ %25 çakışma verir ve çakışma kaydı SESSİZCE
+// ezer; bu yüzden tam UUID kullanılır.
+const newId = () => crypto.randomUUID();
+// Eski belgedeki kayıtların kimliği yoktu: taşınırken üretilir; `t` zaten vardı, korunur.
+export const legacyRows = d => (Array.isArray(d?.records) ? d.records : []).map(r => ({ ...r, id: newId() }));
+export const legacyStrip = d => {
+  delete d.records;
+};
+moveDocRows('staff', 'staff', { rows: legacyRows, strip: legacyStrip });
+
 // recordWork({ user, kind, ms, ticketId }) → kayıt. Yalnız bu dört alan saklanır (+ zaman).
 /** @param {{ user?: any, kind?: any, ms?: any, ticketId?: any }} [o] */
 export function recordWork({ user, kind, ms, ticketId } = {}) {
@@ -29,16 +43,11 @@ export function recordWork({ user, kind, ms, ticketId } = {}) {
   if (!KINDS.includes(kind)) fail('invalid', `kind şunlardan biri olmalı: ${KINDS.join(', ')}`);
   if (typeof ms !== 'number' || !Number.isFinite(ms) || ms <= 0) fail('invalid', 'ms pozitif sayı olmalı');
   if (!tid) fail('invalid', 'ticketId gerekli');
-  return store.tx(() => {
-    /** @type {any} */
-    const d = store.doc('staff', null) || {};
-    const records = d.records || [];
-    const rec = { user: u, kind, ms, ticketId: tid, t: Date.now() };
-    records.push(rec);
-    if (records.length > MAX_RECORDS) records.splice(0, records.length - MAX_RECORDS);
-    store.saveDoc('staff', { ...d, records });
-    return rec;
-  });
+  // Tek `put` + tavan budaması: oku-değiştir-yaz dizisi yok, `tx` gerekmez. Tavan en eski kayıtları siler.
+  const rec = records.put({ id: newId(), user: u, kind, ms, ticketId: tid, t: Date.now() });
+  records.prune(MAX_RECORDS);
+  const { id: _id, ...out } = rec;
+  return out;
 }
 
 const avg = a => (a.length ? Math.round(a.reduce((s, x) => s + x, 0) / a.length) : null);
@@ -59,10 +68,8 @@ const ts = (v, name) => {
 export function performance({ from, to } = {}) {
   const f = ts(from, 'from'),
     e = ts(to, 'to');
-  /** @type {any} */
-  const d = store.doc('staff', null) || {};
   const by = new Map();
-  for (const r of d.records || []) {
+  for (const r of records.all()) {
     if ((f !== null && r.t < f) || (e !== null && r.t > e)) continue;
     if (!by.has(r.user)) by.set(r.user, { tickets: new Set(), fr: [], res: [] });
     const u = by.get(r.user);

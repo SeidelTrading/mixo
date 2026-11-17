@@ -16,6 +16,7 @@ const ord = await import('../services/orders.mjs');
 const { P } = await import('../services/catalog.mjs');
 const rf = await import('../services/refunds.mjs');
 const { store } = await import('../lib/store.mjs');
+const { recordSet } = await import('../services/records.mjs');
 
 test.after(() => {
   store.close?.();
@@ -109,9 +110,9 @@ test('settle idempotent: iki çağrı tek ödeme', () => {
 
 test('tutar uyuşmazlığında conflict, ödeme yok', () => {
   const r = toReceived(req(mkOrder()));
-  const d = store.doc('refunds', null);
-  d.refunds[r.id].amount += 1;
-  store.saveDoc('refunds', d);
+  const rows = recordSet('refunds');
+  const row = rows.get(r.id);
+  rows.put({ ...row, amount: row.amount + 1 });
   assert.equal(
     codeOf(() => rf.settle(r.id)),
     'conflict',
@@ -134,4 +135,128 @@ test('eşik üstü: onaysız pending_approval, onaylıyken ödeme', () => {
   assert.equal(c.refund.status, 'refunded');
   assert.equal(c.refund.approvedBy, 'yonetici');
   assert.ok(c.payment);
+});
+
+test('settle: ödeme satırı iade kimliğine bağlı, iki çağrıda tek satır, ödeme sayısı 1', () => {
+  const before = recordSet('refund_payments').count();
+  const r = toReceived(req(mkOrder()));
+  rf.settle(r.id);
+  rf.settle(r.id);
+  rf.settle(r.id);
+  assert.equal(recordSet('refund_payments').count(), before + 1);
+  assert.equal(rf.refundPayment(r.id).id, 'pay_' + r.id);
+});
+
+test('dört göz kuralı: talep eden kendi iadesini onaylayamaz, başkası onaylar', () => {
+  const o = mkOrder();
+  const r0 = rf.requestRefund({ orderId: o.id, items: [{ id: pid, qty: 1 }] }, { by: 'ayse' });
+  const r = toReceived(r0);
+  assert.equal(
+    codeOf(() => rf.settle(r.id, { approvedBy: 'ayse' })),
+    'conflict',
+  );
+  assert.equal(rf.getRefund(r.id).status, 'received');
+  assert.equal(rf.refundPayment(r.id), null);
+  const ok = rf.settle(r.id, { approvedBy: 'mehmet' });
+  assert.equal(ok.refund.status, 'refunded');
+  assert.equal(ok.refund.approvedBy, 'mehmet');
+});
+
+test('iade verisi belgede kalmaz; belgede yalnız sayaç vardır; dönen kayıtta t alanı yok', () => {
+  const r = req(mkOrder());
+  const d = store.doc('refunds', {});
+  for (const k of ['refunds', 'events', 'payments', 'mails'])
+    assert.equal(k in d, false, `belgede ${k} kalmamalı`);
+  assert.ok(d.seq, 'storno sayacı belgede');
+  assert.equal('t' in rf.getRefund(r.id), false);
+  assert.equal('id' in rf.refundEvents(r.id)[0], false);
+});
+
+test('storno numarası 1.000 ardışık çağrıda tekrar etmez ve atlamaz', () => {
+  const year = new Date().getFullYear();
+  const start = store.doc('refunds', {}).seq?.[year] || 0;
+  const rows = recordSet('refunds');
+  const ids = [];
+  rows.putMany(
+    Array.from({ length: 1000 }, (_, i) => {
+      const id = `rf_seq${String(i).padStart(4, '0')}`;
+      ids.push(id);
+      return {
+        id,
+        orderId: 'seq-' + i,
+        status: 'received',
+        lines: [{ id: 'x', title: 'X', qty: 1, price: 10 }],
+        amount: 10,
+        reason: '',
+        invoice: null,
+        created: Date.now(),
+        updated: Date.now(),
+      };
+    }),
+  );
+  const nos = ids.map(id => rf.storno(id).no);
+  assert.equal(new Set(nos).size, 1000);
+  nos.forEach((no, i) => assert.equal(no, `ST-${year}-${String(start + i + 1).padStart(5, '0')}`));
+  assert.equal(store.doc('refunds', {}).seq[year], start + 1000);
+});
+
+test('storno işlemi yarıda patlarsa numara kaybolmaz ve kayıt yazılmaz (tx geri alınır)', () => {
+  const year = new Date().getFullYear();
+  const r = req(mkOrder());
+  const before = store.doc('refunds', {}).seq?.[year] || 0;
+  // Sayaç ve iade satırı yazıldıktan SONRA (posta yazılırken) hata: tek işlem olduğu için hepsi geri alınmalı.
+  const orig = store.recs.put;
+  store.recs.put = (kind, rec) => {
+    if (kind === 'refund_mails') throw new Error('süreç öldü (simülasyon)');
+    return orig(kind, rec);
+  };
+  try {
+    assert.throws(() => rf.storno(r.id), /süreç öldü/);
+  } finally {
+    store.recs.put = orig;
+  }
+  assert.equal(store.doc('refunds', {}).seq?.[year] || 0, before);
+  assert.equal(rf.getRefund(r.id).invoice, null);
+  assert.equal(rf.storno(r.id).no, `ST-${year}-${String(before + 1).padStart(5, '0')}`, 'numara kaybolmadı');
+});
+
+test('5.000 iade kaydından sonra getRefund ve listRefunds doğru çalışır', () => {
+  const rows = recordSet('refunds');
+  const base = Date.now() - 10_000_000;
+  const mk = i => ({
+    id: `rf_big${String(i).padStart(5, '0')}`,
+    orderId: 'big-' + (i % 50),
+    status: i % 2 ? 'refunded' : 'requested',
+    lines: [{ id: 'x', title: 'X', qty: 1, price: 5 }],
+    amount: 5,
+    reason: '',
+    invoice: null,
+    created: base + i,
+    updated: base + i,
+  });
+  rows.putMany(Array.from({ length: 5000 }, (_, i) => mk(i)));
+  assert.equal(rf.getRefund('rf_big04999').status, 'refunded');
+  assert.equal(rf.getRefund('rf_big00000').status, 'requested');
+  assert.equal(rf.getRefund('rf_yok'), null);
+  const all = rf.listRefunds();
+  assert.ok(all.length >= 5000);
+  const big = all.filter(r => r.id.startsWith('rf_big'));
+  assert.equal(big.length, 5000);
+  assert.equal(big[0].id, 'rf_big04999', 'yeniden eskiye');
+  assert.equal(rf.listRefunds({ status: 'refunded' }).filter(r => r.id.startsWith('rf_big')).length, 2500);
+  // belge şişmedi
+  assert.ok(JSON.stringify(store.doc('refunds', {})).length < 2000);
+  // büyük tablo varken yazma ve eski iadeye erişim bozulmaz
+  const o = mkOrder();
+  const r = req(o);
+  assert.equal(rf.getRefund(r.id).orderId, o.id);
+});
+
+test('olay günlüğü ve posta kutusu tavanlıdır; iade kayıtları tavansızdır', () => {
+  const before = recordSet('refunds').count();
+  const mails = recordSet('refund_mails');
+  mails.putMany(Array.from({ length: 1100 }, (_, i) => ({ id: 'm' + i, t: Date.now() + i, key: 'x' })));
+  rf.storno(req(mkOrder()).id); // posta yazar ve budar
+  assert.ok(mails.count() <= 1000);
+  assert.ok(recordSet('refunds').count() >= before);
 });

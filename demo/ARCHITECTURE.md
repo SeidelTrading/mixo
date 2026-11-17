@@ -16,6 +16,7 @@ services/             iş mantığı (HTTP bilmez)
   analytics           olay toplama ve analiz
   assistant*          Claude asistanı: araç tanımı (assistant-tools), işleyici tablosu (tool-handlers), onay kapısı (assistant-gate), sohbet döngüsü (assistant)
   channels            Instagram ve pazarlama modüllerinin bağlanması (instagram.mjs, marketing.mjs)
+  records             büyüyen iş kayıtları için satır katmanı (recs tablosu) + belgeden satıra bir kerelik taşıma
   order-flow          sipariş kancası: geçerli siparişte hedef sayacını düşürür ve kargo firmasını seçer (orders ↔ dashboard/shipping döngüsünü önler)
   pool                ürün havuzu: kanonik kart, çoklu EAN (pazar yerine özel), kaynak kaydı, birleştir/geri al (db/pool.mjs tabloları)
   tenants · scope     kiracı, mağaza, paket limiti, kullanıcı bağı, AES-256-GCM entegrasyon anahtarı · kapsam kapısı (scopeFor, assertScope, assertShared)
@@ -41,6 +42,8 @@ marketing.mjs + marketing/   Pazarlama modülü: öneri, Instagram köprüsü, k
 - Fabrika modüller (`instagram`, `marketing`) ortak bağlamı `c` nesnesiyle gruplara dağıtır: her grup `makeX(c)` ile yalnız kullandığı adları alır, ürettiklerini döndürür. Yönetici uçları `GET`/`POST` route tablosudur (`instagram/admin-state|posts|inbox.mjs`). Vitrin tıklama eylemleri `CLICK_ACTIONS_*` tablolarındadır.
 - Her yazma işlemi `actions` içinden geçer (günlük + geri alma).
 - Durum belgeleri (`store.doc`/`saveDoc`) oku-değiştir-yaz dizisidir: her yazma `store.tx()` içinde yapılır, yoksa eşzamanlı istekler birbirini ezer.
+- Sayısı kullanımla BÜYÜYEN kayıt belgeye yazılmaz: `services/records.mjs` üzerinden `recs` tablosuna satır olarak yazılır. Belgede her yazma tüm belgeyi yeniden yazar — ölçüldü: 10.000 personel kaydında yazma başına 10,7 ms → 0,22 ms, `requestRefund` 131 ms → 1,1 ms. Belgede yalnız küçük ayar, sayaç ve özet kalır.
+- Eski kurulumların verisi modül yüklenirken `moveDocRows(kind, belge, {rows, strip})` ile bir kez satıra taşınır; damga belgede durur, ikinci çağrı hiçbir şey yapmaz.
 - Kullanıcıdan gelen metin bir nesnenin anahtarı olacaksa uç katmanında `isSafeKey`, servis katmanında `dict()` kullanılır (`lib/safe.mjs`). İkisi birlikte, tek başına değil.
 - Yasal ya da parasal etkili uçların rol kapısı `routes/handler.mjs` içindeki tek `ADMIN_ONLY` tablosundadır; dağınık `if` yazılmaz.
 - Modüller arası bağ statik `import` ile kurulur. Dinamik `import()` ile "yüklenemezse devam et" deseni yasaktır: kural motoru yüklenemiyorsa sistem sessizce izin vermek yerine patlamalıdır. Yeni asistan aracı: `assistant-tools.mjs` (tanım) + `tool-handlers.mjs` (işleyici); birim testi ikisinin eşleştiğini denetler.
@@ -59,13 +62,13 @@ CI: `.github/workflows/ci.yml` (lint, biçim, tip, birim, uçtan uca, `npm audit
 
 ## İşletme notları
 
-- `GET /api/admin/health`: bellekteki sipariş/olay sayıları ve tavanları, bellek, veritabanı boyutu, yedek durumu; tavanın %80'inde `warnings` dolar. Bellekte tutma modelinin bırakılma sinyali budur (bkz. aşağıdaki sınırlar).
+- `GET /api/admin/health`: bellekteki sipariş/olay sayıları ve tavanları, bellek, veritabanı boyutu, yedek durumu; tavanın %80'inde `warnings` dolar. Ayrıca en büyük 10 belgenin boyutu (`docs`) ve modül başına satır sayısı (`recs`) raporlanır; 2 MB'ı aşan belge için uyarı düşer. Bellekte tutma modelinin bırakılma sinyali budur (bkz. aşağıdaki sınırlar).
 - `SUNUM_PROTECT=1`: `/sunum/*` yalnız panel oturumuna açılır (varsayılan herkese açık).
 - Instagram webhook: kimlik listesi kalıcıdır (14 gün, 5000 kayıt), 7 günden eski zaman damgalı yük yok sayılır.
 
 ## Bilinen sınırlar
 
-Tek süreç ve tek disk (yatay ölçek yok); siparişler (≤5000) ve olaylar (≤200 bin) bellekte tutuluyor. İş verilerinin çoğu tek JSON belgesi olarak duruyor: `settings`, `tenants`, `tenant_keys`, `rules`, `price_strategy`, `shipping`, `dashboard`, `ads` küçük ve tavanlı; `feed`, `refunds`, `support`, `b2b`, `insights`, `staff` büyür ve her yazma tüm belgeyi yeniden yazar (ölçüm: 4-5 MB'de ≈ 150 ms, 35 MB'de ≈ 640 ms olay döngüsünü bloklar) — bunlar SQLite tablosu adayıdır. Çok kopyada son yazan kazanır.
+Tek süreç ve tek disk (yatay ölçek yok); siparişler (≤5000) ve olaylar (≤200 bin) bellekte tutuluyor. Küçük ve tavanlı durum tek JSON belgesinde: `settings`, `tenants`, `tenant_keys`, `rules`, `price_strategy`, `shipping`, `dashboard`, `ads`. Büyüyen iş kayıtları (`refunds`, `support`, `b2b`, `feed`, `insights`, `staff`) `recs` tablosundadır; belgede yalnız özet ve sayaç kalır. Çok kopyada son yazan kazanır (belgeler için).
 
 Kiracı yalıtımı yalnız `tenants` kayıtlarında gerçek: diğer modüllerin kayıtlarında `tenantId` alanı yok, bu yüzden o uçların okumaları kiracıya bağlı kullanıcıya kapatıldı (`assertShared`). Çok kiracılı kullanıma açmadan önce kayıtlara `tenantId` eklenmelidir.
 
