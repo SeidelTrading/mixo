@@ -12,6 +12,12 @@ export const MARKETS = {
 export const MARKET_IDS = Object.keys(MARKETS);
 export const isMarket = m => Object.hasOwn(MARKETS, m);
 
+/** Negatif olmayan tam sayı; boş/geçersiz değerde varsayılan (0 geçerli bir değerdir). */
+const nonNegInt = (v, dflt) => {
+  const n = v === undefined || String(v).trim() === '' ? NaN : Number(v);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : dflt;
+};
+
 /** Çevre değişkenlerinden ayar okur. siteUrl PORT=0 ise dinlemeden sonra server.mjs tarafından düzeltilir. */
 export function loadConfig(env = process.env) {
   const port = env.PORT === undefined ? 3100 : Number(env.PORT);
@@ -32,5 +38,8 @@ export function loadConfig(env = process.env) {
       .filter(Boolean),
     ownIntervalMs: Number(env.OWN_INTERVAL_MS || 2000),
     mixoCatalogTotal: Number(env.MIXO_CATALOG_TOTAL || 44862),
+    // EAN/MPN araması (searchTargeted): mağaza başına günlük arama tavanı (sayaç crawl_state'te gün anahtarıyla tutulur).
+    // 0 geçerlidir (aramayı kapatır); boş ya da sayı olmayan değer varsayılana (1000) düşer.
+    searchDailyCap: nonNegInt(env.SEARCH_DAILY_CAP, 1000),
   };
 }

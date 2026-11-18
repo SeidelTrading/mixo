@@ -29,12 +29,24 @@ import {
   productPage,
   searchBody,
 } from './views.mjs';
-import { mixoComparison, mixoSummary } from '../db/mixo.mjs';
+import { mixoComparison, mixoList, mixoSummary } from '../db/mixo.mjs';
 
 const STATIC = {
   'style.css': 'text/css; charset=utf-8',
   'chart.js': 'text/javascript; charset=utf-8',
 };
+
+/** Mixoutlet özeti ve karşılaştırma listesi 60 sn bellekte tutulur: senkron ve pahalı sorgular her istekte olay döngüsünü bloke etmesin. */
+const MIXO_TTL_MS = 60_000;
+function mixoCached(ctx, key, fn) {
+  const cache = (ctx.mixoCache ??= new Map());
+  const hit = cache.get(key);
+  const t = Date.now();
+  if (hit && t - hit.at < MIXO_TTL_MS) return hit.v;
+  const v = fn();
+  cache.set(key, { at: t, v });
+  return v;
+}
 
 const notFound = (ctx, res, market = 'de') =>
   html(
@@ -62,7 +74,7 @@ export function handlePublic(ctx, req, res, url) {
       : pickLang(req.headers['accept-language']);
     const page = marketChooser(ctx, {
       lang,
-      mixo: mixoSummary(db, now, maxAge0, config.mixoCatalogTotal),
+      mixo: mixoCached(ctx, 'summary', () => mixoSummary(db, now, maxAge0, config.mixoCatalogTotal)),
       stats: siteStats(db, now, maxAge0),
       topCats,
       brands: topBrands(db, now, maxAge0),
@@ -123,8 +135,9 @@ export function handlePublic(ctx, req, res, url) {
     const page = Math.max(1, Math.min(10000, Number(q.get('page')) || 1));
     const perPage = 50;
     const maxAge = config.offerMaxAgeDays;
-    const cmp = mixoComparison(db, now, maxAge, { sort, limit: perPage, offset: (page - 1) * perPage });
-    const summary = mixoSummary(db, now, maxAge, config.mixoCatalogTotal);
+    const list = mixoCached(ctx, 'list', () => mixoList(db, now, maxAge));
+    const cmp = mixoComparison(db, now, maxAge, { sort, limit: perPage, offset: (page - 1) * perPage, list });
+    const summary = mixoCached(ctx, 'summary', () => mixoSummary(db, now, maxAge, config.mixoCatalogTotal));
     return (html(res, 200, mixoPage(ctx, { summary, cmp, sort, page, perPage, lang }), cache), true);
   }
 

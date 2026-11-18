@@ -39,3 +39,51 @@ test('mağaza kaydı: var olan mağaza (www / ad farkı) yinelenmez ve ayarları
   assert.equal(rows[0].shippingDefault, 9);
   db.close();
 });
+
+// Deneme (2026-11-18) sonrası secomp.de ve office-partner.de crawl: false (aşağıda ayrı sınanır); beşi taranır.
+const SEVEN = ['reichelt.de', 'jacob.de', 'mindfactory.de', 'uhrzeit.org', 'pieper.de'];
+const CLOSED_AFTER_TRIAL = ['secomp.de', 'office-partner.de'];
+
+test('mağaza kaydı: yeni mağazalar eklenir (secomp, office-partner kapalı); christ.de ve uhren4you.de kapatılmaz', () => {
+  const db = fresh();
+  const r = provisionStores(db);
+  for (const d of SEVEN) assert.ok(r.added.includes(`de:${d}`), d);
+  for (const d of CLOSED_AFTER_TRIAL) assert.ok(!r.added.includes(`de:${d}`), d); // crawl: false: eklenmez
+  assert.ok(r.added.includes('de:christ.de') && r.added.includes('de:uhren4you.de'));
+  assert.equal(
+    db
+      .prepare("SELECT count(*) c FROM shops WHERE domain IN ('christ.de', 'uhren4you.de') AND active = 1")
+      .get().c,
+    2,
+  );
+  assert.deepEqual(provisionStores(db), { added: [], disabled: [] });
+  db.close();
+});
+
+test('mağaza kaydı: search şablonu {q} içerir ve aynı host yoludur; priceNet / eanFromText boolean', () => {
+  const byDomain = Object.fromEntries(STORES.map(s => [s.domain, s]));
+  for (const d of SEVEN) assert.equal(byDomain[d]?.crawl, true, d);
+  for (const d of CLOSED_AFTER_TRIAL) {
+    assert.equal(byDomain[d]?.crawl, false, d);
+    assert.ok(byDomain[d].why && !byDomain[d].search, d); // neden yazılı, arama şablonu yok
+  }
+  for (const s of STORES.filter(x => x.search)) {
+    assert.ok(s.crawl, s.domain);
+    assert.ok(s.search.startsWith('/') && s.search.split('{q}').length === 2, s.domain); // yol, tek {q}: host değişemez
+    assert.ok(!s.search.includes('//'));
+  }
+  // robots'ta arama yolu yasak olan mağazalarda arama yok
+  assert.equal(byDomain['jacob.de'].search, undefined);
+  assert.equal(byDomain['mindfactory.de'].search, undefined);
+  for (const s of STORES.filter(x => 'priceNet' in x || 'eanFromText' in x)) {
+    assert.equal(typeof (s.priceNet ?? false), 'boolean');
+    assert.equal(typeof (s.eanFromText ?? false), 'boolean');
+  }
+  assert.equal(byDomain['office-partner.de'].priceNet, true);
+  assert.equal(byDomain['office-partner.de'].eanFromText, true);
+  assert.ok(
+    Array.isArray(byDomain['reichelt.de'].brands) && byDomain['reichelt.de'].brands.includes('delock'),
+  );
+  // net fiyat yalnız işaretli mağazada; ikinci dalga mağazaları kayıtlı değil
+  assert.ok(!STORES.some(s => ['bechtle.com', 'wlan-shop24.de', 'druckerzubehoer.de'].includes(s.domain)));
+});

@@ -8,12 +8,17 @@ import { openDb } from '../db.mjs';
 import { addShop } from '../db/repo.mjs';
 import {
   ACCEPT,
+  buildTitleIndex,
   createCrawler,
   looksLikeProductUrl,
+  mixoTargets,
   productUrlScore,
   rankSitemaps,
   readSitemap,
+  titleMatches,
+  urlMatches,
 } from '../crawler/crawler.mjs';
+import { ingestOffer } from '../lib/ingest.mjs';
 import { RateLimiter } from '../crawler/limiter.mjs';
 import { isAllowed, parseRobots } from '../crawler/robots.mjs';
 
@@ -295,4 +300,180 @@ test('alt alan adındaki site haritası (sitemap.boyner.com.tr) kendi robots.txt
     if (byHost[h] !== undefined) assert.ok(c.at - byHost[h] >= 10_000);
     byHost[h] = c.at;
   }
+});
+
+// --- Hedefli keşif: marka koşulu, hedef kümesi, devam imleci, büyük harita, başlık tohumu --------------------------
+const T = (token, brand, ean = null) => [token, { brand, brands: brand ? [brand] : [], ean }];
+
+test('urlMatches: kısa ya da yalnız rakamlı token için marka şart; EAN token tek başına yeter', () => {
+  const targets = new Map([
+    T('66556', 'DeLOCK'),
+    T('4003619665567', '', '4003619665567'),
+    T('efb109d7avef', 'Casio'),
+    T('tl510', 'TP-Link'),
+  ]);
+  const O = 'https://r.test';
+  assert.equal(urlMatches(`${O}/delock-66556-adapter`, targets), true);
+  assert.equal(urlMatches(`${O}/product/66556`, targets), false); // markasız 5 haneli kod ürün ID'si olabilir
+  assert.equal(urlMatches(`${O}/logilink-66556-adapter`, targets), false); // başka marka
+  assert.equal(urlMatches(`${O}/p/4003619665567`, targets), true); // EAN markasız da eşleşir
+  assert.equal(urlMatches(`${O}/casio-uhr-efb-109d-7avef`, targets), true); // 1-3 parça birleşimi, uzun karışık token
+  assert.equal(urlMatches(`${O}/uhr/efb-109d-7avef-schwarz`, targets), true); // marka yok ama 6+ karakterli karışık token
+  assert.equal(urlMatches(`${O}/tp-link-tl-510-switch`, targets), true); // marka 'tp-link' -> 'tplink' birleşimi
+  assert.equal(urlMatches(`${O}/tplink/tl-510-switch`, targets), true);
+  assert.equal(urlMatches(`${O}/link/tl-510-switch`, targets), false); // markanın yalnız bir parçası yetmez
+  // eski kullanım: düz Set (marka bilgisi yok) çalışmaya devam eder
+  assert.equal(urlMatches(`${O}/casio-ga-100`, new Set(['ga100'])), true);
+});
+
+test('mixoTargets: gerçek MPN ve EAN girer, iç kodlar (sku) girmez', () => {
+  const db = openDb(mkdtempSync(join(dir, 'mt-')));
+  const mixo = db
+    .prepare('SELECT * FROM shops WHERE id = ?')
+    .get(addShop(db, { market: 'de', name: 'Mixoutlet', domain: 'mixoutlet.de' }));
+  const row = (n, extra) => ({
+    title: 'Ürün ' + n,
+    price: 10,
+    url: `https://mixoutlet.de/products/p-${n}`,
+    ...extra,
+  });
+  ingestOffer(db, mixo, row(1, { brand: 'Digitus', mpn: 'DA-90370', sku: 'BA-820009' }));
+  ingestOffer(db, mixo, row(2, { brand: 'X', mpn: 'BA-21150232', sku: 'BA-21150232' })); // iç kod
+  ingestOffer(
+    db,
+    mixo,
+    row(3, { brand: 'Casio', mpn: 'UHREN1-EFB-109D-7AVEF', sku: 'UHREN1-EFB-109D-7AVEF' }),
+  ); // iç kod
+  ingestOffer(db, mixo, row(4, { brand: 'Epson', mpn: 'C13T02V34010', ean: '8806097379355' }));
+  ingestOffer(db, mixo, row(5, { brand: 'Y', mpn: 'AB-12' })); // 5 karakterden kısa
+  const t = mixoTargets(db);
+  assert.ok(t instanceof Map);
+  assert.equal(t.get('da90370')?.brand, 'Digitus');
+  assert.ok(!t.has('ba820009') && !t.has('ba21150232') && !t.has('uhren1efb109d7avef'));
+  assert.ok(!t.has('ab12'));
+  assert.equal(t.get('c13t02v34010')?.ean, '8806097379355');
+  assert.equal(t.get('8806097379355')?.ean, '8806097379355'); // EAN token'ı
+  db.close();
+});
+
+test('hedefli keşif: alt harita devam imleci günde 8 harita ilerler, dizin değişince sıfırlanır', async () => {
+  const O = 'https://www.shop.example';
+  const maps = n => Array.from({ length: n }, (_, i) => `${O}/sitemap-products-${i + 1}.xml`);
+  const files = { [`${O}/robots.txt`]: ['text/plain', `Sitemap: ${O}/sitemap.xml\n`] };
+  const child = i => `${O}/produkt/adapter-kx${1000 + i}-pro`;
+  for (let i = 0; i < 21; i++) files[maps(21)[i]] = ['application/xml', urlset([child(i)])];
+  files[`${O}/sitemap.xml`] = ['application/xml', index(maps(20))];
+  const { crawler, shop, seeds, calls } = setup('www.shop.example', files);
+  const targets = new Map(Array.from({ length: 21 }, (_, i) => T(`kx${1000 + i}`, 'X')));
+  const fetched = () =>
+    calls.filter(c => /sitemap-products/.test(c.href)).map(c => Number(/-(\d+)\.xml/.exec(c.href)[1]));
+  assert.equal(await crawler.discoverSeeds(shop, undefined, { targets }), 8);
+  assert.deepEqual(fetched(), [1, 2, 3, 4, 5, 6, 7, 8]);
+  calls.length = 0;
+  assert.equal(await crawler.discoverSeeds(shop, undefined, { targets }), 8);
+  assert.deepEqual(fetched(), [9, 10, 11, 12, 13, 14, 15, 16]);
+  calls.length = 0;
+  assert.equal(await crawler.discoverSeeds(shop, undefined, { targets }), 4);
+  assert.deepEqual(fetched(), [17, 18, 19, 20]);
+  assert.equal(seeds().length, 20);
+  calls.length = 0;
+  await crawler.discoverSeeds(shop, undefined, { targets }); // tur tamam: baştan
+  assert.deepEqual(fetched(), [1, 2, 3, 4, 5, 6, 7, 8]);
+  // dizin yapısı değişti (21. harita eklendi): imleç sıfırlanır
+  await crawler.discoverSeeds(shop, undefined, { targets }); // 9..16
+  files[`${O}/sitemap.xml`] = ['application/xml', index(maps(21))];
+  calls.length = 0;
+  await crawler.discoverSeeds(shop, undefined, { targets });
+  assert.deepEqual(fetched(), [1, 2, 3, 4, 5, 6, 7, 8]);
+});
+
+test('hedefli modda 25 MB düz harita tam okunur, normal modda 10 MB ham sınırında kesilir', async () => {
+  const O = 'https://www.shop.example';
+  const filler = i => `<url><loc>${O}/produkt/dolgu-urun-adi-${i}</loc></url>`;
+  const needle = `${O}/produkt/delock-nx9999-adapter`;
+  const parts = ['<urlset>'];
+  let size = 0;
+  for (let i = 0; size < 25 * 1024 * 1024; i++) size += parts.push(filler(i)) && filler(i).length;
+  parts.push(`<url><loc>${needle}</loc></url></urlset>`);
+  const body = Buffer.from(parts.join(''));
+  const files = {
+    [`${O}/robots.txt`]: ['text/plain', `Sitemap: ${O}/sitemap-items.xml\n`],
+    // 64 KB'lık parçalarla akış (gerçek ağ gibi); tek parça olsaydı sınır parça düzeyinde uygulanırdı.
+    [`${O}/sitemap-items.xml`]: () =>
+      new Response(
+        new ReadableStream({
+          start(c) {
+            for (let i = 0; i < body.length; i += 64 * 1024) c.enqueue(body.subarray(i, i + 64 * 1024));
+            c.close();
+          },
+        }),
+        { headers: { 'content-type': 'application/xml' } },
+      ),
+  };
+  const keep = l => (l === needle ? 2 : 0);
+  const a = setup('www.shop.example', files);
+  const normal = await a.crawler.guardedGet(a.shop, `${O}/sitemap-items.xml`, {
+    sitemap: true,
+    keep,
+    want: Infinity,
+  });
+  assert.equal(normal.truncated, true);
+  assert.ok(!normal.locs.includes(needle));
+  const big = await a.crawler.guardedGet(a.shop, `${O}/sitemap-items.xml`, {
+    sitemap: true,
+    keep,
+    want: Infinity,
+    maxSitemapBytes: 30 * 1024 * 1024,
+  });
+  assert.equal(big.truncated, false);
+  assert.deepEqual(big.locs, [needle]);
+  // keşif düzeyinde: hedefli mod iğneyi bulup 'targeted' tohum yapar
+  const b = setup('www.shop.example', files);
+  const targets = new Map([T('nx9999', 'DeLOCK')]);
+  assert.equal(await b.crawler.discoverSeeds(b.shop, undefined, { targets }), 1);
+  assert.deepEqual(b.seeds(), [needle]);
+  assert.equal(b.db.prepare('SELECT source FROM seeds').get().source, 'targeted');
+});
+
+test('başlık token tohumu: benzer URL targeted-title tohumu olur ama sayfa EAN/MPN tutmazsa Mixoutlet ürününe bağlanmaz', async () => {
+  const O = 'https://www.shop.example';
+  const near = `${O}/uhren/casio-edifice-herrenuhr-chronograph-armband-schwarz-98765`;
+  const far = `${O}/uhren/casio-g-shock-digitaluhr-schwarz-111111`;
+  const files = {
+    [`${O}/robots.txt`]: ['text/plain', `Sitemap: ${O}/sitemap.xml\n`],
+    [`${O}/sitemap.xml`]: ['application/xml', urlset([near, far, `${O}/p/12345678`])],
+    [near]: [
+      'text/html',
+      '<script type="application/ld+json">{"@type":"Product","name":"Casio Edifice Herrenuhr","brand":"Casio","gtin13":"4977766771146","offers":{"price":"99","priceCurrency":"EUR"}}</script>',
+    ],
+  };
+  const { db, shop, crawler, seeds } = setup('www.shop.example', files);
+  const mixo = db
+    .prepare('SELECT * FROM shops WHERE id = ?')
+    .get(addShop(db, { market: 'de', name: 'Mixoutlet', domain: 'mixoutlet.de' }));
+  ingestOffer(db, mixo, {
+    ean: '8806097379355',
+    brand: 'Casio',
+    title: 'Casio Edifice Herrenuhr Chronograph Armband Schwarz 44 mm',
+    price: 120,
+    url: 'https://mixoutlet.de/products/casio-edifice',
+  });
+  const titles = buildTitleIndex(db);
+  assert.equal(titleMatches(near, titles), true);
+  assert.equal(titleMatches(far, titles), false);
+  assert.equal(titleMatches(`${O}/p/12345678`, titles), false); // ad yok
+  const targets = new Map([T('unrelated99', 'X')]);
+  assert.equal(await crawler.discoverSeeds(shop, undefined, { targets, titles }), 1);
+  assert.deepEqual(seeds(), [near]);
+  assert.equal(db.prepare('SELECT source FROM seeds').get().source, 'targeted-title');
+  // tohum taranır: sayfadaki EAN Mixoutlet'inkiyle aynı değil, MPN yok -> bağlanmaz
+  await crawler.runCycle();
+  assert.equal(
+    db.prepare("SELECT count(*) n FROM offers WHERE ean = '8806097379355' AND shopId = ?").get(shop.id).n,
+    0,
+  );
+  assert.equal(
+    db.prepare("SELECT count(*) n FROM offers WHERE ean = '4977766771146' AND shopId = ?").get(shop.id).n,
+    1,
+  );
 });

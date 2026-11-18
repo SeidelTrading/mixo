@@ -1,9 +1,13 @@
+import { gtinChecksumOk } from '../lib/ean.mjs';
 import { parsePrice } from '../lib/price.mjs';
 
 /**
  * Sayfadan YALNIZCA schema.org Product/Offer verisini çıkarır: JSON-LD (öncelikli) ve microdata.
  * Başka hiçbir kaynaktan (CSS seçici, metin, dahili API) fiyat okunmaz.
  * Dönüş: [{ name, ean, mpn, sku, brand, image, category, offers: [{ price, currency, inStock, url, shipping }] }]
+ * GTIN, mikroveride `<meta itemprop="gtin13" content="...">` ya da `<span itemprop="gtin8" content="...">` olarak da gelir
+ * (jacob.de, mindfactory.de, reichelt.de); alan adı ne olursa olsun değer ingest'te EAN olarak doğrulanır
+ * (gtin8 alanına yazılmış 13 haneli EAN de geçerli sayılır).
  */
 const GTIN_KEYS = ['gtin13', 'gtin', 'gtin14', 'gtin12', 'gtin8'];
 const OUT_RE = /outofstock|soldout|discontinued/i;
@@ -154,7 +158,58 @@ function microdata(html) {
   });
 }
 
-export function extractProducts(html) {
+/**
+ * Metinden EAN (yalnız `eanFromText` açık mağazalar için, JSON-LD / microdata'da gtin yoksa): "EAN: <13 hane>" ya da
+ * `productEAN: "<13 hane>"`. Sayfada TEK bir değer (tekrarlar aynı değerse sayılır) ve sağlama toplamı tutarsa döner;
+ * iki farklı EAN görünürse (ilgili ürün, aksesuar) hiçbiri alınmaz.
+ */
+export function eanFromPageText(html) {
+  const found = new Set();
+  const res = [
+    /\bEAN\b\s*:?\s*(?:<[^>]*>\s*)*(\d{13})(?!\d)/gi,
+    /productEAN["']?\s*[:=]\s*["']?(\d{13})(?!\d)/gi,
+  ];
+  for (const re of res) for (const m of String(html).matchAll(re)) found.add(m[1]);
+  const [only] = [...found];
+  return found.size === 1 && gtinChecksumOk(only) ? only : '';
+}
+
+/**
+ * JSON-LD'si olmayan mağaza (office-partner.de) için yedek: sayfada schema.org mikroverisi olarak `itemprop="price"` ve
+ * metinde tek bir EAN varsa tek ürün kurulur. Fiyat yine yalnız schema.org işaretinden okunur (CSS seçici yok).
+ */
+function textProduct(html) {
+  const ean = eanFromPageText(html);
+  const price = parsePrice(prop(html, 'price'));
+  const og = html.match(
+    /<meta\b[^>]*\bproperty\s*=\s*["']og:title["'][^>]*\bcontent\s*=\s*["']([^"']*)["']/i,
+  )?.[1];
+  const name = decodeEntities(prop(html, 'name') || og || '').trim();
+  if (!ean || price === null || !name) return [];
+  return [
+    {
+      name,
+      ean,
+      mpn: '',
+      sku: '',
+      brand: prop(html, 'brand'),
+      image: '',
+      category: '',
+      offers: [
+        {
+          price,
+          currency: prop(html, 'priceCurrency').toUpperCase() || null,
+          inStock: !OUT_RE.test(prop(html, 'availability')),
+          url: null,
+          shipping: null,
+        },
+      ],
+    },
+  ];
+}
+
+/** @param {string} html @param {{ eanFromText?: boolean }} [opts] */
+export function extractProducts(html, { eanFromText = false } = {}) {
   const found = [];
   const blocks = [];
   const re = /<script\b[^>]*\btype\s*=\s*["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script>/gi;
@@ -170,8 +225,12 @@ export function extractProducts(html) {
   for (const b of blocks) walk(b, found);
   ids = new Map();
   const withOffers = found.filter(p => p.offers.length);
-  if (withOffers.length) return withOffers;
-  return microdata(String(html)).filter(p => p.offers.length);
+  let out = withOffers.length ? withOffers : microdata(String(html)).filter(p => p.offers.length);
+  if (eanFromText) {
+    if (!out.length) out = textProduct(String(html));
+    else if (out.length === 1 && !out[0].ean) out[0].ean = eanFromPageText(html);
+  }
+  return out;
 }
 
 /** Sayfada birden çok teklif varsa en ucuz stoklu olanı (yoksa en ucuzu) seçer. */

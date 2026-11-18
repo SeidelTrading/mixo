@@ -1,13 +1,15 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openDb } from '../db.mjs';
 import { addShop } from '../db/repo.mjs';
 import { createCrawler, BOT_TOKEN } from '../crawler/crawler.mjs';
 import { RateLimiter } from '../crawler/limiter.mjs';
+import { extractProducts } from '../crawler/jsonld.mjs';
+import { normalizeEan } from '../lib/ean.mjs';
 
 // Yalnızca yerel test sunucusu: gerçek ağ isteği yok.
 const hits = [];
@@ -107,6 +109,17 @@ test('robots.txt yasaklı yol çekilmez; schema.org olmayan sayfadan fiyat okunm
   const r2 = await s.crawler.crawlSeed(s.row(s.seed('/p/plain')));
   assert.equal(r2.reason, 'no-schema-org-product');
   assert.equal(s.db.prepare('SELECT count(*) AS n FROM offers').get().n, 0);
+});
+
+test('www ve çıplak alan adı aynı beklemeyi paylaşır: www 503 sonrası çıplak adrese robots isteği gitmez', async () => {
+  hits.length = 0;
+  const s = setup();
+  s.db
+    .prepare('INSERT INTO host_backoff (host, until, reason) VALUES (?, ?, ?)')
+    .run(`www.${host}`, Date.parse('2026-11-17T10:00:00Z') + 3600_000, 'HTTP 503');
+  const r = await s.crawler.crawlSeed(s.row(s.seed('/p/1')));
+  assert.ok(!r.offer);
+  assert.equal(hits.length, 0); // robots.txt dahil ağa hiç gidilmedi
 });
 
 test('429 -> host 24 saat bekletilir, yeniden deneme yok; süre dolunca tekrar denenir', async () => {
@@ -309,4 +322,299 @@ test('runCycle: mağazalar arasında sırayla seçer (ilk eklenen mağaza kuyru�
     crawled.map(c => c.shopId),
     [s.shopId, other],
   );
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Sayfa çıkarıcı uyarlamaları, tur önceliği, host paralelliği, Crawl-delay. Gerçek ağ YOK: sahte fetch + sahte saat.
+// ---------------------------------------------------------------------------------------------------------------
+const fixture = n => readFileSync(new URL(`./fixtures/${n}.html`, import.meta.url), 'utf8');
+const LD = (name, price, extra = {}) =>
+  `<script type="application/ld+json">${JSON.stringify({ '@type': 'Product', name, ...extra, offers: { '@type': 'Offer', price, priceCurrency: 'EUR' } })}</script>`;
+
+/** files: tam href -> [content-type, gövde, durum?] | (href) => Response. Saat sahte; kayıt: calls ({ href, at }). */
+function fake(files, { domains = ['shop.test'], market = 'de', ...crawlerOpts } = {}) {
+  let t = Date.parse('2026-11-18T10:00:00Z');
+  const calls = [];
+  const stat = { inflight: new Map(), maxHost: 0, now: 0, maxGlobal: 0 };
+  const fetchImpl = async href => {
+    const host = new URL(href).host;
+    calls.push({ href, at: t });
+    const n = (stat.inflight.get(host) ?? 0) + 1;
+    stat.inflight.set(host, n);
+    stat.maxHost = Math.max(stat.maxHost, n);
+    stat.now++;
+    stat.maxGlobal = Math.max(stat.maxGlobal, stat.now);
+    await new Promise(r => setTimeout(r, 3)); // yanıt süresi: paralel istek varsa örtüşme görülür
+    stat.inflight.set(host, n - 1);
+    stat.now--;
+    const f = files[href];
+    if (typeof f === 'function') return f(href);
+    return f
+      ? new Response(f[1], { status: f[2] || 200, headers: { 'content-type': f[0], ...(f[3] || {}) } })
+      : new Response('yok', { status: 404 });
+  };
+  const now = () => t;
+  const limiter = new RateLimiter({
+    minIntervalMs: 10_000,
+    maxConcurrent: 4,
+    now,
+    sleep: async ms => void (t += ms),
+  });
+  const db = openDb(mkdtempSync(join(dir, 'f-')));
+  const shops = domains.map(d =>
+    db.prepare('SELECT * FROM shops WHERE id = ?').get(addShop(db, { market, name: d, domain: d })),
+  );
+  const crawler = createCrawler({
+    db,
+    siteUrl: 'https://kb.example',
+    fetchImpl,
+    now,
+    limiter,
+    ...crawlerOpts,
+  });
+  const seed = (shop, url, source = 'sitemap') =>
+    db.prepare('INSERT INTO seeds (shopId, url, source) VALUES (?, ?, ?)').run(shop.id, url, source);
+  return { db, shops, crawler, calls, seed, stat, now };
+}
+
+test('çıplak -> www robots yönlendirmesi de 10 sn host aralığına tabi (iki ayrı host sayılmaz)', async () => {
+  const f = fake(
+    {
+      'https://hop.test/robots.txt': () =>
+        new Response('', { status: 301, headers: { location: 'https://www.hop.test/robots.txt' } }),
+      'https://www.hop.test/robots.txt': ['text/plain', 'User-agent: *\nAllow: /\n'],
+      'https://www.hop.test/p': ['text/html', '<html><title>x</title></html>'],
+    },
+    { domains: ['hop.test'] },
+  );
+  await f.crawler.guardedGet(f.shops[0], 'https://hop.test/p');
+  assert.ok(f.calls.length >= 2);
+  for (let i = 1; i < f.calls.length; i++)
+    assert.ok(f.calls[i].at - f.calls[i - 1].at >= 10_000, f.calls[i].href);
+});
+
+test('microdata: reichelt gtin13/mpn meta, jacob meta itemprop, mindfactory gtin8 alanındaki EAN-13', () => {
+  const [r] = extractProducts(fixture('reichelt-microdata'));
+  assert.deepEqual(
+    { ean: r.ean, mpn: r.mpn, brand: r.brand, price: r.offers[0].price, stock: r.offers[0].inStock },
+    { ean: '4003619665567', mpn: '66556', brand: 'DeLOCK', price: 12.49, stock: true },
+  );
+  const [j] = extractProducts(fixture('jacob-meta'));
+  assert.deepEqual(
+    { ean: j.ean, mpn: j.mpn, name: j.name, price: j.offers[0].price, stock: j.offers[0].inStock },
+    {
+      ean: '4977766771146',
+      mpn: 'TN-248VAL',
+      name: 'Brother TN-248VAL Toner Multipack',
+      price: 159.34,
+      stock: false,
+    },
+  );
+  const [m] = extractProducts(fixture('mindfactory-gtin8'));
+  assert.equal(m.ean, '8806097379355'); // gtin8 alanında 13 hane: EAN-13 olarak kabul
+  assert.equal(normalizeEan(m.ean), '8806097379355');
+  assert.equal(m.offers[0].price, 329);
+});
+
+test('eanFromText ve priceNet: office-partner net 23,77 -> 28,29; kapalı mağazada metindeki EAN kullanılmaz', () => {
+  const stores = [
+    { market: 'de', domain: 'office.test', crawl: true, priceNet: true, eanFromText: true },
+    { market: 'de', domain: 'plain.test', crawl: true },
+  ];
+  const f = fake({}, { domains: ['office.test', 'plain.test'], stores });
+  const [office, plain] = f.shops;
+  const html = fixture('office-partner');
+  const o = f.crawler.ingestPage(office, 'https://office.test/samsung-s-pen-40535095', html);
+  assert.equal(o.offer, 1);
+  assert.deepEqual(
+    { ...f.db.prepare('SELECT ean, price FROM offers WHERE shopId = ?').get(office.id) },
+    { ean: '8806097379355', price: 28.29 },
+  );
+  // eanFromText kapalı: JSON-LD'si olmayan sayfadan hiçbir şey okunmaz
+  const p = f.crawler.ingestPage(plain, 'https://plain.test/x-1', html);
+  assert.equal(p.reason, 'no-schema-org-product');
+  assert.equal(f.db.prepare('SELECT count(*) n FROM offers WHERE shopId = ?').get(plain.id).n, 0);
+  // JSON-LD var ama gtin yok + metinde EAN: yalnız eanFromText'li mağazada EAN olur, diğerinde unmatched
+  const ld = `<h1>Ürün</h1>${LD('Samsung S Pen', '10.00')}<p>EAN: 8806097379355</p>`;
+  assert.equal(f.crawler.ingestPage(plain, 'https://plain.test/ld-1', ld).unmatched, 1);
+  assert.equal(f.crawler.ingestPage(office, 'https://office.test/ld-1', ld).offer, 1);
+  assert.equal(
+    f.db.prepare('SELECT price FROM offers WHERE shopId = ? AND url LIKE ?').get(office.id, '%ld-1').price,
+    11.9,
+  );
+  // sayfada iki farklı EAN: hiçbiri alınmaz
+  assert.equal(extractProducts(fixture('office-partner-two-eans'), { eanFromText: true }).length, 0);
+  assert.equal(
+    extractProducts(`${LD('A', '5')}<p>EAN: 8806097379355 / EAN: 4977766771146</p>`, { eanFromText: true })[0]
+      .ean,
+    '',
+  );
+  // sağlama toplamı tutmayan EAN alınmaz
+  assert.equal(extractProducts(`${LD('A', '5')}<p>EAN: 8806097379350</p>`, { eanFromText: true })[0].ean, '');
+});
+
+const seedHost = (f, shop, source, n, prefix = 'p') =>
+  Array.from({ length: n }, (_, i) =>
+    f.seed(shop, `https://${shop.domain}/produkt/${prefix}-${source}-${i + 100000}`, source),
+  );
+
+test('runCycle: targeted ve search tohumlar önce, targeted-title sonra, rastgele tohum mağaza başına en çok 3', async () => {
+  const f = fake({});
+  const [shop] = f.shops;
+  seedHost(f, shop, 'sitemap', 10);
+  seedHost(f, shop, 'targeted', 3);
+  seedHost(f, shop, 'search', 2);
+  seedHost(f, shop, 'targeted-title', 2);
+  const r = await f.crawler.runCycle({ limit: 7 });
+  assert.equal(r.seeds, 7);
+  const done = src =>
+    f.db.prepare('SELECT count(*) n FROM seeds WHERE source = ? AND lastCrawledAt IS NOT NULL').get(src).n;
+  assert.deepEqual([done('targeted'), done('search'), done('targeted-title'), done('sitemap')], [3, 2, 2, 0]);
+  const r2 = await f.crawler.runCycle({ limit: 50 }); // kalanlar: yalnız 3 rastgele
+  assert.equal(r2.seeds, 3);
+  assert.equal(done('sitemap'), 3);
+});
+
+test('runCycle: Mixoutlet tohumları (catalog her turda, tümü normal turda) taranmaz, silinmez', async () => {
+  const f = fake({}, { domains: ['mixoutlet.de', 'shop.test'], ownDomains: ['mixoutlet.de'] });
+  const [mixo, shop] = f.shops;
+  f.seed(mixo, 'https://mixoutlet.de/products/a', 'catalog');
+  f.seed(mixo, 'https://mixoutlet.de/products/b', 'targeted');
+  f.seed(shop, 'https://shop.test/produkt/x-100000', 'sitemap');
+  const r = await f.crawler.runCycle({ limit: 50 });
+  assert.equal(r.seeds, 1);
+  assert.ok(!f.calls.some(c => c.href.includes('mixoutlet.de')));
+  const own = await f.crawler.runCycle({ limit: 50, ownOnly: true }); // kendi sitem turu: catalog yine atlanır
+  assert.equal(own.seeds, 1);
+  assert.ok(f.calls.some(c => c.href === 'https://mixoutlet.de/products/b'));
+  assert.ok(!f.calls.some(c => c.href === 'https://mixoutlet.de/products/a'));
+  assert.equal(f.db.prepare('SELECT count(*) n FROM seeds WHERE shopId = ?').get(mixo.id).n, 2);
+  // OWN_DOMAINS yokken de normal turda Mixoutlet taranmaz
+  const g = fake({}, { domains: ['mixoutlet.de'] });
+  g.seed(g.shops[0], 'https://mixoutlet.de/products/c', 'targeted');
+  assert.equal((await g.crawler.runCycle()).seeds, 0);
+});
+
+test('4 işçi: farklı host paralel, aynı host asla paralel değil ve ardışık istekler >= 10 sn', async () => {
+  const hosts = ['a.test', 'b.test', 'c.test', 'd.test'];
+  const f = fake({}, { domains: hosts });
+  for (const shop of f.shops) seedHost(f, shop, 'targeted', 3);
+  const r = await f.crawler.runCycle({ limit: 100 });
+  assert.equal(r.seeds, 12);
+  assert.equal(f.stat.maxGlobal, 4); // varsayılan maxConcurrent 4
+  assert.equal(f.stat.maxHost, 1); // aynı host'a asla paralel istek yok
+  for (const h of hosts) {
+    const at = f.calls.filter(c => new URL(c.href).host === h).map(c => c.at);
+    assert.equal(at.length, 4); // robots.txt + 3 sayfa
+    for (let i = 1; i < at.length; i++) assert.ok(at[i] - at[i - 1] >= 10_000, `${h}: ${at}`);
+  }
+});
+
+test('limiter: yanıt aralıktan uzun sürse bile aynı host isteği öncekinin bitmesini bekler', async () => {
+  const lim = new RateLimiter({ minIntervalMs: 5, maxConcurrent: 4 });
+  const ev = [];
+  const job = id => async () => {
+    ev.push('+' + id);
+    await new Promise(r => setTimeout(r, 40));
+    ev.push('-' + id);
+  };
+  await Promise.all([lim.run('h', job(1)), lim.run('h', job(2)), lim.run('x', job(3))]);
+  assert.ok(ev.indexOf('-1') < ev.indexOf('+2'), ev.join(' '));
+  assert.ok(ev.indexOf('+3') < ev.indexOf('-1')); // farklı host beklemez
+});
+
+test('robots Crawl-delay: aralıktan büyükse o uygulanır (15 sn), yoksa 10 sn', async () => {
+  // Her host kendi sahte saatinde: ortak saatte bir host'un beklemesi öbürünün zaman damgasını oynatır.
+  const gapFor = async (host, delay) => {
+    const files = {
+      [`https://${host}/robots.txt`]: ['text/plain', `User-agent: *\nCrawl-delay: ${delay}\n`],
+      [`https://${host}/produkt/a-100001`]: ['text/html', LD('A', '1')],
+      [`https://${host}/produkt/b-100002`]: ['text/html', LD('B', '1')],
+    };
+    const f = fake(files, { domains: [host] });
+    for (const p of ['a-100001', 'b-100002']) f.seed(f.shops[0], `https://${host}/produkt/${p}`, 'targeted');
+    await f.crawler.runCycle();
+    const at = f.calls.filter(c => c.href.includes('/produkt/')).map(c => c.at);
+    assert.equal(at.length, 2);
+    return at[1] - at[0];
+  };
+  assert.equal(await gapFor('slow.test', 15), 15_000);
+  assert.equal(await gapFor('fast.test', 3), 10_000); // Crawl-delay 3 < 10: host aralığı korunur
+  // aşırı büyük Crawl-delay: host taranmaz
+  const g = fake(
+    { 'https://huge.test/robots.txt': ['text/plain', 'User-agent: *\nCrawl-delay: 86400\n'] },
+    { domains: ['huge.test'] },
+  );
+  assert.equal(
+    (await g.crawler.guardedGet(g.shops[0], 'https://huge.test/produkt/a-100001')).reason,
+    'crawl-delay',
+  );
+});
+
+test('runCycle: skipMixo ile kendi-site turu Mixoutlet dışındaki kendi mağazaları tarar, Mixoutlet atlanır', async () => {
+  const f = fake({}, { domains: ['mixoutlet.de', 'own.test'], ownDomains: ['mixoutlet.de', 'own.test'] });
+  const [mixo, own] = f.shops;
+  f.seed(mixo, 'https://mixoutlet.de/products/b', 'targeted');
+  f.seed(own, 'https://own.test/produkt/x-100000', 'targeted');
+  const r = await f.crawler.runCycle({ limit: 50, ownOnly: true, skipMixo: true });
+  assert.equal(r.seeds, 1);
+  assert.ok(f.calls.some(c => c.href === 'https://own.test/produkt/x-100000'));
+  assert.ok(!f.calls.some(c => c.href.includes('mixoutlet.de/products')));
+  // normal tur kendi mağazaları hiç taramaz (ayrı turda taranırlar)
+  assert.equal((await f.crawler.runCycle({ limit: 50 })).seeds, 0);
+});
+
+test('limiter: yavaş gövde bitmeden aynı host a ikinci istek başlamaz (gövde yuva içinde okunur); site haritası akışı release e kadar yuvayı tutar', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-lim-'));
+  const db = openDb(dir);
+  try {
+    const id = addShop(db, { market: 'de', name: 'L', domain: 'lim.test' });
+    const shop = db.prepare('SELECT * FROM shops WHERE id = ?').get(id);
+    const log = [];
+    const slowBody = (text, ms, tag) =>
+      new ReadableStream({
+        start(c) {
+          c.enqueue(new TextEncoder().encode(text.slice(0, 5)));
+          setTimeout(() => {
+            c.enqueue(new TextEncoder().encode(text.slice(5)));
+            c.close();
+            log.push('end ' + tag);
+          }, ms);
+        },
+      });
+    const fetchImpl = async url => {
+      const p = new URL(url).pathname;
+      log.push('start ' + p);
+      if (p === '/robots.txt')
+        return new Response('User-agent: *\nAllow: /\n', { headers: { 'content-type': 'text/plain' } });
+      if (p === '/slow')
+        return new Response(slowBody('<html>slow</html>', 150, '/slow'), {
+          headers: { 'content-type': 'text/html' },
+        });
+      if (p === '/map.xml')
+        return new Response(
+          slowBody('<urlset><url><loc>https://lim.test/p/1</loc></url></urlset>', 150, '/map.xml'),
+          { headers: { 'content-type': 'application/xml' } },
+        );
+      return new Response('<html>a</html>', { headers: { 'content-type': 'text/html' } });
+    };
+    const limiter = new RateLimiter({ minIntervalMs: 5, maxConcurrent: 4 });
+    const c = createCrawler({ db, siteUrl: 'https://k.test', fetchImpl, limiter });
+    await c.guardedGet(shop, 'https://lim.test/'); // robots önbelleğe alınsın
+    log.length = 0;
+    await Promise.all([
+      c.guardedGet(shop, 'https://lim.test/slow'),
+      c.guardedGet(shop, 'https://lim.test/a'),
+    ]);
+    assert.ok(log.indexOf('end /slow') < log.indexOf('start /a'), log.join(' | '));
+    log.length = 0;
+    await Promise.all([
+      c.guardedGet(shop, 'https://lim.test/map.xml', { sitemap: true }),
+      c.guardedGet(shop, 'https://lim.test/b'),
+    ]);
+    assert.ok(log.indexOf('end /map.xml') < log.indexOf('start /b'), log.join(' | '));
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

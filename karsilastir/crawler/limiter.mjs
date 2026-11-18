@@ -1,6 +1,8 @@
 /**
  * Host başına en az `minIntervalMs` aralık + küresel eşzamanlılık sınırı.
  * Slot rezervasyonu senkron yapıldığı için aynı host'a gelen istekler kesinlikle sıraya girer.
+ * Ayrıca aynı host'a ASLA paralel istek gitmez: bir istek (yanıt gövdesi dahil) bitmeden o host'un sonraki isteği
+ * başlamaz; yavaş bir yanıt aralığı aşsa bile iki istek üst üste binmez.
  * now/sleep enjekte edilebilir (testlerde sahte saat).
  */
 export class RateLimiter {
@@ -15,6 +17,8 @@ export class RateLimiter {
     this.now = now;
     this.sleep = sleep;
     this.nextAt = new Map();
+    /** host -> o host'ta sırada bekleyen son isteğin bitiş sözü (host başına sıralı yürütme). */
+    this.tail = new Map();
     this.active = 0;
     this.waiters = [];
   }
@@ -33,12 +37,24 @@ export class RateLimiter {
     const t = this.now();
     const slot = Math.max(t, this.nextAt.get(host) ?? 0);
     this.nextAt.set(host, slot + interval);
-    if (slot > t) await this.sleep(slot - t);
-    await this.#acquire();
+    const prev = this.tail.get(host);
+    /** @type {(v?: any) => void} */
+    let finish = () => {};
+    const mine = new Promise(r => (finish = r));
+    this.tail.set(host, mine);
     try {
-      return await fn();
+      if (prev) await prev; // aynı host: önceki istek bitmeden başlamaz
+      const t2 = this.now();
+      if (slot > t2) await this.sleep(slot - t2);
+      await this.#acquire();
+      try {
+        return await fn();
+      } finally {
+        this.#release();
+      }
     } finally {
-      this.#release();
+      finish();
+      if (this.tail.get(host) === mine) this.tail.delete(host);
     }
   }
 }

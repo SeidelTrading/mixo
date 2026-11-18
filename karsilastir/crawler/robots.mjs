@@ -29,18 +29,32 @@ export function parseRobots(text) {
   return { groups, sitemaps };
 }
 
+/** Derlenmiş kural kalıpları: büyük site haritasında aynı kurallar yüz binlerce kez sorulur, her seferinde derlenmesin. */
+const REGEX_CACHE = new Map();
+
 function patternToRegex(p) {
+  let re = REGEX_CACHE.get(p);
+  if (re) return re;
   const anchored = p.endsWith('$');
   const body = (anchored ? p.slice(0, -1) : p).replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
-  return new RegExp('^' + body + (anchored ? '$' : ''));
+  re = new RegExp('^' + body + (anchored ? '$' : ''));
+  if (REGEX_CACHE.size >= 2000) REGEX_CACHE.clear(); // sınırsız büyümesin
+  REGEX_CACHE.set(p, re);
+  return re;
 }
 
-/** Ürün belirteci (örn. "KarsilastirBot") için geçerli kural grubunu seçer; yoksa '*'. */
-function rulesFor(robots, token) {
+/** Ürün belirteci (örn. "KarsilastirBot") için geçerli kural gruplarını seçer; yoksa '*'. */
+function groupsFor(robots, token) {
   const t = token.toLowerCase();
   const specific = robots.groups.filter(g => g.agents.some(a => a !== '*' && t.startsWith(a)));
-  const groups = specific.length ? specific : robots.groups.filter(g => g.agents.includes('*'));
-  return groups.flatMap(g => g.rules);
+  return specific.length ? specific : robots.groups.filter(g => g.agents.includes('*'));
+}
+const rulesFor = (robots, token) => groupsFor(robots, token).flatMap(g => g.rules);
+
+/** Geçerli gruptaki Crawl-delay (saniye) milisaniye olarak; yoksa 0. Birden çok grup varsa en büyüğü. */
+export function crawlDelayMs(robots, token) {
+  const d = groupsFor(robots, token).map(g => g.crawlDelay || 0);
+  return Math.round(Math.max(0, ...d) * 1000);
 }
 
 /** path: yol + sorgu (örn. "/p/1?x=2"). Kural yoksa serbest. */

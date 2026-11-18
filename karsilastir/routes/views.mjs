@@ -290,7 +290,11 @@ export function mixoPage(ctx, { summary, cmp, sort, page, perPage, lang }) {
     .join('');
   const rows = cmp.items
     .map(
-      p => `<tr><td><a href="/de/product/${esc(p.ean)}">${esc(p.title)}</a><br><small>${esc(p.brand || '')} · ${esc(p.ean)}</small></td>
+      p => `<tr><td>${
+        p.matchType === 'mpn'
+          ? `${p.mixoUrl ? `<a href="${esc(p.mixoUrl)}" rel="nofollow noopener">${esc(p.title)}</a>` : esc(p.title)}<br><small>${esc(p.brand || '')} · <span class="badge" title="${esc(t('mixoMatchMpnHint'))}">${esc(t('mixoMatchMpn'))}</span></small>`
+          : `<a href="/de/product/${esc(p.ean)}">${esc(p.title)}</a><br><small>${esc(p.brand || '')} · ${esc(p.ean)}</small>`
+      }</td>
 <td>${esc(money(p.mixo))}</td>
 <td>${p.rivals.map(r => `${esc(r.shop)} ${esc(money(r.total))}`).join('<br>')}</td>
 <td>${esc(money(p.best))}</td><td class="${p.diff > 0 ? 'drop' : ''}">${esc(money(p.diff))}<br><small>${esc(pct(p.pct))}</small></td></tr>`,
@@ -304,7 +308,7 @@ export function mixoPage(ctx, { summary, cmp, sort, page, perPage, lang }) {
     description: head,
     canonicalPath: '/de/mixoutlet',
     body: `<section class="hero-band"><h1>${esc(head)}</h1><p>${esc(share)} % · ${esc(t('mixoNote'))}</p></section>
-<ul class="stats" aria-label="${esc(t('mixoCoverage'))}">${stat(summary.known, t('mixoKnown'))}${stat(summary.withEan, t('mixoWithEan'))}${stat(summary.covered, t('mixoNav'))}${stat(summary.cheaper, t('mixoCheaperCount'))}</ul>
+<ul class="stats" aria-label="${esc(t('mixoCoverage'))}">${stat(summary.known, t('mixoKnown'))}${stat(summary.withEan, t('mixoWithEan'))}${stat(summary.covered, t('mixoNav'))}${summary.coveredByMpn ? stat(summary.coveredByMpn, t('mixoCoveredMpn')) : ''}${stat(summary.cheaper, t('mixoCheaperCount'))}</ul>
 ${shops ? `<section class="block"><h2>${esc(t('mixoByShop'))}</h2><ul class="chiprow">${shops}</ul></section>` : ''}
 <section class="block"><p>${sorts}</p>${
       cmp.items.length

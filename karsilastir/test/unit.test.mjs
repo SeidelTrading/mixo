@@ -434,3 +434,343 @@ test("JSON-LD: TR mağaza sayfaları (dr.com.tr EAN'lı, flo.com.tr EAN'sız)", 
   assert.equal(f.ean, '');
   assert.equal(f.offers[0].currency, 'TRY');
 });
+
+// ---- MPN anahtarı, v4 göçü ve promoteUnmatched ----
+test('mpnKey: ayırıcı ve marka yazım farkları aynı anahtarı verir, güvensiz değerler null', async () => {
+  const { mpnKey } = await import('../lib/ingest.mjs');
+  assert.equal(mpnKey('Festina', 'F20636/1'), mpnKey('Festina', 'F20636-1'));
+  assert.equal(mpnKey('Festina', 'F20636.1'), mpnKey('FESTINA', 'f20636 1'));
+  assert.equal(mpnKey('Good Connections', 'K8104GN'), mpnKey('GoodConnections', 'k8104gn'));
+  assert.equal(mpnKey('Synergy 21', 'S215413'), mpnKey('Synergy21', 'S215413'));
+  assert.equal(mpnKey('EFB Elektronik', 'K8104GN'), mpnKey('EFB-Elektronik', 'K8104GN'));
+  assert.equal(mpnKey('Festina', 'F20636-1'), 'festina|f206361');
+  assert.equal(mpnKey('Acme', 'A-12'), null); // 5 karakterden kısa
+  assert.equal(mpnKey('Acme', 'ABCDEF'), null); // rakam yok
+  assert.equal(mpnKey('Acme', '4006381333931'), null); // barkod
+  for (const iç of ['BA-21150232', 'arp-17', 'OT-12345', 'UHREN1-EFB-109D-7AVEF'])
+    assert.equal(mpnKey('Casio', iç), null, iç);
+});
+
+test('ingestOffer: iç kod mpn olarak saklanmaz; eşleşmeyen satıra mpnKey yazılır', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-mpn4-'));
+  const db = openDb(dir);
+  try {
+    const shop = db
+      .prepare('SELECT * FROM shops WHERE id = ?')
+      .get(addShop(db, { market: 'de', name: 'M', domain: 'mixoutlet.de' }));
+    const base = { price: '10,00', currency: 'EUR', title: 'Casio Edifice EFB-109D-7AVEF', brand: 'Casio' };
+    assert.equal(
+      ingestOffer(db, shop, { ...base, mpn: 'UHREN1-EFB-109D-7AVEF', url: 'https://m.test/a' }, Date.now()),
+      'unmatched',
+    );
+    const a = db.prepare('SELECT mpn, mpnKey FROM unmatched WHERE url = ?').get('https://m.test/a');
+    assert.deepEqual({ ...a }, { mpn: null, mpnKey: null });
+    assert.equal(
+      ingestOffer(db, shop, { ...base, mpn: 'EFB-109D-7AVEF', url: 'https://m.test/b' }, Date.now()),
+      'unmatched',
+    );
+    const b = db.prepare('SELECT mpn, mpnKey FROM unmatched WHERE url = ?').get('https://m.test/b');
+    assert.deepEqual({ ...b }, { mpn: 'EFB-109D-7AVEF', mpnKey: 'casio|efb109d7avef' });
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('migrate v4: eski anahtarlar yeniden hesaplanır, iç kodlar temizlenir', async () => {
+  const { migrate } = await import('../db/schema.mjs');
+  const dir = mkdtempSync(join(tmpdir(), 'kb-v4-'));
+  const db = openDb(dir);
+  try {
+    const sid = addShop(db, { market: 'de', name: 'M', domain: 'mixoutlet.de' });
+    db.prepare(
+      'INSERT INTO products (ean, title, brand, createdAt, mpn, mpnKey) VALUES (?, ?, ?, ?, ?, ?)',
+    ).run('4006381333931', 'Uhr', 'Festina', 1, 'F20636/1', 'festina|f20636/1');
+    db.prepare(
+      'INSERT INTO products (ean, title, brand, createdAt, mpn, mpnKey) VALUES (?, ?, ?, ?, ?, ?)',
+    ).run('96385074', 'Kabel', 'DeLOCK', 1, 'BA-21150232', 'delock|ba21150232');
+    const ins = db.prepare(
+      "INSERT INTO unmatched (shopId, title, price, currency, url, seenAt, brand, mpn, sku, mpnKey) VALUES (?, ?, 10, 'EUR', ?, 1, ?, ?, ?, ?)",
+    );
+    ins.run(
+      sid,
+      'Casio Edifice EFB-109D-7AVEF Uhr',
+      'https://m.test/1',
+      'Casio',
+      'UHREN1-EFB-109D-7AVEF',
+      'UHREN1-EFB-109D-7AVEF',
+      'casio|uhren1efb109d7avef',
+    );
+    ins.run(
+      sid,
+      'Delock Kabel',
+      'https://m.test/2',
+      'DeLOCK',
+      'BA-21150232',
+      'BA-21150232',
+      'delock|ba21150232',
+    );
+    ins.run(sid, 'Good Kabel', 'https://m.test/3', 'Good Connections', 'K8104GN', null, null);
+    db.exec('PRAGMA user_version = 3');
+    migrate(db);
+    const p = db
+      .prepare('SELECT ean, mpn, mpnKey FROM products ORDER BY ean')
+      .all()
+      .map(r => ({ ...r }));
+    assert.deepEqual(p, [
+      { ean: '4006381333931', mpn: 'F20636/1', mpnKey: 'festina|f206361' },
+      { ean: '96385074', mpn: null, mpnKey: null },
+    ]);
+    const u = db
+      .prepare('SELECT url, mpn, mpnKey FROM unmatched ORDER BY url')
+      .all()
+      .map(r => ({ ...r }));
+    assert.deepEqual(u, [
+      { url: 'https://m.test/1', mpn: 'EFB-109D-7AVEF', mpnKey: 'casio|efb109d7avef' },
+      { url: 'https://m.test/2', mpn: null, mpnKey: null },
+      { url: 'https://m.test/3', mpn: 'K8104GN', mpnKey: 'goodconnections|k8104gn' },
+    ]);
+    assert.equal(db.prepare('PRAGMA user_version').get().user_version, 4);
+    const idx = db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'unmatched_mpnKey'")
+      .get();
+    assert.ok(idx);
+    assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE name = 'mixo_enrich'").get());
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('migrate v4: elle kurulmuş v3 veritabanı (mpnKey sütunu ve mixo_enrich yok), ikinci çalıştırma veriyi bozmaz', async () => {
+  const { migrate } = await import('../db/schema.mjs');
+  const { DatabaseSync } = await import('node:sqlite');
+  const db = new DatabaseSync(':memory:');
+  try {
+    db.exec(`
+      CREATE TABLE products (ean TEXT PRIMARY KEY, title TEXT NOT NULL, brand TEXT, category TEXT, image TEXT, createdAt INTEGER NOT NULL, mpn TEXT, mpnKey TEXT);
+      CREATE TABLE shops (id INTEGER PRIMARY KEY AUTOINCREMENT, market TEXT NOT NULL, name TEXT NOT NULL, domain TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1, blocked INTEGER NOT NULL DEFAULT 0, network TEXT, networkMerchantId TEXT);
+      CREATE TABLE offers (id INTEGER PRIMARY KEY AUTOINCREMENT, shopId INTEGER NOT NULL, ean TEXT NOT NULL, price REAL NOT NULL, currency TEXT NOT NULL, url TEXT NOT NULL, seenAt INTEGER NOT NULL, deepLink TEXT);
+      CREATE TABLE unmatched (id INTEGER PRIMARY KEY AUTOINCREMENT, shopId INTEGER NOT NULL, title TEXT, rawEan TEXT, price REAL NOT NULL, currency TEXT NOT NULL, url TEXT NOT NULL, seenAt INTEGER NOT NULL, brand TEXT, mpn TEXT, sku TEXT, deepLink TEXT, UNIQUE (shopId, url));
+      INSERT INTO shops (market, name, domain) VALUES ('de', 'M', 'mixoutlet.de');
+      INSERT INTO products (ean, title, brand, createdAt, mpn, mpnKey) VALUES ('4006381333931', 'Uhr', 'Festina', 1, 'F20636/1', 'festina|f20636/1');
+      INSERT INTO products (ean, title, brand, createdAt, mpn, mpnKey) VALUES ('96385074', 'Kabel', 'DeLOCK', 1, 'BA-21150232', 'delock|ba21150232');
+      INSERT INTO unmatched (shopId, title, price, currency, url, seenAt, brand, mpn, sku) VALUES (1, 'Casio Edifice EFB-109D-7AVEF Uhr', 10, 'EUR', 'https://m.test/1', 1, 'Casio', 'UHREN1-EFB-109D-7AVEF', 'UHREN1-EFB-109D-7AVEF');
+      INSERT INTO unmatched (shopId, title, price, currency, url, seenAt, brand, mpn, sku) VALUES (1, 'Delock Kabel', 10, 'EUR', 'https://m.test/2', 1, 'DeLOCK', 'BA-21150232', 'BA-21150232');
+      INSERT INTO unmatched (shopId, title, price, currency, url, seenAt, brand, mpn, sku) VALUES (1, 'Good Kabel', 10, 'EUR', 'https://m.test/3', 1, 'Good Connections', 'K8104GN', NULL);
+      PRAGMA user_version = 3;
+    `);
+    const snap = () => ({
+      p: db
+        .prepare('SELECT ean, mpn, mpnKey FROM products ORDER BY ean')
+        .all()
+        .map(r => ({ ...r })),
+      u: db
+        .prepare('SELECT url, mpn, mpnKey FROM unmatched ORDER BY url')
+        .all()
+        .map(r => ({ ...r })),
+    });
+    migrate(db);
+    const first = snap();
+    assert.deepEqual(first.p, [
+      { ean: '4006381333931', mpn: 'F20636/1', mpnKey: 'festina|f206361' },
+      { ean: '96385074', mpn: null, mpnKey: null },
+    ]);
+    assert.deepEqual(first.u, [
+      { url: 'https://m.test/1', mpn: 'EFB-109D-7AVEF', mpnKey: 'casio|efb109d7avef' },
+      { url: 'https://m.test/2', mpn: null, mpnKey: null },
+      { url: 'https://m.test/3', mpn: 'K8104GN', mpnKey: 'goodconnections|k8104gn' },
+    ]);
+    assert.equal(db.prepare('PRAGMA user_version').get().user_version, 4);
+    assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE name = 'unmatched_mpnKey'").get());
+    migrate(db);
+    assert.deepEqual(snap(), first);
+    assert.equal(db.prepare('SELECT count(*) n FROM unmatched').get().n, 3);
+  } finally {
+    db.close();
+  }
+});
+
+test("promoteUnmatched: Mixoutlet önce, EAN'lı rakip sonra gelince satır offers'a taşınır; belirsiz anahtara dokunulmaz", async () => {
+  const { promoteUnmatched } = await import('../lib/ingest.mjs');
+  const dir = mkdtempSync(join(tmpdir(), 'kb-promote-'));
+  const db = openDb(dir);
+  try {
+    const row = id => db.prepare('SELECT * FROM shops WHERE id = ?').get(id);
+    const mixo = row(addShop(db, { market: 'de', name: 'Mixoutlet', domain: 'mixoutlet.de' }));
+    const rival = row(addShop(db, { market: 'de', name: 'Rakip', domain: 'rakip.test', shippingDefault: 4 }));
+    const now = Date.now();
+    const m = { price: '164,41', currency: 'EUR', brand: 'Casio' };
+    ingestOffer(
+      db,
+      mixo,
+      { ...m, title: 'Casio EFB-109D-7AVEF', mpn: 'EFB-109D-7AVEF', url: 'https://mixo.test/p1' },
+      now - 5000,
+    );
+    ingestOffer(
+      db,
+      mixo,
+      { ...m, title: 'Casio ABC-12345', mpn: 'ABC-12345', url: 'https://mixo.test/p2' },
+      now,
+    );
+    assert.equal(promoteUnmatched(db, now), 0); // henüz ürün yok
+    // rakip EAN'lı ürünü getirir
+    ingestOffer(
+      db,
+      rival,
+      {
+        ean: '4006381333931',
+        title: 'Casio Edifice',
+        brand: 'Casio',
+        mpn: 'EFB 109D 7AVEF',
+        price: '139,00',
+        url: 'https://rakip.test/1',
+      },
+      now,
+    );
+    assert.equal(promoteUnmatched(db, now), 1);
+    const o = db.prepare('SELECT ean, price, seenAt FROM offers WHERE shopId = ?').get(mixo.id);
+    assert.deepEqual({ ...o }, { ean: '4006381333931', price: 164.41, seenAt: now - 5000 }); // tazelik korunur
+    assert.equal(db.prepare('SELECT count(*) n FROM unmatched WHERE shopId = ?').get(mixo.id).n, 1);
+    // belirsiz: aynı anahtar iki farklı EAN'lı üründe
+    for (const ean of ['96385074', '5901234123457'])
+      ingestOffer(
+        db,
+        rival,
+        {
+          ean,
+          title: 'Casio ABC',
+          brand: 'Casio',
+          mpn: 'ABC-12345',
+          price: '10',
+          url: 'https://rakip.test/' + ean,
+        },
+        now,
+      );
+    assert.equal(promoteUnmatched(db, now), 0);
+    assert.equal(db.prepare('SELECT count(*) n FROM unmatched WHERE shopId = ?').get(mixo.id).n, 1);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("MPN bağı: aynı mağazanın başka adresli teklifi olan EAN'a bağlanmaz (paket/renk aynı MPN'i paylaşsa da fiyat ezilmez)", async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-mpn-conflict-'));
+  const db = openDb(dir);
+  try {
+    const row = id => db.prepare('SELECT * FROM shops WHERE id = ?').get(id);
+    const mixo = row(addShop(db, { market: 'de', name: 'Mixoutlet', domain: 'mixoutlet.de' }));
+    const now = Date.now();
+    const toner = { brand: 'Brother', mpn: 'TN-2420', currency: 'EUR' };
+    // Barkodlu tekli toner: kendi EAN'ı ve Mixoutlet teklifi
+    assert.equal(
+      ingestOffer(
+        db,
+        mixo,
+        {
+          ...toner,
+          ean: '4977766779494',
+          title: 'Brother TN-2420 Toner',
+          price: '60',
+          url: 'https://mixoutlet.de/products/a',
+        },
+        now,
+      ),
+      'offer',
+    );
+    // Aynı MPN'li barkodsuz 2'li paket: tekli ürünün teklifini ezmemeli, eşleşmemiş kalmalı
+    assert.equal(
+      ingestOffer(
+        db,
+        mixo,
+        {
+          ...toner,
+          title: 'Brother TN-2420 Toner 2er Pack',
+          price: '115',
+          url: 'https://mixoutlet.de/products/b',
+        },
+        now,
+      ),
+      'unmatched',
+    );
+    const offers = db.prepare('SELECT price, url FROM offers WHERE shopId = ?').all(mixo.id);
+    assert.deepEqual(
+      offers.map(o => ({ ...o })),
+      [{ price: 60, url: 'https://mixoutlet.de/products/a' }],
+    );
+    // Aynı adresin yeniden işlenmesi (güncelleme) engellenmez
+    assert.equal(
+      ingestOffer(
+        db,
+        mixo,
+        { ...toner, title: 'Brother TN-2420 Toner', price: '58', url: 'https://mixoutlet.de/products/a' },
+        now,
+      ),
+      'offer',
+    );
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('promoteUnmatched: aynı mağazada aynı anahtarlı 2 eşleşmemiş satır (renk varyantı) terfi etmez', async () => {
+  const { promoteUnmatched } = await import('../lib/ingest.mjs');
+  const dir = mkdtempSync(join(tmpdir(), 'kb-promote-amb-'));
+  const db = openDb(dir);
+  try {
+    const row = id => db.prepare('SELECT * FROM shops WHERE id = ?').get(id);
+    const mixo = row(addShop(db, { market: 'de', name: 'Mixoutlet', domain: 'mixoutlet.de' }));
+    const rival = row(addShop(db, { market: 'de', name: 'Rakip', domain: 'rakip.test' }));
+    const now = Date.now();
+    const hp = { brand: 'HP', mpn: '305XL', currency: 'EUR' };
+    ingestOffer(
+      db,
+      mixo,
+      { ...hp, title: 'HP 305XL schwarz', price: '30', url: 'https://mixoutlet.de/products/s' },
+      now,
+    );
+    ingestOffer(
+      db,
+      mixo,
+      { ...hp, title: 'HP 305XL farbig', price: '45', url: 'https://mixoutlet.de/products/f' },
+      now,
+    );
+    ingestOffer(
+      db,
+      rival,
+      { ...hp, ean: '4006381333931', title: 'HP 305XL Tinte', price: '25', url: 'https://rakip.test/hp' },
+      now,
+    );
+    assert.equal(promoteUnmatched(db, now), 0);
+    assert.equal(db.prepare('SELECT count(*) n FROM unmatched WHERE shopId = ?').get(mixo.id).n, 2);
+    assert.equal(db.prepare('SELECT count(*) n FROM offers WHERE shopId = ?').get(mixo.id).n, 0);
+    // Biri kalkınca (tek satır) terfi eder
+    db.prepare("DELETE FROM unmatched WHERE url LIKE '%/f'").run();
+    assert.equal(promoteUnmatched(db, now), 1);
+    assert.equal(db.prepare('SELECT price FROM offers WHERE shopId = ?').get(mixo.id).price, 30);
+    // Mixoutlet'in aynı EAN'da başka adresli teklifi varken ikinci ürün terfi etmez
+    ingestOffer(
+      db,
+      mixo,
+      { ...hp, title: 'HP 305XL 2er', price: '99', url: 'https://mixoutlet.de/products/x' },
+      now,
+    );
+    assert.equal(promoteUnmatched(db, now), 0);
+    assert.equal(db.prepare('SELECT price FROM offers WHERE shopId = ?').get(mixo.id).price, 30);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('loadConfig: SEARCH_DAILY_CAP 0 geçerli (aramayı kapatır), geçersiz değer varsayılana (1000) düşer', async () => {
+  const { loadConfig } = await import('../lib/config.mjs');
+  assert.equal(loadConfig({}).searchDailyCap, 1000);
+  assert.equal(loadConfig({ SEARCH_DAILY_CAP: '0' }).searchDailyCap, 0);
+  assert.equal(loadConfig({ SEARCH_DAILY_CAP: '250' }).searchDailyCap, 250);
+  assert.equal(loadConfig({ SEARCH_DAILY_CAP: 'abc' }).searchDailyCap, 1000);
+  assert.equal(loadConfig({ SEARCH_DAILY_CAP: '-5' }).searchDailyCap, 1000);
+  assert.equal(loadConfig({ SEARCH_DAILY_CAP: '' }).searchDailyCap, 1000);
+});

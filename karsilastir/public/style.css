@@ -93,7 +93,7 @@ h2 {
   margin: 0 auto;
   padding: 0.6rem 1rem;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas: 'brand markets' 'search search';
   gap: 0.5rem 1rem;
   align-items: center;
@@ -122,6 +122,7 @@ h2 {
 }
 .search {
   grid-area: search;
+  min-width: 0;
   display: flex;
   gap: 0.5rem;
 }
@@ -134,6 +135,10 @@ h2 {
   border-radius: var(--radius);
   background: var(--bg);
   color: var(--fg);
+}
+.search select {
+  min-width: 0;
+  max-width: 30%;
 }
 .search input:focus {
   border-color: var(--primary);
@@ -177,7 +182,11 @@ h2 {
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+}
+.cats ul::-webkit-scrollbar {
+  display: none;
 }
 .chip {
   display: inline-block;
@@ -400,6 +409,7 @@ main {
 /* Arama sayfası */
 .results {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 }
 @media (min-width: 900px) {
@@ -420,6 +430,7 @@ main {
 }
 .filterform {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.9rem;
   padding: 0 1rem 1rem;
 }
@@ -456,6 +467,10 @@ main {
   min-width: 0;
   width: 100%;
 }
+.filters select {
+  width: 100%;
+  min-width: 0;
+}
 .filters input[type='number'],
 .filters select,
 .sortform select {
@@ -468,6 +483,7 @@ main {
 }
 .factions {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   align-items: center;
 }
@@ -496,6 +512,7 @@ main {
 }
 .sortform {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
 }
@@ -524,12 +541,13 @@ main {
 }
 .pgrid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   margin-bottom: 1.25rem;
 }
 @media (min-width: 720px) {
   .pgrid {
-    grid-template-columns: 320px 1fr;
+    grid-template-columns: 320px minmax(0, 1fr);
     gap: 2rem;
   }
 }
@@ -582,6 +600,7 @@ main {
   margin-bottom: 1rem;
 }
 .tablewrap {
+  position: relative;
   overflow-x: auto;
 }
 .offers {
@@ -801,4 +820,14 @@ form.inline {
 }
 .chiprow {
   margin-top: 0;
+}
+.mcats li,
+.chiprow li {
+  min-width: 0;
+  max-width: 100%;
+}
+.mcats .chip,
+.chiprow .chip {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
